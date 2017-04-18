@@ -1,3 +1,16 @@
+/*
+ * handle.go
+ *
+ * Copyright 2017 Bill Zissimopoulos
+ */
+/*
+ * This file is part of Cgofuse.
+ *
+ * You can redistribute it and/or modify it under the terms of the GNU
+ * General Public License version 3 as published by the Free Software
+ * Foundation.
+ */
+
 package fuse
 
 /*
