@@ -261,7 +261,7 @@ func hostGetattr(path0 *C.char, stat0 *C.struct_stat) (errc0 C.int) {
 }
 
 //export hostReadlink
-func hostReadlink(path0 *C.char, buf0 *C.char, size0 C.size_t) (errc0 C.int) {
+func hostReadlink(path0 *C.char, buff0 *C.char, size0 C.size_t) (errc0 C.int) {
 	defer func() {
 		if r := recover(); r != nil {
 			errc0 = -C.int(EIO)
@@ -270,8 +270,8 @@ func hostReadlink(path0 *C.char, buf0 *C.char, size0 C.size_t) (errc0 C.int) {
 	fsop := getInterfaceForPointer(C.fuse_get_context().private_data).(FileSystemInterface)
 	path := C.GoString(path0)
 	errc, rslt := fsop.Readlink(path)
-	buf := (*[1 << 30]byte)(unsafe.Pointer(buf0))
-	copy(buf[:size0], rslt)
+	buff := (*[1 << 30]byte)(unsafe.Pointer(buff0))
+	copy(buff[:size0], rslt)
 	return -C.int(errc)
 }
 
@@ -420,7 +420,7 @@ func hostOpen(path0 *C.char, fi0 *C.struct_fuse_file_info) (errc0 C.int) {
 }
 
 //export hostRead
-func hostRead(path0 *C.char, buf0 *C.char, size0 C.size_t, off0 C.off_t,
+func hostRead(path0 *C.char, buff0 *C.char, size0 C.size_t, ofst0 C.off_t,
 	fi0 *C.struct_fuse_file_info) (errc0 C.int) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -429,13 +429,13 @@ func hostRead(path0 *C.char, buf0 *C.char, size0 C.size_t, off0 C.off_t,
 	}()
 	fsop := getInterfaceForPointer(C.fuse_get_context().private_data).(FileSystemInterface)
 	path := C.GoString(path0)
-	buf := (*[1 << 30]byte)(unsafe.Pointer(buf0))
-	errc := fsop.Read(path, buf[:size0], uint64(off0), uint64(fi0.fh))
+	buff := (*[1 << 30]byte)(unsafe.Pointer(buff0))
+	errc := fsop.Read(path, buff[:size0], uint64(ofst0), uint64(fi0.fh))
 	return -C.int(errc)
 }
 
 //export hostWrite
-func hostWrite(path0 *C.char, buf0 *C.char, size0 C.size_t, off0 C.off_t,
+func hostWrite(path0 *C.char, buff0 *C.char, size0 C.size_t, ofst0 C.off_t,
 	fi0 *C.struct_fuse_file_info) (errc0 C.int) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -444,8 +444,8 @@ func hostWrite(path0 *C.char, buf0 *C.char, size0 C.size_t, off0 C.off_t,
 	}()
 	fsop := getInterfaceForPointer(C.fuse_get_context().private_data).(FileSystemInterface)
 	path := C.GoString(path0)
-	buf := (*[1 << 30]byte)(unsafe.Pointer(buf0))
-	errc := fsop.Write(path, buf[:size0], uint64(off0), uint64(fi0.fh))
+	buff := (*[1 << 30]byte)(unsafe.Pointer(buff0))
+	errc := fsop.Write(path, buff[:size0], uint64(ofst0), uint64(fi0.fh))
 	return -C.int(errc)
 }
 
@@ -504,7 +504,7 @@ func hostFsync(path0 *C.char, datasync C.int, fi0 *C.struct_fuse_file_info) (err
 }
 
 //export hostSetxattr
-func hostSetxattr(path0 *C.char, name0 *C.char, buf0 *C.char, size0 C.size_t,
+func hostSetxattr(path0 *C.char, name0 *C.char, buff0 *C.char, size0 C.size_t,
 	flags C.int) (errc0 C.int) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -514,13 +514,13 @@ func hostSetxattr(path0 *C.char, name0 *C.char, buf0 *C.char, size0 C.size_t,
 	fsop := getInterfaceForPointer(C.fuse_get_context().private_data).(FileSystemInterface)
 	path := C.GoString(path0)
 	name := C.GoString(name0)
-	buf := (*[1 << 30]byte)(unsafe.Pointer(buf0))
-	errc := fsop.Setxattr(path, name, buf[:size0], int(flags))
+	buff := (*[1 << 30]byte)(unsafe.Pointer(buff0))
+	errc := fsop.Setxattr(path, name, buff[:size0], int(flags))
 	return -C.int(errc)
 }
 
 //export hostGetxattr
-func hostGetxattr(path0 *C.char, name0 *C.char, buf0 *C.char, size0 C.size_t) (errc0 C.int) {
+func hostGetxattr(path0 *C.char, name0 *C.char, buff0 *C.char, size0 C.size_t) (errc0 C.int) {
 	defer func() {
 		if r := recover(); r != nil {
 			errc0 = -C.int(EIO)
@@ -529,13 +529,13 @@ func hostGetxattr(path0 *C.char, name0 *C.char, buf0 *C.char, size0 C.size_t) (e
 	fsop := getInterfaceForPointer(C.fuse_get_context().private_data).(FileSystemInterface)
 	path := C.GoString(path0)
 	name := C.GoString(name0)
-	buf := (*[1 << 30]byte)(unsafe.Pointer(buf0))
-	errc := fsop.Getxattr(path, name, buf[:size0])
+	buff := (*[1 << 30]byte)(unsafe.Pointer(buff0))
+	errc := fsop.Getxattr(path, name, buff[:size0])
 	return -C.int(errc)
 }
 
 //export hostListxattr
-func hostListxattr(path0 *C.char, buf0 *C.char, size0 C.size_t) (errc0 C.int) {
+func hostListxattr(path0 *C.char, buff0 *C.char, size0 C.size_t) (errc0 C.int) {
 	// !!!: NOTIMPL
 	return -C.int(ENOSYS)
 }
@@ -569,7 +569,7 @@ func hostOpendir(path0 *C.char, fi0 *C.struct_fuse_file_info) (errc0 C.int) {
 }
 
 //export hostReaddir
-func hostReaddir(path0 *C.char, buf0 unsafe.Pointer, fill0 C.fuse_fill_dir_t, off0 C.off_t,
+func hostReaddir(path0 *C.char, buff0 unsafe.Pointer, fill0 C.fuse_fill_dir_t, ofst0 C.off_t,
 	fi0 *C.struct_fuse_file_info) (errc0 C.int) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -583,9 +583,9 @@ func hostReaddir(path0 *C.char, buf0 unsafe.Pointer, fill0 C.fuse_fill_dir_t, of
 		defer C.free(unsafe.Pointer(name))
 		stat := C.struct_stat{}
 		copyCstatFromFusestat(&stat, stat1)
-		return 0 == C.hostFilldir(fill0, buf0, name, &stat, C.off_t(off1))
+		return 0 == C.hostFilldir(fill0, buff0, name, &stat, C.off_t(off1))
 	}
-	errc := fsop.Readdir(path, fill, uint64(off0), uint64(fi0.fh))
+	errc := fsop.Readdir(path, fill, uint64(ofst0), uint64(fi0.fh))
 	return -C.int(errc)
 }
 

@@ -122,10 +122,10 @@ type FileSystemInterface interface {
 	Truncate(path string, size uint64, fh uint64) int
 
 	// Read reads data from a file.
-	Read(path string, buf []byte, off uint64, fh uint64) int
+	Read(path string, buff []byte, ofst uint64, fh uint64) int
 
 	// Write writes data to a file.
-	Write(path string, buf []byte, off uint64, fh uint64) int
+	Write(path string, buff []byte, ofst uint64, fh uint64) int
 
 	// Flush flushes cached file data.
 	Flush(path string, fh uint64) int
@@ -143,8 +143,8 @@ type FileSystemInterface interface {
 
 	// Readdir reads a directory.
 	Readdir(path string,
-		fill func(name string, stat *Stat_t, off uint64) bool,
-		off uint64,
+		fill func(name string, stat *Stat_t, ofst uint64) bool,
+		ofst uint64,
 		fh uint64) int
 
 	// Releasedir closes an open directory.
@@ -244,11 +244,11 @@ func (*FileSystemBase) Truncate(path string, size uint64, fh uint64) int {
 	return ENOSYS
 }
 
-func (*FileSystemBase) Read(path string, buf []byte, off uint64, fh uint64) int {
+func (*FileSystemBase) Read(path string, buff []byte, ofst uint64, fh uint64) int {
 	return ENOSYS
 }
 
-func (*FileSystemBase) Write(path string, buf []byte, off uint64, fh uint64) int {
+func (*FileSystemBase) Write(path string, buff []byte, ofst uint64, fh uint64) int {
 	return ENOSYS
 }
 
@@ -275,8 +275,8 @@ func (*FileSystemBase) Opendir(path string) (int, uint64) {
 }
 
 func (*FileSystemBase) Readdir(path string,
-	fill func(name string, stat *Stat_t, off uint64) bool,
-	off uint64,
+	fill func(name string, stat *Stat_t, ofst uint64) bool,
+	ofst uint64,
 	fh uint64) int {
 	return ENOSYS
 }
