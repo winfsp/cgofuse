@@ -136,10 +136,7 @@ import (
 	"unsafe"
 )
 
-/*
- * FileSystemHost
- */
-
+// FileSystemHost is used to host a Cgofuse file system.
 type FileSystemHost struct {
 	fsop FileSystemInterface
 }
@@ -149,7 +146,7 @@ func copyCstatvfsFromGostatfs(dst *C.struct_statvfs, src *syscall.Statfs_t) {
 		return
 	}
 	*dst = C.struct_statvfs{}
-	// !!!
+	// !!!: NOTIMPL
 }
 
 func copyCstatFromGostat(dst *C.struct_stat, src *syscall.Stat_t) {
@@ -157,7 +154,7 @@ func copyCstatFromGostat(dst *C.struct_stat, src *syscall.Stat_t) {
 		return
 	}
 	*dst = C.struct_stat{}
-	// !!!
+	// !!!: NOTIMPL
 }
 
 func copyGotimespecFromCtimespec(dst *syscall.Timespec, src *C.struct_timespec) {
@@ -165,7 +162,7 @@ func copyGotimespecFromCtimespec(dst *syscall.Timespec, src *C.struct_timespec) 
 		return
 	}
 	*dst = syscall.Timespec{}
-	// !!!
+	// !!!: NOTIMPL
 }
 
 //export hostGetattr
@@ -457,7 +454,7 @@ func hostGetxattr(path0 *C.char, name0 *C.char, buf0 *C.char, size0 C.size_t) (e
 
 //export hostListxattr
 func hostListxattr(path0 *C.char, buf0 *C.char, size0 C.size_t) (errno C.int) {
-	// !!!
+	// !!!: NOTIMPL
 	return -C.int(syscall.ENOSYS)
 }
 
@@ -633,10 +630,12 @@ func hostUtimens(path0 *C.char, tv0 *C.struct_fuse_timespec) (errno C.int) {
 	return -C.int(serr)
 }
 
+// NewFileSystemHost creates a file system host.
 func NewFileSystemHost(fsop FileSystemInterface) *FileSystemHost {
 	return &FileSystemHost{fsop}
 }
 
+// Mount mounts a file system.
 func (host *FileSystemHost) Mount(args []string) bool {
 	argv := make([]*C.char, len(args))
 	for i, s := range args {
@@ -652,6 +651,7 @@ func (host *FileSystemHost) Mount(args []string) bool {
 	return 0 == C.fuse_main_real(C.int(len(args)), &argv[0], C.hostFsop(), C.hostFsopSize(), p)
 }
 
+// Mount unmounts a file system.
 func (host *FileSystemHost) Unmount() {
 	// !!!: NOTIMPL
 }
