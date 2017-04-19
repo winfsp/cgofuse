@@ -163,7 +163,7 @@ type FileSystemInterface interface {
 	Removexattr(path string, name string) int
 
 	// Listxattr lists extended attributes.
-	Listxattr(path string) (int, []string)
+	Listxattr(path string, fill func(name string)) int
 }
 
 // FileSystemBase provides default implementations of the methods in FileSystemInterface.
@@ -301,8 +301,8 @@ func (*FileSystemBase) Removexattr(path string, name string) int {
 	return ENOSYS
 }
 
-func (*FileSystemBase) Listxattr(path string) (int, []string) {
-	return ENOSYS, nil
+func (*FileSystemBase) Listxattr(path string, fill func(name string)) int {
+	return ENOSYS
 }
 
 var _ FileSystemInterface = (*FileSystemBase)(nil)

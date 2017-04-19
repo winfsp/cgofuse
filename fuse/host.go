@@ -692,7 +692,7 @@ func hostFgetattr(path0 *C.char, stat0 *C.struct_stat,
 }
 
 //export hostUtimens
-func hostUtimens(path0 *C.char, tv0 *C.struct_fuse_timespec) (errc0 C.int) {
+func hostUtimens(path0 *C.char, tmsp0 *C.struct_fuse_timespec) (errc0 C.int) {
 	defer func() {
 		if r := recover(); r != nil {
 			errc0 = -C.int(EIO)
@@ -700,16 +700,17 @@ func hostUtimens(path0 *C.char, tv0 *C.struct_fuse_timespec) (errc0 C.int) {
 	}()
 	fsop := getInterfaceForPointer(C.fuse_get_context().private_data).(FileSystemInterface)
 	path := C.GoString(path0)
-	ts := ([]Timespec)(nil)
-	if tv0 != nil {
-		tsar := [2]Timespec{}
-		tvar := (*[2]C.struct_fuse_timespec)(unsafe.Pointer(tv0))
-		copyFusetimespecFromCtimespec(&tsar[0], &tvar[0])
-		copyFusetimespecFromCtimespec(&tsar[1], &tvar[1])
-		ts = tsar[:]
+	if tmsp0 == nil {
+		errc := fsop.Utimens(path, nil)
+		return -C.int(errc)
+	} else {
+		tmsp := [2]Timespec{}
+		tmsa := (*[2]C.struct_fuse_timespec)(unsafe.Pointer(tmsp0))
+		copyFusetimespecFromCtimespec(&tmsp[0], &tmsa[0])
+		copyFusetimespecFromCtimespec(&tmsp[1], &tmsa[1])
+		errc := fsop.Utimens(path, tmsp[:])
+		return -C.int(errc)
 	}
-	errc := fsop.Utimens(path, ts)
-	return -C.int(errc)
 }
 
 // NewFileSystemHost creates a file system host.
