@@ -21,6 +21,47 @@ package fuse
 
 import "syscall"
 
+const (
+	EIO    = int(syscall.EIO)
+	ENOSYS = int(syscall.ENOSYS)
+)
+
+type Timespec struct {
+	Sec  int64
+	Nsec int64
+}
+
+type Statfs_t struct {
+	Bsize   uint64
+	Frsize  uint64
+	Blocks  uint64
+	Bfree   uint64
+	Bavail  uint64
+	Files   uint64
+	Ffree   uint64
+	Favail  uint64
+	Fsid    uint64
+	Flag    uint64
+	Namemax uint64
+}
+
+type Stat_t struct {
+	Dev      uint64
+	Ino      uint64
+	Mode     uint32
+	Nlink    uint32
+	Uid      uint32
+	Gid      uint32
+	Rdev     uint64
+	Size     int64
+	Atim     Timespec
+	Mtim     Timespec
+	Ctim     Timespec
+	Blksize  int64
+	Blocks   int64
+	Birthtim Timespec
+}
+
 // FileSystemInterface is the interface that Cgofuse file systems must implement.
 type FileSystemInterface interface {
 	// Init is called when the file system is mounted.
@@ -30,96 +71,96 @@ type FileSystemInterface interface {
 	Destroy()
 
 	// Statfs gets file system statistics.
-	Statfs(path string, stbuf *syscall.Statfs_t) syscall.Errno
+	Statfs(path string, stat *Statfs_t) int
 
 	// Mknod creates a file node.
-	Mknod(path string, mode uint32, dev uint64) syscall.Errno
+	Mknod(path string, mode uint32, dev uint64) int
 
 	// Mkdir creates a directory.
-	Mkdir(path string, mode uint32) syscall.Errno
+	Mkdir(path string, mode uint32) int
 
 	// Unlink removes a file.
-	Unlink(path string) syscall.Errno
+	Unlink(path string) int
 
 	// Rmdir removes a directory.
-	Rmdir(path string) syscall.Errno
+	Rmdir(path string) int
 
 	// Link creates a hard link to a file.
-	Link(srcpath string, dstpath string) syscall.Errno
+	Link(srcpath string, dstpath string) int
 
 	// Symlink creates a symbolic link.
-	Symlink(dstpath string, srcpath string) syscall.Errno
+	Symlink(dstpath string, srcpath string) int
 
 	// Readlink reads the target of a symbolic link.
-	Readlink(path string) (syscall.Errno, string)
+	Readlink(path string) (int, string)
 
 	// Rename renames a file.
-	Rename(oldpath string, newpath string) syscall.Errno
+	Rename(oldpath string, newpath string) int
 
 	// Chmod changes the permission bits of a file.
-	Chmod(path string, mode uint32) syscall.Errno
+	Chmod(path string, mode uint32) int
 
 	// Chown changes the owner and group of a file.
-	Chown(path string, uid uint32, gid uint32) syscall.Errno
+	Chown(path string, uid uint32, gid uint32) int
 
 	// Utimens changes the access and modification times of a file.
-	Utimens(path string, tv []syscall.Timespec) syscall.Errno
+	Utimens(path string, tv []Timespec) int
 
 	// Access checks file access permissions.
-	Access(path string, mask int) syscall.Errno
+	Access(path string, mask int) int
 
 	// Create creates and opens a file.
-	Create(path string, mode uint32) (syscall.Errno, uint64)
+	Create(path string, mode uint32) (int, uint64)
 
 	// Open opens a file.
-	Open(path string) (syscall.Errno, uint64)
+	Open(path string) (int, uint64)
 
 	// Getattr gets file attributes.
-	Getattr(path string, stbuf *syscall.Stat_t, fh uint64) syscall.Errno
+	Getattr(path string, stat *Stat_t, fh uint64) int
 
 	// Truncate changes the size of a file.
-	Truncate(path string, size uint64, fh uint64) syscall.Errno
+	Truncate(path string, size uint64, fh uint64) int
 
 	// Read reads data from a file.
-	Read(path string, buf []byte, off uint64, fh uint64) syscall.Errno
+	Read(path string, buf []byte, off uint64, fh uint64) int
 
 	// Write writes data to a file.
-	Write(path string, buf []byte, off uint64, fh uint64) syscall.Errno
+	Write(path string, buf []byte, off uint64, fh uint64) int
 
 	// Flush flushes cached file data.
-	Flush(path string, fh uint64) syscall.Errno
+	Flush(path string, fh uint64) int
 
 	// Release closes an open file.
-	Release(path string, fh uint64) syscall.Errno
+	Release(path string, fh uint64) int
 
 	// Fsync synchronizes file contents.
-	Fsync(path string, datasync bool, fh uint64) syscall.Errno
+	Fsync(path string, datasync bool, fh uint64) int
 
-	//Lock(path string, fh uint64, cmd int, lock syscall.Flock_t) syscall.Errno
+	//Lock(path string, fh uint64, cmd int, lock Flock_t) int
 
 	// Opendir opens a directory.
-	Opendir(path string) (syscall.Errno, uint64)
+	Opendir(path string) (int, uint64)
 
 	// Readdir reads a directory.
-	Readdir(path string, fh uint64) (syscall.Errno, []string)
+	Readdir(path string, fh uint64) (int, []string)
 
 	// Releasedir closes an open directory.
-	Releasedir(path string, fh uint64) syscall.Errno
+	Releasedir(path string, fh uint64) int
 
 	// Fsyncdir synchronizes directory contents.
-	Fsyncdir(path string, datasync bool, fh uint64) syscall.Errno
+	Fsyncdir(path string, datasync bool, fh uint64) int
 
 	// Setxattr sets extended attributes.
-	Setxattr(path string, name string, value []byte, flags int) syscall.Errno
+	Setxattr(path string, name string, value []byte, flags int) int
 
 	// Getxattr gets extended attributes.
-	Getxattr(path string, name string, value []byte) syscall.Errno
+	Getxattr(path string, name string, value []byte) int
 
 	// Removexattr removes extended attributes.
-	Removexattr(path string, name string) syscall.Errno
+	Removexattr(path string, name string) int
 
 	// Listxattr lists extended attributes.
-	Listxattr(path string) (syscall.Errno, []string)
+	Listxattr(path string) (int, []string)
 }
 
 // FileSystemBase provides default implementations of the methods in FileSystemInterface.
@@ -132,130 +173,130 @@ func (*FileSystemBase) Init() {
 func (*FileSystemBase) Destroy() {
 }
 
-func (*FileSystemBase) Statfs(path string, stbuf *syscall.Statfs_t) syscall.Errno {
-	return syscall.ENOSYS
+func (*FileSystemBase) Statfs(path string, stat *Statfs_t) int {
+	return ENOSYS
 }
 
-func (*FileSystemBase) Mknod(path string, mode uint32, dev uint64) syscall.Errno {
-	return syscall.ENOSYS
+func (*FileSystemBase) Mknod(path string, mode uint32, dev uint64) int {
+	return ENOSYS
 }
 
-func (*FileSystemBase) Mkdir(path string, mode uint32) syscall.Errno {
-	return syscall.ENOSYS
+func (*FileSystemBase) Mkdir(path string, mode uint32) int {
+	return ENOSYS
 }
 
-func (*FileSystemBase) Unlink(path string) syscall.Errno {
-	return syscall.ENOSYS
+func (*FileSystemBase) Unlink(path string) int {
+	return ENOSYS
 }
 
-func (*FileSystemBase) Rmdir(path string) syscall.Errno {
-	return syscall.ENOSYS
+func (*FileSystemBase) Rmdir(path string) int {
+	return ENOSYS
 }
 
-func (*FileSystemBase) Link(srcpath string, dstpath string) syscall.Errno {
-	return syscall.ENOSYS
+func (*FileSystemBase) Link(srcpath string, dstpath string) int {
+	return ENOSYS
 }
 
-func (*FileSystemBase) Symlink(dstpath string, srcpath string) syscall.Errno {
-	return syscall.ENOSYS
+func (*FileSystemBase) Symlink(dstpath string, srcpath string) int {
+	return ENOSYS
 }
 
-func (*FileSystemBase) Readlink(path string) (syscall.Errno, string) {
-	return syscall.ENOSYS, ""
+func (*FileSystemBase) Readlink(path string) (int, string) {
+	return ENOSYS, ""
 }
 
-func (*FileSystemBase) Rename(oldpath string, newpath string) syscall.Errno {
-	return syscall.ENOSYS
+func (*FileSystemBase) Rename(oldpath string, newpath string) int {
+	return ENOSYS
 }
 
-func (*FileSystemBase) Chmod(path string, mode uint32) syscall.Errno {
-	return syscall.ENOSYS
+func (*FileSystemBase) Chmod(path string, mode uint32) int {
+	return ENOSYS
 }
 
-func (*FileSystemBase) Chown(path string, uid uint32, gid uint32) syscall.Errno {
-	return syscall.ENOSYS
+func (*FileSystemBase) Chown(path string, uid uint32, gid uint32) int {
+	return ENOSYS
 }
 
-func (*FileSystemBase) Utimens(path string, tv []syscall.Timespec) syscall.Errno {
-	return syscall.ENOSYS
+func (*FileSystemBase) Utimens(path string, tv []Timespec) int {
+	return ENOSYS
 }
 
-func (*FileSystemBase) Access(path string, mask int) syscall.Errno {
-	return syscall.ENOSYS
+func (*FileSystemBase) Access(path string, mask int) int {
+	return ENOSYS
 }
 
-func (*FileSystemBase) Create(path string, mode uint32) (syscall.Errno, uint64) {
-	return syscall.ENOSYS, ^uint64(0)
+func (*FileSystemBase) Create(path string, mode uint32) (int, uint64) {
+	return ENOSYS, ^uint64(0)
 }
 
-func (*FileSystemBase) Open(path string) (syscall.Errno, uint64) {
-	return syscall.ENOSYS, ^uint64(0)
+func (*FileSystemBase) Open(path string) (int, uint64) {
+	return ENOSYS, ^uint64(0)
 }
 
-func (*FileSystemBase) Getattr(path string, stbuf *syscall.Stat_t, fh uint64) syscall.Errno {
-	return syscall.ENOSYS
+func (*FileSystemBase) Getattr(path string, stat *Stat_t, fh uint64) int {
+	return ENOSYS
 }
 
-func (*FileSystemBase) Truncate(path string, size uint64, fh uint64) syscall.Errno {
-	return syscall.ENOSYS
+func (*FileSystemBase) Truncate(path string, size uint64, fh uint64) int {
+	return ENOSYS
 }
 
-func (*FileSystemBase) Read(path string, buf []byte, off uint64, fh uint64) syscall.Errno {
-	return syscall.ENOSYS
+func (*FileSystemBase) Read(path string, buf []byte, off uint64, fh uint64) int {
+	return ENOSYS
 }
 
-func (*FileSystemBase) Write(path string, buf []byte, off uint64, fh uint64) syscall.Errno {
-	return syscall.ENOSYS
+func (*FileSystemBase) Write(path string, buf []byte, off uint64, fh uint64) int {
+	return ENOSYS
 }
 
-func (*FileSystemBase) Flush(path string, fh uint64) syscall.Errno {
-	return syscall.ENOSYS
+func (*FileSystemBase) Flush(path string, fh uint64) int {
+	return ENOSYS
 }
 
-func (*FileSystemBase) Release(path string, fh uint64) syscall.Errno {
-	return syscall.ENOSYS
+func (*FileSystemBase) Release(path string, fh uint64) int {
+	return ENOSYS
 }
 
-func (*FileSystemBase) Fsync(path string, datasync bool, fh uint64) syscall.Errno {
-	return syscall.ENOSYS
+func (*FileSystemBase) Fsync(path string, datasync bool, fh uint64) int {
+	return ENOSYS
 }
 
 /*
-func (*FileSystemBase) Lock(path string, fh uint64, cmd int, lock syscall.Flock_t) syscall.Errno {
-	return syscall.ENOSYS
+func (*FileSystemBase) Lock(path string, fh uint64, cmd int, lock Flock_t) int {
+	return ENOSYS
 }
 */
 
-func (*FileSystemBase) Opendir(path string) (syscall.Errno, uint64) {
-	return syscall.ENOSYS, ^uint64(0)
+func (*FileSystemBase) Opendir(path string) (int, uint64) {
+	return ENOSYS, ^uint64(0)
 }
 
-func (*FileSystemBase) Readdir(path string, fh uint64) (syscall.Errno, []string) {
-	return syscall.ENOSYS, nil
+func (*FileSystemBase) Readdir(path string, fh uint64) (int, []string) {
+	return ENOSYS, nil
 }
 
-func (*FileSystemBase) Releasedir(path string, fh uint64) syscall.Errno {
-	return syscall.ENOSYS
+func (*FileSystemBase) Releasedir(path string, fh uint64) int {
+	return ENOSYS
 }
 
-func (*FileSystemBase) Fsyncdir(path string, datasync bool, fh uint64) syscall.Errno {
-	return syscall.ENOSYS
+func (*FileSystemBase) Fsyncdir(path string, datasync bool, fh uint64) int {
+	return ENOSYS
 }
 
-func (*FileSystemBase) Setxattr(path string, name string, value []byte, flags int) syscall.Errno {
-	return syscall.ENOSYS
+func (*FileSystemBase) Setxattr(path string, name string, value []byte, flags int) int {
+	return ENOSYS
 }
 
-func (*FileSystemBase) Getxattr(path string, name string, value []byte) syscall.Errno {
-	return syscall.ENOSYS
+func (*FileSystemBase) Getxattr(path string, name string, value []byte) int {
+	return ENOSYS
 }
 
-func (*FileSystemBase) Removexattr(path string, name string) syscall.Errno {
-	return syscall.ENOSYS
+func (*FileSystemBase) Removexattr(path string, name string) int {
+	return ENOSYS
 }
 
-func (*FileSystemBase) Listxattr(path string) (syscall.Errno, []string) {
-	return syscall.ENOSYS, nil
+func (*FileSystemBase) Listxattr(path string) (int, []string) {
+	return ENOSYS, nil
 }
 
 var _ FileSystemInterface = (*FileSystemBase)(nil)
