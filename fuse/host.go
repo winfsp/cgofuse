@@ -30,7 +30,7 @@ package fuse
 #define fuse_gid_t gid_t
 #define fuse_off_t off_t
 
-static inline void asgnCstatvfsFromGostatfs(struct fuse_statvfs *stbuf,
+static inline void asgnCstatvfsFromFusestatfs(struct fuse_statvfs *stbuf,
     uint64_t bsize,
     uint64_t frsize,
     uint64_t blocks,
@@ -57,7 +57,7 @@ static inline void asgnCstatvfsFromGostatfs(struct fuse_statvfs *stbuf,
     stbuf->f_namemax = namemax;
 }
 
-static inline void asgnCstatFromGostat(struct fuse_stat *stbuf,
+static inline void asgnCstatFromFusestat(struct fuse_stat *stbuf,
     uint64_t dev,
     uint64_t ino,
     uint32_t mode,
@@ -116,7 +116,7 @@ extern int hostGetxattr(char *path, char *name, char *value, size_t size);
 extern int hostListxattr(char *path, char *namebuf, size_t size);
 extern int hostRemovexattr(char *path, char *name);
 extern int hostOpendir(char *path, struct fuse_file_info *fi);
-extern int hostReaddir(char *path, char *buf, fuse_fill_dir_t filler, fuse_off_t off,
+extern int hostReaddir(char *path, void *buf, fuse_fill_dir_t filler, fuse_off_t off,
     struct fuse_file_info *fi);
 extern int hostReleasedir(char *path, struct fuse_file_info *fi);
 extern int hostFsyncdir(char *path, int datasync, struct fuse_file_info *fi);
@@ -129,9 +129,10 @@ extern int hostFgetattr(char *path, struct fuse_stat *stbuf, struct fuse_file_in
 //extern int hostLock(char *path, struct fuse_file_info *fi, int cmd, struct fuse_flock *lock);
 extern int hostUtimens(char *path, struct fuse_timespec tv[2]);
 
-static inline int hostFilldir(char *buf, fuse_fill_dir_t filler, char *name)
+static inline int hostFilldir(fuse_fill_dir_t filler, void *buf,
+    char *name, struct fuse_stat *stbuf, fuse_off_t off)
 {
-    return filler(buf, name, 0, 0);
+    return filler(buf, name, stbuf, off);
 }
 
 static struct fuse_operations *hostFsop(void)
@@ -197,11 +198,11 @@ type FileSystemHost struct {
 	fsop FileSystemInterface
 }
 
-func copyCstatvfsFromGostatfs(dst *C.struct_statvfs, src *Statfs_t) {
+func copyCstatvfsFromFusestatfs(dst *C.struct_statvfs, src *Statfs_t) {
 	if nil == src {
 		return
 	}
-	C.asgnCstatvfsFromGostatfs(dst,
+	C.asgnCstatvfsFromFusestatfs(dst,
 		C.uint64_t(src.Bsize),
 		C.uint64_t(src.Frsize),
 		C.uint64_t(src.Blocks),
@@ -215,11 +216,11 @@ func copyCstatvfsFromGostatfs(dst *C.struct_statvfs, src *Statfs_t) {
 		C.uint64_t(src.Namemax))
 }
 
-func copyCstatFromGostat(dst *C.struct_stat, src *Stat_t) {
+func copyCstatFromFusestat(dst *C.struct_stat, src *Stat_t) {
 	if nil == src {
 		return
 	}
-	C.asgnCstatFromGostat(dst,
+	C.asgnCstatFromFusestat(dst,
 		C.uint64_t(src.Dev),
 		C.uint64_t(src.Ino),
 		C.uint32_t(src.Mode),
@@ -236,7 +237,7 @@ func copyCstatFromGostat(dst *C.struct_stat, src *Stat_t) {
 		C.int64_t(src.Birthtim.Sec), C.int64_t(src.Birthtim.Nsec))
 }
 
-func copyGotimespecFromCtimespec(dst *Timespec, src *C.struct_timespec) {
+func copyFusetimespecFromCtimespec(dst *Timespec, src *C.struct_timespec) {
 	if nil == src {
 		return
 	}
@@ -255,7 +256,7 @@ func hostGetattr(path0 *C.char, stat0 *C.struct_stat) (errc0 C.int) {
 	path := C.GoString(path0)
 	stat := &Stat_t{}
 	errc := fsop.Getattr(path, stat, ^uint64(0))
-	copyCstatFromGostat(stat0, stat)
+	copyCstatFromFusestat(stat0, stat)
 	return -C.int(errc)
 }
 
@@ -459,7 +460,7 @@ func hostStatfs(path0 *C.char, stat0 *C.struct_statvfs) (errc0 C.int) {
 	path := C.GoString(path0)
 	stat := &Statfs_t{}
 	errc := fsop.Statfs(path, stat)
-	copyCstatvfsFromGostatfs(stat0, stat)
+	copyCstatvfsFromFusestatfs(stat0, stat)
 	return -C.int(errc)
 }
 
@@ -568,7 +569,7 @@ func hostOpendir(path0 *C.char, fi0 *C.struct_fuse_file_info) (errc0 C.int) {
 }
 
 //export hostReaddir
-func hostReaddir(path0 *C.char, buf0 *C.char, filler0 C.fuse_fill_dir_t, off C.off_t,
+func hostReaddir(path0 *C.char, buf0 unsafe.Pointer, fill0 C.fuse_fill_dir_t, off0 C.off_t,
 	fi0 *C.struct_fuse_file_info) (errc0 C.int) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -577,16 +578,15 @@ func hostReaddir(path0 *C.char, buf0 *C.char, filler0 C.fuse_fill_dir_t, off C.o
 	}()
 	fsop := getInterfaceForPointer(C.fuse_get_context().private_data).(FileSystemInterface)
 	path := C.GoString(path0)
-	errc, rslt := fsop.Readdir(path, uint64(fi0.fh))
-	if errc != 0 {
-		return -C.int(errc)
+	fill := func(name1 string, stat1 *Stat_t, off1 uint64) bool {
+		name := C.CString(name1)
+		defer C.free(unsafe.Pointer(name))
+		stat := C.struct_stat{}
+		copyCstatFromFusestat(&stat, stat1)
+		return 0 == C.hostFilldir(fill0, buf0, name, &stat, C.off_t(off1))
 	}
-	for _, i := range rslt {
-		if C.hostFilldir(buf0, filler0, C.CString(i)) != 0 {
-			break
-		}
-	}
-	return 0
+	errc := fsop.Readdir(path, fill, uint64(off0), uint64(fi0.fh))
+	return -C.int(errc)
 }
 
 //export hostReleasedir
@@ -687,7 +687,7 @@ func hostFgetattr(path0 *C.char, stat0 *C.struct_stat,
 	path := C.GoString(path0)
 	stat := &Stat_t{}
 	errc := fsop.Getattr(path, stat, uint64(fi0.fh))
-	copyCstatFromGostat(stat0, stat)
+	copyCstatFromFusestat(stat0, stat)
 	return -C.int(errc)
 }
 
@@ -704,8 +704,8 @@ func hostUtimens(path0 *C.char, tv0 *C.struct_fuse_timespec) (errc0 C.int) {
 	if tv0 != nil {
 		tsar := [2]Timespec{}
 		tvar := (*[2]C.struct_fuse_timespec)(unsafe.Pointer(tv0))
-		copyGotimespecFromCtimespec(&tsar[0], &tvar[0])
-		copyGotimespecFromCtimespec(&tsar[1], &tvar[1])
+		copyFusetimespecFromCtimespec(&tsar[0], &tvar[0])
+		copyFusetimespecFromCtimespec(&tsar[1], &tvar[1])
 		ts = tsar[:]
 	}
 	errc := fsop.Utimens(path, ts)
@@ -721,15 +721,12 @@ func NewFileSystemHost(fsop FileSystemInterface) *FileSystemHost {
 func (host *FileSystemHost) Mount(args []string) bool {
 	argv := make([]*C.char, len(args)+1)
 	for i, s := range args {
-		argv[i] = C.CString(s)
+		v := C.CString(s)
+		defer C.free(unsafe.Pointer(v))
+		argv[i] = v
 	}
 	p := getPointerForInterface(host.fsop)
-	defer func() {
-		delInterfaceFromPointer(p)
-		for _, v := range argv {
-			C.free(unsafe.Pointer(v))
-		}
-	}()
+	defer delInterfaceFromPointer(p)
 	return 0 == C.fuse_main_real(C.int(len(args)), &argv[0], C.hostFsop(), C.hostFsopSize(), p)
 }
 

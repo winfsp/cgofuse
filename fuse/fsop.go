@@ -142,7 +142,10 @@ type FileSystemInterface interface {
 	Opendir(path string) (int, uint64)
 
 	// Readdir reads a directory.
-	Readdir(path string, fh uint64) (int, []string)
+	Readdir(path string,
+		fill func(name string, stat *Stat_t, off uint64) bool,
+		off uint64,
+		fh uint64) int
 
 	// Releasedir closes an open directory.
 	Releasedir(path string, fh uint64) int
@@ -271,8 +274,11 @@ func (*FileSystemBase) Opendir(path string) (int, uint64) {
 	return ENOSYS, ^uint64(0)
 }
 
-func (*FileSystemBase) Readdir(path string, fh uint64) (int, []string) {
-	return ENOSYS, nil
+func (*FileSystemBase) Readdir(path string,
+	fill func(name string, stat *Stat_t, off uint64) bool,
+	off uint64,
+	fh uint64) int {
+	return ENOSYS
 }
 
 func (*FileSystemBase) Releasedir(path string, fh uint64) int {
