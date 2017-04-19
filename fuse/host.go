@@ -174,7 +174,8 @@ func hostGetattr(path0 *C.char, stbuf0 *C.struct_stat) (errno C.int) {
 	}()
 	fsop := getInterfaceForPointer(C.fuse_get_context().private_data).(FileSystemInterface)
 	path := C.GoString(path0)
-	serr, rslt := fsop.Getattr(path, ^uint64(0))
+	rslt := &syscall.Stat_t{}
+	serr := fsop.Getattr(path, rslt, ^uint64(0))
 	copyCstatFromGostat(stbuf0, rslt)
 	return -C.int(serr)
 }
@@ -377,7 +378,8 @@ func hostStatfs(path0 *C.char, stbuf0 *C.struct_statvfs) (errno C.int) {
 	}()
 	fsop := getInterfaceForPointer(C.fuse_get_context().private_data).(FileSystemInterface)
 	path := C.GoString(path0)
-	serr, rslt := fsop.Statfs(path)
+	rslt := &syscall.Statfs_t{}
+	serr := fsop.Statfs(path, rslt)
 	copyCstatvfsFromGostatfs(stbuf0, rslt)
 	return -C.int(serr)
 }
@@ -604,7 +606,8 @@ func hostFgetattr(path0 *C.char, stbuf0 *C.struct_stat,
 	}()
 	fsop := getInterfaceForPointer(C.fuse_get_context().private_data).(FileSystemInterface)
 	path := C.GoString(path0)
-	serr, rslt := fsop.Getattr(path, uint64(fi0.fh))
+	rslt := &syscall.Stat_t{}
+	serr := fsop.Getattr(path, rslt, uint64(fi0.fh))
 	copyCstatFromGostat(stbuf0, rslt)
 	return -C.int(serr)
 }
@@ -637,7 +640,7 @@ func NewFileSystemHost(fsop FileSystemInterface) *FileSystemHost {
 
 // Mount mounts a file system.
 func (host *FileSystemHost) Mount(args []string) bool {
-	argv := make([]*C.char, len(args))
+	argv := make([]*C.char, len(args) + 1)
 	for i, s := range args {
 		argv[i] = C.CString(s)
 	}

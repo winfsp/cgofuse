@@ -30,7 +30,7 @@ type FileSystemInterface interface {
 	Destroy()
 
 	// Statfs gets file system statistics.
-	Statfs(path string) (syscall.Errno, *syscall.Statfs_t)
+	Statfs(path string, stbuf *syscall.Statfs_t) syscall.Errno
 
 	// Mknod creates a file node.
 	Mknod(path string, mode uint32, dev uint64) syscall.Errno
@@ -75,7 +75,7 @@ type FileSystemInterface interface {
 	Open(path string) (syscall.Errno, uint64)
 
 	// Getattr gets file attributes.
-	Getattr(path string, fh uint64) (syscall.Errno, *syscall.Stat_t)
+	Getattr(path string, stbuf *syscall.Stat_t, fh uint64) syscall.Errno
 
 	// Truncate changes the size of a file.
 	Truncate(path string, size uint64, fh uint64) syscall.Errno
@@ -132,8 +132,8 @@ func (*FileSystemBase) Init() {
 func (*FileSystemBase) Destroy() {
 }
 
-func (*FileSystemBase) Statfs(path string) (syscall.Errno, *syscall.Statfs_t) {
-	return syscall.ENOSYS, nil
+func (*FileSystemBase) Statfs(path string, stbuf *syscall.Statfs_t) syscall.Errno {
+	return syscall.ENOSYS
 }
 
 func (*FileSystemBase) Mknod(path string, mode uint32, dev uint64) syscall.Errno {
@@ -192,8 +192,8 @@ func (*FileSystemBase) Open(path string) (syscall.Errno, uint64) {
 	return syscall.ENOSYS, ^uint64(0)
 }
 
-func (*FileSystemBase) Getattr(path string, fh uint64) (syscall.Errno, *syscall.Stat_t) {
-	return syscall.ENOSYS, nil
+func (*FileSystemBase) Getattr(path string, stbuf *syscall.Stat_t, fh uint64) syscall.Errno {
+	return syscall.ENOSYS
 }
 
 func (*FileSystemBase) Truncate(path string, size uint64, fh uint64) syscall.Errno {
