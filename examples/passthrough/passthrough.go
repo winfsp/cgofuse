@@ -41,14 +41,6 @@ func maybeChown(path string) int {
 	return 0
 }
 
-func (self *Ptfs) Init() {
-	// Unfortunately Init cannot be used to communicate failure.
-	// This is a general FUSE problem, so this syscall should
-	// probably happen in main. Still we will leave it here for
-	// demonstration purposes.
-	syscall.Umask(0)
-}
-
 func (self *Ptfs) Statfs(path string, stat *fuse.Statfs_t) (errc int) {
 	defer Trace(path)(&errc, stat)
 	path = filepath.Join(self.root, path)
@@ -99,7 +91,6 @@ func (self *Ptfs) Link(oldpath string, newpath string) (errc int) {
 
 func (self *Ptfs) Symlink(target string, newpath string) (errc int) {
 	defer Trace(target, newpath)(&errc)
-	target = filepath.Join(self.root, target)
 	newpath = filepath.Join(self.root, newpath)
 	e := syscall.Symlink(target, newpath)
 	if nil != e {
@@ -183,7 +174,7 @@ func (self *Ptfs) Getattr(path string, stat *fuse.Stat_t, fh uint64) (errc int) 
 	stgo := syscall.Stat_t{}
 	if ^uint64(0) == fh {
 		path = filepath.Join(self.root, path)
-		errc = errno(syscall.Stat(path, &stgo))
+		errc = errno(syscall.Lstat(path, &stgo))
 	} else {
 		errc = errno(syscall.Fstat(int(fh), &stgo))
 	}
@@ -270,6 +261,7 @@ func (self *Ptfs) Releasedir(path string, fh uint64) (errc int) {
 }
 
 func main() {
+	syscall.Umask(0)
 	ptfs := Ptfs{}
 	args := os.Args
 	if 3 <= len(args) && '-' != args[len(args)-2][0] && '-' != args[len(args)-1][0] {

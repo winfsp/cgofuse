@@ -17,11 +17,12 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"runtime"
 )
 
 var (
-	Enabled = "1" == os.Getenv("TRACE")
+	TracePattern = os.Getenv("TRACE_PATTERN")
 )
 
 func traceJoin(deref bool, vals []interface{}) string {
@@ -77,7 +78,7 @@ func traceJoin(deref bool, vals []interface{}) string {
 }
 
 func Trace(vals ...interface{}) func(vals ...interface{}) {
-	if !Enabled {
+	if "" == TracePattern {
 		return func(vals ...interface{}) {
 		}
 	}
@@ -86,6 +87,10 @@ func Trace(vals ...interface{}) func(vals ...interface{}) {
 	if ok {
 		fn := runtime.FuncForPC(pc)
 		name = fn.Name()
+		if m, _ := filepath.Match(TracePattern, name); !m {
+			return func(vals ...interface{}) {
+			}
+		}
 	}
 	args := traceJoin(false, vals)
 	return func(vals ...interface{}) {

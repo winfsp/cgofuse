@@ -262,7 +262,11 @@ func hostReadlink(path0 *C.char, buff0 *C.char, size0 C.size_t) (errc0 C.int) {
 	path := C.GoString(path0)
 	errc, rslt := fsop.Readlink(path)
 	buff := (*[1 << 30]byte)(unsafe.Pointer(buff0))
-	copy(buff[:size0], rslt)
+	copy(buff[:size0-1], rslt)
+	rlen := len(rslt)
+	if C.size_t(rlen) < size0 {
+		buff[rlen] = 0
+	}
 	return C.int(errc)
 }
 
