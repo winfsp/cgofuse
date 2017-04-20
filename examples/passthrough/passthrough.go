@@ -33,6 +33,22 @@ func errno(err error) int {
 	}
 }
 
+func maybeChown(path string) int {
+	uid, gid, _ := fuse.Getcontext()
+	if syscall.Geteuid() != int(uid) || syscall.Getegid() != int(gid) {
+		return errno(syscall.Chown(path, int(uid), int(gid)))
+	}
+	return 0
+}
+
+func (self *Ptfs) Init() {
+	// Unfortunately Init cannot be used to communicate failure.
+	// This is a general FUSE problem, so this syscall should
+	// probably happen in main. Still we will leave it here for
+	// demonstration purposes.
+	syscall.Umask(0)
+}
+
 func (self *Ptfs) Statfs(path string, stat *fuse.Statfs_t) (errc int) {
 	defer Trace(path)(&errc, stat)
 	path = filepath.Join(self.root, path)
@@ -45,13 +61,21 @@ func (self *Ptfs) Statfs(path string, stat *fuse.Statfs_t) (errc int) {
 func (self *Ptfs) Mknod(path string, mode uint32, dev uint64) (errc int) {
 	defer Trace(path, mode, dev)(&errc)
 	path = filepath.Join(self.root, path)
-	return errno(syscall.Mknod(path, mode, int(dev)))
+	e := syscall.Mknod(path, mode, int(dev))
+	if nil != e {
+		return errno(e)
+	}
+	return maybeChown(path)
 }
 
 func (self *Ptfs) Mkdir(path string, mode uint32) (errc int) {
 	defer Trace(path, mode)(&errc)
 	path = filepath.Join(self.root, path)
-	return errno(syscall.Mkdir(path, mode))
+	e := syscall.Mkdir(path, mode)
+	if nil != e {
+		return errno(e)
+	}
+	return maybeChown(path)
 }
 
 func (self *Ptfs) Unlink(path string) (errc int) {
@@ -77,7 +101,11 @@ func (self *Ptfs) Symlink(target string, newpath string) (errc int) {
 	defer Trace(target, newpath)(&errc)
 	target = filepath.Join(self.root, target)
 	newpath = filepath.Join(self.root, newpath)
-	return errno(syscall.Symlink(target, newpath))
+	e := syscall.Symlink(target, newpath)
+	if nil != e {
+		return errno(e)
+	}
+	return maybeChown(newpath)
 }
 
 func (self *Ptfs) Readlink(path string) (errc int, target string) {
@@ -131,6 +159,11 @@ func (self *Ptfs) Create(path string, mode uint32) (errc int, fh uint64) {
 	f, e := syscall.Open(path, syscall.O_WRONLY|syscall.O_CREAT|syscall.O_TRUNC, mode)
 	if nil != e {
 		return errno(e), ^uint64(0)
+	}
+	errc = maybeChown(path)
+	if 0 != errc {
+		syscall.Close(f)
+		return errc, ^uint64(0)
 	}
 	return 0, uint64(f)
 }

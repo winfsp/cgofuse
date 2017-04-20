@@ -730,3 +730,11 @@ func (host *FileSystemHost) Mount(args []string) bool {
 func (host *FileSystemHost) Unmount() {
 	// !!!: NOTIMPL
 }
+
+// Getcontext gets information related to a file system operation.
+func Getcontext() (uid uint32, gid uint32, pid int) {
+	uid = uint32(C.fuse_get_context().uid)
+	gid = uint32(C.fuse_get_context().gid)
+	pid = int(C.fuse_get_context().pid)
+	return
+}
