@@ -41,6 +41,14 @@ func maybeChown(path string) int {
 	return 0
 }
 
+func maybeLchown(path string) int {
+	uid, gid, _ := fuse.Getcontext()
+	if syscall.Geteuid() != int(uid) || syscall.Getegid() != int(gid) {
+		return errno(syscall.Lchown(path, int(uid), int(gid)))
+	}
+	return 0
+}
+
 func (self *Ptfs) Statfs(path string, stat *fuse.Statfs_t) (errc int) {
 	defer Trace(path)(&errc, stat)
 	path = filepath.Join(self.root, path)
@@ -96,7 +104,7 @@ func (self *Ptfs) Symlink(target string, newpath string) (errc int) {
 	if nil != e {
 		return errno(e)
 	}
-	return maybeChown(newpath)
+	return maybeLchown(newpath)
 }
 
 func (self *Ptfs) Readlink(path string) (errc int, target string) {
