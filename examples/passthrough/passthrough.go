@@ -49,6 +49,14 @@ func maybeLchown(path string) int {
 	return 0
 }
 
+func (self *Ptfs) Init() {
+	defer Trace()()
+	e := syscall.Chdir(self.root)
+	if nil == e {
+		self.root = "./"
+	}
+}
+
 func (self *Ptfs) Statfs(path string, stat *fuse.Statfs_t) (errc int) {
 	defer Trace(path)(&errc, stat)
 	path = filepath.Join(self.root, path)
