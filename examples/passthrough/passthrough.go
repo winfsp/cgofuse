@@ -222,6 +222,7 @@ func (self *Ptfs) Readdir(path string,
 	if nil != e {
 		return errno(e)
 	}
+	nams = append([]string{".", ".."}, nams...)
 	for _, name := range nams {
 		if !fill(name, nil, 0) {
 			break

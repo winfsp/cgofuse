@@ -16,7 +16,12 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
 	"runtime"
+)
+
+var (
+	Enabled = "1" == os.Getenv("TRACE")
 )
 
 func traceJoin(deref bool, vals []interface{}) string {
@@ -72,6 +77,10 @@ func traceJoin(deref bool, vals []interface{}) string {
 }
 
 func Trace(vals ...interface{}) func(vals ...interface{}) {
+	if !Enabled {
+		return func(vals ...interface{}) {
+		}
+	}
 	pc, _, _, ok := runtime.Caller(1)
 	name := "<UNKNOWN>"
 	if ok {
