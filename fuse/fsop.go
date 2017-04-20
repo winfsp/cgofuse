@@ -177,132 +177,132 @@ func (*FileSystemBase) Destroy() {
 }
 
 func (*FileSystemBase) Statfs(path string, stat *Statfs_t) int {
-	return ENOSYS
+	return -ENOSYS
 }
 
 func (*FileSystemBase) Mknod(path string, mode uint32, dev uint64) int {
-	return ENOSYS
+	return -ENOSYS
 }
 
 func (*FileSystemBase) Mkdir(path string, mode uint32) int {
-	return ENOSYS
+	return -ENOSYS
 }
 
 func (*FileSystemBase) Unlink(path string) int {
-	return ENOSYS
+	return -ENOSYS
 }
 
 func (*FileSystemBase) Rmdir(path string) int {
-	return ENOSYS
+	return -ENOSYS
 }
 
 func (*FileSystemBase) Link(oldpath string, newpath string) int {
-	return ENOSYS
+	return -ENOSYS
 }
 
 func (*FileSystemBase) Symlink(target string, newpath string) int {
-	return ENOSYS
+	return -ENOSYS
 }
 
 func (*FileSystemBase) Readlink(path string) (int, string) {
-	return ENOSYS, ""
+	return -ENOSYS, ""
 }
 
 func (*FileSystemBase) Rename(oldpath string, newpath string) int {
-	return ENOSYS
+	return -ENOSYS
 }
 
 func (*FileSystemBase) Chmod(path string, mode uint32) int {
-	return ENOSYS
+	return -ENOSYS
 }
 
 func (*FileSystemBase) Chown(path string, uid uint32, gid uint32) int {
-	return ENOSYS
+	return -ENOSYS
 }
 
 func (*FileSystemBase) Utimens(path string, tmsp []Timespec) int {
-	return ENOSYS
+	return -ENOSYS
 }
 
 func (*FileSystemBase) Access(path string, mask uint32) int {
-	return ENOSYS
+	return -ENOSYS
 }
 
 func (*FileSystemBase) Create(path string, mode uint32) (int, uint64) {
-	return ENOSYS, ^uint64(0)
+	return -ENOSYS, ^uint64(0)
 }
 
 func (*FileSystemBase) Open(path string, flags int) (int, uint64) {
-	return ENOSYS, ^uint64(0)
+	return -ENOSYS, ^uint64(0)
 }
 
 func (*FileSystemBase) Getattr(path string, stat *Stat_t, fh uint64) int {
-	return ENOSYS
+	return -ENOSYS
 }
 
 func (*FileSystemBase) Truncate(path string, size int64, fh uint64) int {
-	return ENOSYS
+	return -ENOSYS
 }
 
 func (*FileSystemBase) Read(path string, buff []byte, ofst int64, fh uint64) int {
-	return ENOSYS
+	return -ENOSYS
 }
 
 func (*FileSystemBase) Write(path string, buff []byte, ofst int64, fh uint64) int {
-	return ENOSYS
+	return -ENOSYS
 }
 
 func (*FileSystemBase) Flush(path string, fh uint64) int {
-	return ENOSYS
+	return -ENOSYS
 }
 
 func (*FileSystemBase) Release(path string, fh uint64) int {
-	return ENOSYS
+	return -ENOSYS
 }
 
 func (*FileSystemBase) Fsync(path string, datasync bool, fh uint64) int {
-	return ENOSYS
+	return -ENOSYS
 }
 
 /*
 func (*FileSystemBase) Lock(path string, fh uint64, cmd int, lock Flock_t) int {
-	return ENOSYS
+	return -ENOSYS
 }
 */
 
 func (*FileSystemBase) Opendir(path string) (int, uint64) {
-	return ENOSYS, ^uint64(0)
+	return -ENOSYS, ^uint64(0)
 }
 
 func (*FileSystemBase) Readdir(path string,
 	fill func(name string, stat *Stat_t, ofst int64) bool,
 	ofst int64,
 	fh uint64) int {
-	return ENOSYS
+	return -ENOSYS
 }
 
 func (*FileSystemBase) Releasedir(path string, fh uint64) int {
-	return ENOSYS
+	return -ENOSYS
 }
 
 func (*FileSystemBase) Fsyncdir(path string, datasync bool, fh uint64) int {
-	return ENOSYS
+	return -ENOSYS
 }
 
 func (*FileSystemBase) Setxattr(path string, name string, value []byte, flags int) int {
-	return ENOSYS
+	return -ENOSYS
 }
 
 func (*FileSystemBase) Getxattr(path string, name string, value []byte) int {
-	return ENOSYS
+	return -ENOSYS
 }
 
 func (*FileSystemBase) Removexattr(path string, name string) int {
-	return ENOSYS
+	return -ENOSYS
 }
 
 func (*FileSystemBase) Listxattr(path string, fill func(name string)) int {
-	return ENOSYS
+	return -ENOSYS
 }
 
 var _ FileSystemInterface = (*FileSystemBase)(nil)

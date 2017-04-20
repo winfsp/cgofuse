@@ -29,7 +29,7 @@ var (
 )
 
 func getPointerForInterface(i interface{}) unsafe.Pointer {
-	if i == nil {
+	if nil == i {
 		return nil
 	}
 	p := C.malloc(1)

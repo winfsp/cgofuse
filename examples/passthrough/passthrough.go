@@ -85,7 +85,7 @@ func (self *Ptfs) Readlink(path string) (errc int, target string) {
 	path = filepath.Join(self.root, path)
 	buff := [1024]byte{}
 	n, e := syscall.Readlink(path, buff[:])
-	if e != nil {
+	if nil != e {
 		return errno(e), ""
 	}
 	return 0, string(buff[:n])
@@ -129,7 +129,7 @@ func (self *Ptfs) Create(path string, mode uint32) (errc int, fh uint64) {
 	defer Trace(path, mode)(&errc, &fh)
 	path = filepath.Join(self.root, path)
 	f, e := syscall.Open(path, syscall.O_WRONLY|syscall.O_CREAT|syscall.O_TRUNC, mode)
-	if e != nil {
+	if nil != e {
 		return errno(e), ^uint64(0)
 	}
 	return 0, uint64(f)
@@ -139,7 +139,7 @@ func (self *Ptfs) Open(path string, flags int) (errc int, fh uint64) {
 	defer Trace(path, flags)(&errc, &fh)
 	path = filepath.Join(self.root, path)
 	f, e := syscall.Open(path, flags, 0)
-	if e != nil {
+	if nil != e {
 		return errno(e), ^uint64(0)
 	}
 	return 0, uint64(f)
@@ -172,7 +172,7 @@ func (self *Ptfs) Truncate(path string, size int64, fh uint64) (errc int) {
 func (self *Ptfs) Read(path string, buff []byte, ofst int64, fh uint64) (n int) {
 	defer Trace(path, buff, ofst, fh)(&n)
 	n, e := syscall.Pread(int(fh), buff, ofst)
-	if e != nil {
+	if nil != e {
 		return errno(e)
 	}
 	return n
@@ -181,7 +181,7 @@ func (self *Ptfs) Read(path string, buff []byte, ofst int64, fh uint64) (n int) 
 func (self *Ptfs) Write(path string, buff []byte, ofst int64, fh uint64) (n int) {
 	defer Trace(path, buff, ofst, fh)(&n)
 	n, e := syscall.Pwrite(int(fh), buff, ofst)
-	if e != nil {
+	if nil != e {
 		return errno(e)
 	}
 	return n
@@ -201,7 +201,7 @@ func (self *Ptfs) Opendir(path string) (errc int, fh uint64) {
 	defer Trace(path)(&errc, &fh)
 	path = filepath.Join(self.root, path)
 	f, e := syscall.Open(path, syscall.O_RDONLY|syscall.O_DIRECTORY, 0)
-	if e != nil {
+	if nil != e {
 		return errno(e), ^uint64(0)
 	}
 	return 0, uint64(f)
@@ -212,13 +212,14 @@ func (self *Ptfs) Readdir(path string,
 	ofst int64,
 	fh uint64) (errc int) {
 	defer Trace(path, fill, ofst, fh)(&errc)
+	path = filepath.Join(self.root, path)
 	file, e := os.Open(path)
-	if e != nil {
+	if nil != e {
 		return errno(e)
 	}
 	defer file.Close()
 	nams, e := file.Readdirnames(0)
-	if e != nil {
+	if nil != e {
 		return errno(e)
 	}
 	for _, name := range nams {
