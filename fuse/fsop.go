@@ -86,10 +86,10 @@ type FileSystemInterface interface {
 	Rmdir(path string) int
 
 	// Link creates a hard link to a file.
-	Link(srcpath string, dstpath string) int
+	Link(oldpath string, newpath string) int
 
 	// Symlink creates a symbolic link.
-	Symlink(dstpath string, srcpath string) int
+	Symlink(target string, newpath string) int
 
 	// Readlink reads the target of a symbolic link.
 	Readlink(path string) (int, string)
@@ -104,28 +104,28 @@ type FileSystemInterface interface {
 	Chown(path string, uid uint32, gid uint32) int
 
 	// Utimens changes the access and modification times of a file.
-	Utimens(path string, tv []Timespec) int
+	Utimens(path string, tmsp []Timespec) int
 
 	// Access checks file access permissions.
-	Access(path string, mask int) int
+	Access(path string, mask uint32) int
 
 	// Create creates and opens a file.
 	Create(path string, mode uint32) (int, uint64)
 
 	// Open opens a file.
-	Open(path string) (int, uint64)
+	Open(path string, flags int) (int, uint64)
 
 	// Getattr gets file attributes.
 	Getattr(path string, stat *Stat_t, fh uint64) int
 
 	// Truncate changes the size of a file.
-	Truncate(path string, size uint64, fh uint64) int
+	Truncate(path string, size int64, fh uint64) int
 
 	// Read reads data from a file.
-	Read(path string, buff []byte, ofst uint64, fh uint64) int
+	Read(path string, buff []byte, ofst int64, fh uint64) int
 
 	// Write writes data to a file.
-	Write(path string, buff []byte, ofst uint64, fh uint64) int
+	Write(path string, buff []byte, ofst int64, fh uint64) int
 
 	// Flush flushes cached file data.
 	Flush(path string, fh uint64) int
@@ -143,8 +143,8 @@ type FileSystemInterface interface {
 
 	// Readdir reads a directory.
 	Readdir(path string,
-		fill func(name string, stat *Stat_t, ofst uint64) bool,
-		ofst uint64,
+		fill func(name string, stat *Stat_t, ofst int64) bool,
+		ofst int64,
 		fh uint64) int
 
 	// Releasedir closes an open directory.
@@ -196,11 +196,11 @@ func (*FileSystemBase) Rmdir(path string) int {
 	return ENOSYS
 }
 
-func (*FileSystemBase) Link(srcpath string, dstpath string) int {
+func (*FileSystemBase) Link(oldpath string, newpath string) int {
 	return ENOSYS
 }
 
-func (*FileSystemBase) Symlink(dstpath string, srcpath string) int {
+func (*FileSystemBase) Symlink(target string, newpath string) int {
 	return ENOSYS
 }
 
@@ -220,11 +220,11 @@ func (*FileSystemBase) Chown(path string, uid uint32, gid uint32) int {
 	return ENOSYS
 }
 
-func (*FileSystemBase) Utimens(path string, tv []Timespec) int {
+func (*FileSystemBase) Utimens(path string, tmsp []Timespec) int {
 	return ENOSYS
 }
 
-func (*FileSystemBase) Access(path string, mask int) int {
+func (*FileSystemBase) Access(path string, mask uint32) int {
 	return ENOSYS
 }
 
@@ -232,7 +232,7 @@ func (*FileSystemBase) Create(path string, mode uint32) (int, uint64) {
 	return ENOSYS, ^uint64(0)
 }
 
-func (*FileSystemBase) Open(path string) (int, uint64) {
+func (*FileSystemBase) Open(path string, flags int) (int, uint64) {
 	return ENOSYS, ^uint64(0)
 }
 
@@ -240,15 +240,15 @@ func (*FileSystemBase) Getattr(path string, stat *Stat_t, fh uint64) int {
 	return ENOSYS
 }
 
-func (*FileSystemBase) Truncate(path string, size uint64, fh uint64) int {
+func (*FileSystemBase) Truncate(path string, size int64, fh uint64) int {
 	return ENOSYS
 }
 
-func (*FileSystemBase) Read(path string, buff []byte, ofst uint64, fh uint64) int {
+func (*FileSystemBase) Read(path string, buff []byte, ofst int64, fh uint64) int {
 	return ENOSYS
 }
 
-func (*FileSystemBase) Write(path string, buff []byte, ofst uint64, fh uint64) int {
+func (*FileSystemBase) Write(path string, buff []byte, ofst int64, fh uint64) int {
 	return ENOSYS
 }
 
@@ -275,8 +275,8 @@ func (*FileSystemBase) Opendir(path string) (int, uint64) {
 }
 
 func (*FileSystemBase) Readdir(path string,
-	fill func(name string, stat *Stat_t, ofst uint64) bool,
-	ofst uint64,
+	fill func(name string, stat *Stat_t, ofst int64) bool,
+	ofst int64,
 	fh uint64) int {
 	return ENOSYS
 }
