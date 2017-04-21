@@ -19,11 +19,20 @@
 // provides default implementations of the methods in FileSystemInterface.
 package fuse
 
-import "syscall"
+/*
+#include <errno.h>
+#include <sys/xattr.h>
+*/
+import "C"
 
 const (
-	EIO    = int(syscall.EIO)
-	ENOSYS = int(syscall.ENOSYS)
+	EIO    = int(C.EIO)
+	ENOSYS = int(C.ENOSYS)
+)
+
+const (
+	XATTR_CREATE  = int(C.XATTR_CREATE)
+	XATTR_REPLACE = int(C.XATTR_REPLACE)
 )
 
 type Timespec struct {
@@ -163,7 +172,7 @@ type FileSystemInterface interface {
 	Removexattr(path string, name string) int
 
 	// Listxattr lists extended attributes.
-	Listxattr(path string, fill func(name string)) int
+	Listxattr(path string, fill func(name string) bool) int
 }
 
 // FileSystemBase provides default implementations of the methods in FileSystemInterface.
@@ -301,7 +310,7 @@ func (*FileSystemBase) Removexattr(path string, name string) int {
 	return -ENOSYS
 }
 
-func (*FileSystemBase) Listxattr(path string, fill func(name string)) int {
+func (*FileSystemBase) Listxattr(path string, fill func(name string) bool) int {
 	return -ENOSYS
 }
 
