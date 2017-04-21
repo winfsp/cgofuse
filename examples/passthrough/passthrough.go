@@ -36,7 +36,7 @@ func errno(err error) int {
 
 func trace(vals ...interface{}) func(vals ...interface{}) {
 	uid, gid, _ := fuse.Getcontext()
-	return Trace(fmt.Sprintf("[uid=%v,gid=%v]", uid, gid), vals...)
+	return Trace(1, fmt.Sprintf("[uid=%v,gid=%v]", uid, gid), vals...)
 }
 
 func (self *Ptfs) Init() {
@@ -125,7 +125,7 @@ func (self *Ptfs) Chmod(path string, mode uint32) (errc int) {
 func (self *Ptfs) Chown(path string, uid uint32, gid uint32) (errc int) {
 	defer trace(path, uid, gid)(&errc)
 	path = filepath.Join(self.root, path)
-	return errno(syscall.Chown(path, int(uid), int(gid)))
+	return errno(syscall.Lchown(path, int(uid), int(gid)))
 }
 
 func (self *Ptfs) Utimens(path string, tmsp1 []fuse.Timespec) (errc int) {

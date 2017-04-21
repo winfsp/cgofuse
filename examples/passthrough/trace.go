@@ -77,12 +77,12 @@ func traceJoin(deref bool, vals []interface{}) string {
 	return rslt
 }
 
-func Trace(prfx string, vals ...interface{}) func(vals ...interface{}) {
+func Trace(skip int, prfx string, vals ...interface{}) func(vals ...interface{}) {
 	if "" == TracePattern {
 		return func(vals ...interface{}) {
 		}
 	}
-	pc, _, _, ok := runtime.Caller(1)
+	pc, _, _, ok := runtime.Caller(skip + 1)
 	name := "<UNKNOWN>"
 	if ok {
 		fn := runtime.FuncForPC(pc)
