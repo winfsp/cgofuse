@@ -635,14 +635,15 @@ func NewFileSystemHost(fsop FileSystemInterface) *FileSystemHost {
 
 // Mount mounts a file system.
 func (host *FileSystemHost) Mount(args []string) bool {
-	argv := make([]*C.char, len(args)+1)
+	argv := make([]*C.char, 1+len(args)+1)
+	argv[0] = C.CString("-f") // do not daemonize; Go cannot handle it (at least on OSX)
+	defer C.free(unsafe.Pointer(argv[0]))
 	for i, s := range args {
-		v := C.CString(s)
-		defer C.free(unsafe.Pointer(v))
-		argv[i] = v
+		argv[i+1] = C.CString(s)
+		defer C.free(unsafe.Pointer(argv[i+1]))
 	}
-	p := getPointerForInterface(host.fsop)
-	defer delInterfaceFromPointer(p)
+	p := newPointerForInterface(host.fsop)
+	defer delPointerForInterface(p)
 	return 0 == C.fuse_main_real(C.int(len(args)), &argv[0], C.hostFsop(), C.hostFsopSize(), p)
 }
 
