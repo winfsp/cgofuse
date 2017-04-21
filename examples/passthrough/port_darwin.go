@@ -25,8 +25,8 @@ func setuidgid() func() {
 	if 0 == euid {
 		uid, gid, _ := fuse.Getcontext()
 		egid := syscall.Getegid()
-		syscall.Setegid(int(uid))
-		syscall.Seteuid(int(gid))
+		syscall.Setegid(int(gid))
+		syscall.Seteuid(int(uid))
 		return func() {
 			syscall.Seteuid(euid)
 			syscall.Setegid(egid)
