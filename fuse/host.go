@@ -30,65 +30,6 @@ package fuse
 #define fuse_gid_t gid_t
 #define fuse_off_t off_t
 
-static inline void asgnCstatvfsFromFusestatfs(struct fuse_statvfs *stbuf,
-    uint64_t bsize,
-    uint64_t frsize,
-    uint64_t blocks,
-    uint64_t bfree,
-    uint64_t bavail,
-    uint64_t files,
-    uint64_t ffree,
-    uint64_t favail,
-    uint64_t fsid,
-    uint64_t flag,
-    uint64_t namemax)
-{
-    memset(stbuf, 0, sizeof *stbuf);
-    stbuf->f_bsize = bsize;
-    stbuf->f_frsize = frsize;
-    stbuf->f_blocks = blocks;
-    stbuf->f_bfree = bfree;
-    stbuf->f_bavail = bavail;
-    stbuf->f_files = files;
-    stbuf->f_ffree = ffree;
-    stbuf->f_favail = favail;
-    stbuf->f_fsid = fsid;
-    stbuf->f_flag = flag;
-    stbuf->f_namemax = namemax;
-}
-
-static inline void asgnCstatFromFusestat(struct fuse_stat *stbuf,
-    uint64_t dev,
-    uint64_t ino,
-    uint32_t mode,
-    uint32_t nlink,
-    uint32_t uid,
-    uint32_t gid,
-    uint64_t rdev,
-    int64_t size,
-    int64_t atimSec, int64_t atimNsec,
-    int64_t mtimSec, int64_t mtimNsec,
-    int64_t ctimSec, int64_t ctimNsec,
-    int64_t blksize,
-    int64_t blocks,
-    int64_t birthtimSec, int64_t birthtimNsec)
-{
-    memset(stbuf, 0, sizeof *stbuf);
-    stbuf->st_dev = dev;
-    stbuf->st_ino = ino;
-    stbuf->st_mode = mode;
-    stbuf->st_nlink = nlink;
-    stbuf->st_uid = uid;
-    stbuf->st_gid = gid;
-    stbuf->st_rdev = rdev;
-    stbuf->st_size = size;
-    stbuf->st_atime = atimSec;
-    stbuf->st_mtime = mtimSec;
-    stbuf->st_ctime = ctimSec;
-    stbuf->st_blksize = blksize;
-    stbuf->st_blocks = blocks;
-}
-
 extern int hostGetattr(char *path, struct fuse_stat *stbuf);
 extern int hostReadlink(char *path, char *buf, size_t size);
 extern int hostMknod(char *path, fuse_mode_t mode, fuse_dev_t dev);
@@ -129,13 +70,72 @@ extern int hostFgetattr(char *path, struct fuse_stat *stbuf, struct fuse_file_in
 //extern int hostLock(char *path, struct fuse_file_info *fi, int cmd, struct fuse_flock *lock);
 extern int hostUtimens(char *path, struct fuse_timespec tv[2]);
 
+static inline void hostCstatvfsFromFusestatfs(struct fuse_statvfs *stbuf,
+    uint64_t bsize,
+    uint64_t frsize,
+    uint64_t blocks,
+    uint64_t bfree,
+    uint64_t bavail,
+    uint64_t files,
+    uint64_t ffree,
+    uint64_t favail,
+    uint64_t fsid,
+    uint64_t flag,
+    uint64_t namemax)
+{
+    memset(stbuf, 0, sizeof *stbuf);
+    stbuf->f_bsize = bsize;
+    stbuf->f_frsize = frsize;
+    stbuf->f_blocks = blocks;
+    stbuf->f_bfree = bfree;
+    stbuf->f_bavail = bavail;
+    stbuf->f_files = files;
+    stbuf->f_ffree = ffree;
+    stbuf->f_favail = favail;
+    stbuf->f_fsid = fsid;
+    stbuf->f_flag = flag;
+    stbuf->f_namemax = namemax;
+}
+
+static inline void hostCstatFromFusestat(struct fuse_stat *stbuf,
+    uint64_t dev,
+    uint64_t ino,
+    uint32_t mode,
+    uint32_t nlink,
+    uint32_t uid,
+    uint32_t gid,
+    uint64_t rdev,
+    int64_t size,
+    int64_t atimSec, int64_t atimNsec,
+    int64_t mtimSec, int64_t mtimNsec,
+    int64_t ctimSec, int64_t ctimNsec,
+    int64_t blksize,
+    int64_t blocks,
+    int64_t birthtimSec, int64_t birthtimNsec)
+{
+    memset(stbuf, 0, sizeof *stbuf);
+    stbuf->st_dev = dev;
+    stbuf->st_ino = ino;
+    stbuf->st_mode = mode;
+    stbuf->st_nlink = nlink;
+    stbuf->st_uid = uid;
+    stbuf->st_gid = gid;
+    stbuf->st_rdev = rdev;
+    stbuf->st_size = size;
+    stbuf->st_atime = atimSec;
+    stbuf->st_mtime = mtimSec;
+    stbuf->st_ctime = ctimSec;
+    stbuf->st_blksize = blksize;
+    stbuf->st_blocks = blocks;
+}
+
 static inline int hostFilldir(fuse_fill_dir_t filler, void *buf,
     char *name, struct fuse_stat *stbuf, fuse_off_t off)
 {
     return filler(buf, name, stbuf, off);
 }
 
-static struct fuse_operations *hostFsop(void)
+static inline struct fuse_operations *hostFsop(void)
 {
 #if defined(__GNUC__)
 #pragma GCC diagnostic push
@@ -185,7 +185,7 @@ static struct fuse_operations *hostFsop(void)
 #endif
 }
 
-static size_t hostFsopSize(void)
+static inline size_t hostFsopSize(void)
 {
     return sizeof(struct fuse_operations);
 }
@@ -199,7 +199,7 @@ type FileSystemHost struct {
 }
 
 func copyCstatvfsFromFusestatfs(dst *C.struct_statvfs, src *Statfs_t) {
-	C.asgnCstatvfsFromFusestatfs(dst,
+	C.hostCstatvfsFromFusestatfs(dst,
 		C.uint64_t(src.Bsize),
 		C.uint64_t(src.Frsize),
 		C.uint64_t(src.Blocks),
@@ -214,7 +214,7 @@ func copyCstatvfsFromFusestatfs(dst *C.struct_statvfs, src *Statfs_t) {
 }
 
 func copyCstatFromFusestat(dst *C.struct_stat, src *Stat_t) {
-	C.asgnCstatFromFusestat(dst,
+	C.hostCstatFromFusestat(dst,
 		C.uint64_t(src.Dev),
 		C.uint64_t(src.Ino),
 		C.uint32_t(src.Mode),
