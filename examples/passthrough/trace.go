@@ -77,7 +77,7 @@ func traceJoin(deref bool, vals []interface{}) string {
 	return rslt
 }
 
-func Trace(vals ...interface{}) func(vals ...interface{}) {
+func Trace(prfx string, vals ...interface{}) func(vals ...interface{}) {
 	if "" == TracePattern {
 		return func(vals ...interface{}) {
 		}
@@ -92,12 +92,15 @@ func Trace(vals ...interface{}) func(vals ...interface{}) {
 			}
 		}
 	}
+	if "" != prfx {
+		prfx = prfx + ": "
+	}
 	args := traceJoin(false, vals)
 	return func(vals ...interface{}) {
-		f := "%v(%v) = (%v)"
+		f := "%v%v(%v) = (%v)"
 		if len(vals) == 1 {
-			f = "%v(%v) = %v"
+			f = "%v%v(%v) = %v"
 		}
-		log.Printf(f, name, args, traceJoin(true, vals))
+		log.Printf(f, prfx, name, args, traceJoin(true, vals))
 	}
 }

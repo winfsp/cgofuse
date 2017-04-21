@@ -20,6 +20,22 @@ import (
 	"syscall"
 )
 
+func setuidgid() func() {
+	euid := syscall.Geteuid()
+	if 0 == euid {
+		uid, gid, _ := fuse.Getcontext()
+		egid := syscall.Getegid()
+		syscall.Setegid(int(uid))
+		syscall.Seteuid(int(gid))
+		return func() {
+			syscall.Seteuid(euid)
+			syscall.Setegid(egid)
+		}
+	}
+	return func() {
+	}
+}
+
 func copyFusestatfsFromGostatfs(dst *fuse.Statfs_t, src *syscall.Statfs_t) {
 	*dst = fuse.Statfs_t{}
 	dst.Bsize = uint64(src.Bsize)
