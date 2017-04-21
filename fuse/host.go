@@ -213,6 +213,8 @@ import "unsafe"
 // FileSystemHost is used to host a Cgofuse file system.
 type FileSystemHost struct {
 	fsop FileSystemInterface
+	hndl unsafe.Pointer
+	fuse *C.struct_fuse
 }
 
 func copyCstatvfsFromFusestatfs(dst *C.struct_statvfs, src *Statfs_t) {
@@ -557,9 +559,11 @@ func hostFsyncdir(path0 *C.char, datasync C.int, fi0 *C.struct_fuse_file_info) (
 //export hostInit
 func hostInit(conn0 *C.struct_fuse_conn_info) (user_data unsafe.Pointer) {
 	defer recover()
-	user_data = C.fuse_get_context().private_data
-	fsop := getInterfaceForPointer(user_data).(FileSystemInterface)
-	fsop.Init()
+	fctx := C.fuse_get_context()
+	host := getInterfaceForPointer(fctx.private_data).(FileSystemHost)
+	host.fuse = fctx.fuse
+	user_data = host.hndl
+	host.fsop.Init()
 	return
 }
 
@@ -630,7 +634,7 @@ func hostUtimens(path0 *C.char, tmsp0 *C.struct_fuse_timespec) (errc0 C.int) {
 
 // NewFileSystemHost creates a file system host.
 func NewFileSystemHost(fsop FileSystemInterface) *FileSystemHost {
-	return &FileSystemHost{fsop}
+	return &FileSystemHost{fsop, nil, nil}
 }
 
 // Mount mounts a file system.
@@ -645,14 +649,21 @@ func (host *FileSystemHost) Mount(args []string) bool {
 		argv[i+1] = C.CString(args[i])
 		defer C.free(unsafe.Pointer(argv[i+1]))
 	}
-	p := newPointerForInterface(host.fsop)
-	defer delPointerForInterface(p)
-	return 0 == C.fuse_main_real(C.int(argc), &argv[0], C.hostFsop(), C.hostFsopSize(), p)
+	host.hndl = newPointerForInterface(host.fsop)
+	defer delPointerForInterface(host.hndl)
+	hosthndl := newPointerForInterface(*host)
+	defer delPointerForInterface(hosthndl)
+	defer func() {
+		host.fuse = nil
+	}()
+	return 0 == C.fuse_main_real(C.int(argc), &argv[0], C.hostFsop(), C.hostFsopSize(), hosthndl)
 }
 
 // Mount unmounts a file system.
 func (host *FileSystemHost) Unmount() {
-	// !!!: NOTIMPL
+	if nil != host.fuse {
+		C.fuse_exit(host.fuse)
+	}
 }
 
 // Getcontext gets information related to a file system operation.
