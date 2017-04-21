@@ -28,7 +28,7 @@ var (
 	table = map[unsafe.Pointer]interface{}{}
 )
 
-func newPointerForInterface(i interface{}) unsafe.Pointer {
+func newHandleForInterface(i interface{}) unsafe.Pointer {
 	if nil == i {
 		return nil
 	}
@@ -39,7 +39,7 @@ func newPointerForInterface(i interface{}) unsafe.Pointer {
 	return p
 }
 
-func delPointerForInterface(p unsafe.Pointer) interface{} {
+func delHandleForInterface(p unsafe.Pointer) interface{} {
 	guard.Lock()
 	defer guard.Unlock()
 	if i, ok := table[p]; ok {
@@ -50,7 +50,7 @@ func delPointerForInterface(p unsafe.Pointer) interface{} {
 	return nil
 }
 
-func getInterfaceForPointer(p unsafe.Pointer) interface{} {
+func getInterfaceForHandle(p unsafe.Pointer) interface{} {
 	guard.Lock()
 	defer guard.Unlock()
 	if i, ok := table[p]; ok {
