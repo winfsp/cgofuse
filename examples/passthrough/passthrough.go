@@ -21,6 +21,10 @@ import (
 	"syscall"
 )
 
+var (
+	_host *fuse.FileSystemHost
+)
+
 type Ptfs struct {
 	fuse.FileSystemBase
 	root string
@@ -140,6 +144,11 @@ func (self *Ptfs) Utimens(path string, tmsp1 []fuse.Timespec) (errc int) {
 func (self *Ptfs) Create(path string, mode uint32) (errc int, fh uint64) {
 	defer trace(path, mode)(&errc, &fh)
 	defer setuidgid()()
+	if "/$$quit$$" == path {
+		// for testing!
+		_host.Unmount()
+		return -fuse.EIO, ^uint64(0)
+	}
 	path = filepath.Join(self.root, path)
 	f, e := syscall.Open(path, syscall.O_WRONLY|syscall.O_CREAT|syscall.O_TRUNC, mode)
 	if nil != e {
@@ -257,6 +266,6 @@ func main() {
 		ptfs.root, _ = filepath.Abs(args[len(args)-2])
 		args = append(args[:len(args)-2], args[len(args)-1])
 	}
-	host := fuse.NewFileSystemHost(&ptfs)
-	host.Mount(args)
+	_host = fuse.NewFileSystemHost(&ptfs)
+	_host.Mount(args)
 }

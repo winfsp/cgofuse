@@ -560,7 +560,7 @@ func hostFsyncdir(path0 *C.char, datasync C.int, fi0 *C.struct_fuse_file_info) (
 func hostInit(conn0 *C.struct_fuse_conn_info) (user_data unsafe.Pointer) {
 	defer recover()
 	fctx := C.fuse_get_context()
-	host := getInterfaceForHandle(fctx.private_data).(FileSystemHost)
+	host := getInterfaceForHandle(fctx.private_data).(*FileSystemHost)
 	host.fuse = fctx.fuse
 	user_data = host.hndl
 	host.fsop.Init()
@@ -651,7 +651,7 @@ func (host *FileSystemHost) Mount(args []string) bool {
 	}
 	host.hndl = newHandleForInterface(host.fsop)
 	defer delHandleForInterface(host.hndl)
-	hosthndl := newHandleForInterface(*host)
+	hosthndl := newHandleForInterface(host)
 	defer delHandleForInterface(hosthndl)
 	defer func() {
 		host.fuse = nil
