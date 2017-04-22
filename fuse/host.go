@@ -14,8 +14,10 @@
 package fuse
 
 /*
-#cgo CFLAGS: -DFUSE_USE_VERSION=28 -D_FILE_OFFSET_BITS=64 -I/usr/local/include/osxfuse
-#cgo LDFLAGS: -L/usr/local/lib -losxfuse
+#cgo darwin CFLAGS: -DFUSE_USE_VERSION=28 -D_FILE_OFFSET_BITS=64 -I/usr/local/include/osxfuse
+#cgo linux CFLAGS: -DFUSE_USE_VERSION=28 -D_FILE_OFFSET_BITS=64 -I/usr/include/fuse
+#cgo darwin LDFLAGS: -L/usr/local/lib -losxfuse
+#cgo linux LDFLAGS: -lfuse
 
 #include <stdlib.h>
 #include <string.h>
