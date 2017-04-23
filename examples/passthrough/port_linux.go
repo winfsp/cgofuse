@@ -16,8 +16,9 @@
 package main
 
 import (
-	"cgofuse/fuse"
 	"syscall"
+
+	"github.com/billziss-gh/cgofuse/fuse"
 )
 
 func setuidgid() func() {

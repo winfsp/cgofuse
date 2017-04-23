@@ -14,11 +14,12 @@
 package main
 
 import (
-	"cgofuse/fuse"
 	"fmt"
 	"os"
 	"path/filepath"
 	"syscall"
+
+	"github.com/billziss-gh/cgofuse/fuse"
 )
 
 var (
