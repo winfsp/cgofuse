@@ -20,8 +20,18 @@
 package fuse
 
 /*
+#if !(defined(__APPLE__) || defined(__linux__) || defined(_WIN32))
+#error platform not supported
+#endif
+
 #include <errno.h>
+
+#if defined(__APPLE__) || defined(__linux__)
 #include <sys/xattr.h>
+#elif defined(_WIN32)
+#define XATTR_CREATE  1
+#define XATTR_REPLACE 2
+#endif
 */
 import "C"
 

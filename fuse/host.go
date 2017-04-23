@@ -18,21 +18,33 @@ package fuse
 #cgo darwin LDFLAGS: -L/usr/local/lib -losxfuse
 #cgo linux CFLAGS: -DFUSE_USE_VERSION=28 -D_FILE_OFFSET_BITS=64 -I/usr/include/fuse
 #cgo linux LDFLAGS: -lfuse
+#cgo windows CFLAGS: -DFUSE_USE_VERSION=28 -Iwinfsp/inc/fuse
+#cgo windows LDFLAGS: -Lwinfsp/lib -lwinfsp-x64
+
+#if !(defined(__APPLE__) || defined(__linux__) || defined(_WIN32))
+#error platform not supported
+#endif
 
 #include <stdlib.h>
 #include <string.h>
 #include <fuse.h>
 
-#define fuse_stat stat
-#define fuse_statvfs statvfs
-#define fuse_timespec timespec
-#define fuse_mode_t mode_t
-#define fuse_dev_t dev_t
-#define fuse_uid_t uid_t
-#define fuse_gid_t gid_t
-#define fuse_off_t off_t
+#if defined(__APPLE__) || defined(__linux__)
+typedef struct stat fuse_stat_t;
+typedef struct statvfs fuse_statvfs_t;
+typedef struct timespec fuse_timespec_t;
+typedef mode_t fuse_mode_t;
+typedef dev_t fuse_dev_t;
+typedef uid_t fuse_uid_t;
+typedef gid_t fuse_gid_t;
+typedef off_t fuse_off_t;
+#elif defined(_WIN32)
+typedef struct fuse_stat fuse_stat_t;
+typedef struct fuse_statvfs fuse_statvfs_t;
+typedef struct fuse_timespec fuse_timespec_t;
+#endif
 
-extern int hostGetattr(char *path, struct fuse_stat *stbuf);
+extern int hostGetattr(char *path, fuse_stat_t *stbuf);
 extern int hostReadlink(char *path, char *buf, size_t size);
 extern int hostMknod(char *path, fuse_mode_t mode, fuse_dev_t dev);
 extern int hostMkdir(char *path, fuse_mode_t mode);
@@ -49,7 +61,7 @@ extern int hostRead(char *path, char *buf, size_t size, fuse_off_t off,
     struct fuse_file_info *fi);
 extern int hostWrite(char *path, char *buf, size_t size, fuse_off_t off,
     struct fuse_file_info *fi);
-extern int hostStatfs(char *path, struct fuse_statvfs *stbuf);
+extern int hostStatfs(char *path, fuse_statvfs_t *stbuf);
 extern int hostFlush(char *path, struct fuse_file_info *fi);
 extern int hostRelease(char *path, struct fuse_file_info *fi);
 extern int hostFsync(char *path, int datasync, struct fuse_file_info *fi);
@@ -67,11 +79,11 @@ extern void hostDestroy(void *data);
 extern int hostAccess(char *path, int mask);
 extern int hostCreate(char *path, fuse_mode_t mode, struct fuse_file_info *fi);
 extern int hostFtruncate(char *path, fuse_off_t off, struct fuse_file_info *fi);
-extern int hostFgetattr(char *path, struct fuse_stat *stbuf, struct fuse_file_info *fi);
+extern int hostFgetattr(char *path, fuse_stat_t *stbuf, struct fuse_file_info *fi);
 //extern int hostLock(char *path, struct fuse_file_info *fi, int cmd, struct fuse_flock *lock);
-extern int hostUtimens(char *path, struct fuse_timespec tv[2]);
+extern int hostUtimens(char *path, fuse_timespec_t tv[2]);
 
-static inline void hostCstatvfsFromFusestatfs(struct fuse_statvfs *stbuf,
+static inline void hostCstatvfsFromFusestatfs(fuse_statvfs_t *stbuf,
     uint64_t bsize,
     uint64_t frsize,
     uint64_t blocks,
@@ -98,7 +110,7 @@ static inline void hostCstatvfsFromFusestatfs(struct fuse_statvfs *stbuf,
     stbuf->f_namemax = namemax;
 }
 
-static inline void hostCstatFromFusestat(struct fuse_stat *stbuf,
+static inline void hostCstatFromFusestat(fuse_stat_t *stbuf,
     uint64_t dev,
     uint64_t ino,
     uint32_t mode,
@@ -123,23 +135,27 @@ static inline void hostCstatFromFusestat(struct fuse_stat *stbuf,
     stbuf->st_gid = gid;
     stbuf->st_rdev = rdev;
     stbuf->st_size = size;
-    stbuf->st_atime = atimSec;
-    stbuf->st_mtime = mtimSec;
-    stbuf->st_ctime = ctimSec;
+#if defined(__APPLE__)
+    stbuf->st_atimespec.tv_sec = atimSec; stbuf->st_atimespec.tv_nsec = atimNsec;
+    stbuf->st_mtimespec.tv_sec = mtimSec; stbuf->st_mtimespec.tv_nsec = mtimNsec;
+    stbuf->st_ctimespec.tv_sec = ctimSec; stbuf->st_ctimespec.tv_nsec = ctimNsec;
+    stbuf->st_birthtimespec.tv_sec = birthtimSec; stbuf->st_birthtimespec.tv_nsec = birthtimNsec;
+#else
+    stbuf->st_atim.tv_sec = atimSec; stbuf->st_atim.tv_nsec = atimNsec;
+    stbuf->st_mtim.tv_sec = mtimSec; stbuf->st_mtim.tv_nsec = mtimNsec;
+    stbuf->st_ctim.tv_sec = ctimSec; stbuf->st_ctim.tv_nsec = ctimNsec;
+#endif
     stbuf->st_blksize = blksize;
     stbuf->st_blocks = blocks;
 }
 
 static inline int hostFilldir(fuse_fill_dir_t filler, void *buf,
-    char *name, struct fuse_stat *stbuf, fuse_off_t off)
+    char *name, fuse_stat_t *stbuf, fuse_off_t off)
 {
     return filler(buf, name, stbuf, off);
 }
 
-#if !defined(__APPLE__)
-#define _hostSetxattr hostSetxattr
-#define _hostGetxattr hostGetxattr
-#else
+#if defined(__APPLE__)
 static int _hostSetxattr(char *path, char *name, char *value, size_t size, int flags,
     uint32_t position)
 {
@@ -152,6 +168,9 @@ static int _hostGetxattr(char *path, char *name, char *value, size_t size,
     // OSX uses position only for the resource fork; we do not support it!
     return hostGetxattr(path, name, value, size);
 }
+#else
+#define _hostSetxattr hostSetxattr
+#define _hostGetxattr hostGetxattr
 #endif
 
 static inline struct fuse_operations *hostFsop(void)
@@ -219,7 +238,7 @@ type FileSystemHost struct {
 	fuse *C.struct_fuse
 }
 
-func copyCstatvfsFromFusestatfs(dst *C.struct_statvfs, src *Statfs_t) {
+func copyCstatvfsFromFusestatfs(dst *C.fuse_statvfs_t, src *Statfs_t) {
 	C.hostCstatvfsFromFusestatfs(dst,
 		C.uint64_t(src.Bsize),
 		C.uint64_t(src.Frsize),
@@ -234,7 +253,7 @@ func copyCstatvfsFromFusestatfs(dst *C.struct_statvfs, src *Statfs_t) {
 		C.uint64_t(src.Namemax))
 }
 
-func copyCstatFromFusestat(dst *C.struct_stat, src *Stat_t) {
+func copyCstatFromFusestat(dst *C.fuse_stat_t, src *Stat_t) {
 	C.hostCstatFromFusestat(dst,
 		C.uint64_t(src.Dev),
 		C.uint64_t(src.Ino),
@@ -252,7 +271,7 @@ func copyCstatFromFusestat(dst *C.struct_stat, src *Stat_t) {
 		C.int64_t(src.Birthtim.Sec), C.int64_t(src.Birthtim.Nsec))
 }
 
-func copyFusetimespecFromCtimespec(dst *Timespec, src *C.struct_timespec) {
+func copyFusetimespecFromCtimespec(dst *Timespec, src *C.fuse_timespec_t) {
 	dst.Sec = int64(src.tv_sec)
 	dst.Nsec = int64(src.tv_nsec)
 }
@@ -264,7 +283,7 @@ func recoverAsErrno(errc0 *C.int) {
 }
 
 //export hostGetattr
-func hostGetattr(path0 *C.char, stat0 *C.struct_stat) (errc0 C.int) {
+func hostGetattr(path0 *C.char, stat0 *C.fuse_stat_t) (errc0 C.int) {
 	defer recoverAsErrno(&errc0)
 	fsop := getInterfaceForHandle(C.fuse_get_context().private_data).(FileSystemInterface)
 	path := C.GoString(path0)
@@ -290,7 +309,7 @@ func hostReadlink(path0 *C.char, buff0 *C.char, size0 C.size_t) (errc0 C.int) {
 }
 
 //export hostMknod
-func hostMknod(path0 *C.char, mode0 C.mode_t, dev0 C.dev_t) (errc0 C.int) {
+func hostMknod(path0 *C.char, mode0 C.fuse_mode_t, dev0 C.fuse_dev_t) (errc0 C.int) {
 	defer recoverAsErrno(&errc0)
 	fsop := getInterfaceForHandle(C.fuse_get_context().private_data).(FileSystemInterface)
 	path := C.GoString(path0)
@@ -299,7 +318,7 @@ func hostMknod(path0 *C.char, mode0 C.mode_t, dev0 C.dev_t) (errc0 C.int) {
 }
 
 //export hostMkdir
-func hostMkdir(path0 *C.char, mode0 C.mode_t) (errc0 C.int) {
+func hostMkdir(path0 *C.char, mode0 C.fuse_mode_t) (errc0 C.int) {
 	defer recoverAsErrno(&errc0)
 	fsop := getInterfaceForHandle(C.fuse_get_context().private_data).(FileSystemInterface)
 	path := C.GoString(path0)
@@ -353,7 +372,7 @@ func hostLink(oldpath0 *C.char, newpath0 *C.char) (errc0 C.int) {
 }
 
 //export hostChmod
-func hostChmod(path0 *C.char, mode0 C.mode_t) (errc0 C.int) {
+func hostChmod(path0 *C.char, mode0 C.fuse_mode_t) (errc0 C.int) {
 	defer recoverAsErrno(&errc0)
 	fsop := getInterfaceForHandle(C.fuse_get_context().private_data).(FileSystemInterface)
 	path := C.GoString(path0)
@@ -362,7 +381,7 @@ func hostChmod(path0 *C.char, mode0 C.mode_t) (errc0 C.int) {
 }
 
 //export hostChown
-func hostChown(path0 *C.char, uid0 C.uid_t, gid0 C.gid_t) (errc0 C.int) {
+func hostChown(path0 *C.char, uid0 C.fuse_uid_t, gid0 C.fuse_gid_t) (errc0 C.int) {
 	defer recoverAsErrno(&errc0)
 	fsop := getInterfaceForHandle(C.fuse_get_context().private_data).(FileSystemInterface)
 	path := C.GoString(path0)
@@ -371,7 +390,7 @@ func hostChown(path0 *C.char, uid0 C.uid_t, gid0 C.gid_t) (errc0 C.int) {
 }
 
 //export hostTruncate
-func hostTruncate(path0 *C.char, size0 C.off_t) (errc0 C.int) {
+func hostTruncate(path0 *C.char, size0 C.fuse_off_t) (errc0 C.int) {
 	defer recoverAsErrno(&errc0)
 	fsop := getInterfaceForHandle(C.fuse_get_context().private_data).(FileSystemInterface)
 	path := C.GoString(path0)
@@ -390,7 +409,7 @@ func hostOpen(path0 *C.char, fi0 *C.struct_fuse_file_info) (errc0 C.int) {
 }
 
 //export hostRead
-func hostRead(path0 *C.char, buff0 *C.char, size0 C.size_t, ofst0 C.off_t,
+func hostRead(path0 *C.char, buff0 *C.char, size0 C.size_t, ofst0 C.fuse_off_t,
 	fi0 *C.struct_fuse_file_info) (nbyt0 C.int) {
 	defer recoverAsErrno(&nbyt0)
 	fsop := getInterfaceForHandle(C.fuse_get_context().private_data).(FileSystemInterface)
@@ -401,7 +420,7 @@ func hostRead(path0 *C.char, buff0 *C.char, size0 C.size_t, ofst0 C.off_t,
 }
 
 //export hostWrite
-func hostWrite(path0 *C.char, buff0 *C.char, size0 C.size_t, ofst0 C.off_t,
+func hostWrite(path0 *C.char, buff0 *C.char, size0 C.size_t, ofst0 C.fuse_off_t,
 	fi0 *C.struct_fuse_file_info) (nbyt0 C.int) {
 	defer recoverAsErrno(&nbyt0)
 	fsop := getInterfaceForHandle(C.fuse_get_context().private_data).(FileSystemInterface)
@@ -412,7 +431,7 @@ func hostWrite(path0 *C.char, buff0 *C.char, size0 C.size_t, ofst0 C.off_t,
 }
 
 //export hostStatfs
-func hostStatfs(path0 *C.char, stat0 *C.struct_statvfs) (errc0 C.int) {
+func hostStatfs(path0 *C.char, stat0 *C.fuse_statvfs_t) (errc0 C.int) {
 	defer recoverAsErrno(&errc0)
 	fsop := getInterfaceForHandle(C.fuse_get_context().private_data).(FileSystemInterface)
 	path := C.GoString(path0)
@@ -520,7 +539,7 @@ func hostOpendir(path0 *C.char, fi0 *C.struct_fuse_file_info) (errc0 C.int) {
 }
 
 //export hostReaddir
-func hostReaddir(path0 *C.char, buff0 unsafe.Pointer, fill0 C.fuse_fill_dir_t, ofst0 C.off_t,
+func hostReaddir(path0 *C.char, buff0 unsafe.Pointer, fill0 C.fuse_fill_dir_t, ofst0 C.fuse_off_t,
 	fi0 *C.struct_fuse_file_info) (errc0 C.int) {
 	defer recoverAsErrno(&errc0)
 	fsop := getInterfaceForHandle(C.fuse_get_context().private_data).(FileSystemInterface)
@@ -529,11 +548,11 @@ func hostReaddir(path0 *C.char, buff0 unsafe.Pointer, fill0 C.fuse_fill_dir_t, o
 		name := C.CString(name1)
 		defer C.free(unsafe.Pointer(name))
 		if nil == stat1 {
-			return 0 == C.hostFilldir(fill0, buff0, name, nil, C.off_t(off1))
+			return 0 == C.hostFilldir(fill0, buff0, name, nil, C.fuse_off_t(off1))
 		} else {
-			stat := C.struct_stat{}
+			stat := C.fuse_stat_t{}
 			copyCstatFromFusestat(&stat, stat1)
-			return 0 == C.hostFilldir(fill0, buff0, name, &stat, C.off_t(off1))
+			return 0 == C.hostFilldir(fill0, buff0, name, &stat, C.fuse_off_t(off1))
 		}
 	}
 	errc := fsop.Readdir(path, fill, int64(ofst0), uint64(fi0.fh))
@@ -586,7 +605,7 @@ func hostAccess(path0 *C.char, mask0 C.int) (errc0 C.int) {
 }
 
 //export hostCreate
-func hostCreate(path0 *C.char, mode0 C.mode_t, fi0 *C.struct_fuse_file_info) (errc0 C.int) {
+func hostCreate(path0 *C.char, mode0 C.fuse_mode_t, fi0 *C.struct_fuse_file_info) (errc0 C.int) {
 	defer recoverAsErrno(&errc0)
 	fsop := getInterfaceForHandle(C.fuse_get_context().private_data).(FileSystemInterface)
 	path := C.GoString(path0)
@@ -596,7 +615,7 @@ func hostCreate(path0 *C.char, mode0 C.mode_t, fi0 *C.struct_fuse_file_info) (er
 }
 
 //export hostFtruncate
-func hostFtruncate(path0 *C.char, size0 C.off_t, fi0 *C.struct_fuse_file_info) (errc0 C.int) {
+func hostFtruncate(path0 *C.char, size0 C.fuse_off_t, fi0 *C.struct_fuse_file_info) (errc0 C.int) {
 	defer recoverAsErrno(&errc0)
 	fsop := getInterfaceForHandle(C.fuse_get_context().private_data).(FileSystemInterface)
 	path := C.GoString(path0)
@@ -605,7 +624,7 @@ func hostFtruncate(path0 *C.char, size0 C.off_t, fi0 *C.struct_fuse_file_info) (
 }
 
 //export hostFgetattr
-func hostFgetattr(path0 *C.char, stat0 *C.struct_stat,
+func hostFgetattr(path0 *C.char, stat0 *C.fuse_stat_t,
 	fi0 *C.struct_fuse_file_info) (errc0 C.int) {
 	defer recoverAsErrno(&errc0)
 	fsop := getInterfaceForHandle(C.fuse_get_context().private_data).(FileSystemInterface)
@@ -617,7 +636,7 @@ func hostFgetattr(path0 *C.char, stat0 *C.struct_stat,
 }
 
 //export hostUtimens
-func hostUtimens(path0 *C.char, tmsp0 *C.struct_fuse_timespec) (errc0 C.int) {
+func hostUtimens(path0 *C.char, tmsp0 *C.fuse_timespec_t) (errc0 C.int) {
 	defer recoverAsErrno(&errc0)
 	fsop := getInterfaceForHandle(C.fuse_get_context().private_data).(FileSystemInterface)
 	path := C.GoString(path0)
@@ -626,7 +645,7 @@ func hostUtimens(path0 *C.char, tmsp0 *C.struct_fuse_timespec) (errc0 C.int) {
 		return C.int(errc)
 	} else {
 		tmsp := [2]Timespec{}
-		tmsa := (*[2]C.struct_fuse_timespec)(unsafe.Pointer(tmsp0))
+		tmsa := (*[2]C.fuse_timespec_t)(unsafe.Pointer(tmsp0))
 		copyFusetimespecFromCtimespec(&tmsp[0], &tmsa[0])
 		copyFusetimespecFromCtimespec(&tmsp[1], &tmsa[1])
 		errc := fsop.Utimens(path, tmsp[:])
