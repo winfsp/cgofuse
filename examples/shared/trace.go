@@ -97,10 +97,20 @@ func Trace(skip int, prfx string, vals ...interface{}) func(vals ...interface{})
 	}
 	args := traceJoin(false, vals)
 	return func(vals ...interface{}) {
-		f := "%v%v(%v) = (%v)"
-		if len(vals) == 1 {
-			f = "%v%v(%v) = %v"
+		form := "%v%v(%v) = %v"
+		rslt := ""
+		rcvr := recover()
+		if nil != rcvr {
+			rslt = fmt.Sprintf("!PANIC:%v", rcvr)
+		} else {
+			if len(vals) != 1 {
+				form = "%v%v(%v) = (%v)"
+			}
+			rslt = traceJoin(true, vals)
 		}
-		log.Printf(f, prfx, name, args, traceJoin(true, vals))
+		log.Printf(form, prfx, name, args, rslt)
+		if nil != rcvr {
+			panic(rcvr)
+		}
 	}
 }

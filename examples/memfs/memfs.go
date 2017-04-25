@@ -91,6 +91,12 @@ type Memfs struct {
 	openmap map[uint64]*node_t
 }
 
+func (self *Memfs) Statfs(path string, stat *fuse.Statfs_t) (errc int) {
+	defer trace(path)(&errc, stat)
+	*stat = fuse.Statfs_t{}
+	return 0
+}
+
 func (self *Memfs) Mknod(path string, mode uint32, dev uint64) (errc int) {
 	defer trace(path, mode, dev)(&errc)
 	defer self.synchronize()()
@@ -189,7 +195,7 @@ func (self *Memfs) Chmod(path string, mode uint32) (errc int) {
 	if nil == node {
 		return -fuse.ENOENT
 	}
-	node.stat.Mode = mode & 07777
+	node.stat.Mode = (node.stat.Mode & 0170000) | mode&07777
 	return 0
 }
 
@@ -253,7 +259,7 @@ func (self *Memfs) Truncate(path string, size int64, fh uint64) (errc int) {
 	if nil == node {
 		return -fuse.ENOENT
 	}
-	resize(node.data, size, true)
+	node.data = resize(node.data, size, true)
 	node.stat.Size = size
 	return 0
 }
@@ -284,7 +290,7 @@ func (self *Memfs) Write(path string, buff []byte, ofst int64, fh uint64) (n int
 	}
 	endofst := ofst + int64(len(buff))
 	if endofst > node.stat.Size {
-		resize(node.data, endofst, false)
+		node.data = resize(node.data, endofst, false)
 		node.stat.Size = endofst
 	}
 	return copy(node.data[ofst:endofst], buff)
@@ -377,9 +383,7 @@ func (self *Memfs) removeNode(path string, dir bool) int {
 		return -fuse.ENOTEMPTY
 	}
 	node.stat.Nlink--
-	if 0 == node.stat.Nlink {
-		delete(prnt.chld, name)
-	}
+	delete(prnt.chld, name)
 	return 0
 }
 
