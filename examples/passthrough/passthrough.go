@@ -15,20 +15,16 @@ package main
 
 import (
 	"fmt"
+	"github.com/billziss-gh/cgofuse/examples/shared"
+	"github.com/billziss-gh/cgofuse/fuse"
 	"os"
 	"path/filepath"
 	"syscall"
-
-	"github.com/billziss-gh/cgofuse/fuse"
 )
 
-var (
-	_host *fuse.FileSystemHost
-)
-
-type Ptfs struct {
-	fuse.FileSystemBase
-	root string
+func trace(vals ...interface{}) func(vals ...interface{}) {
+	uid, gid, _ := fuse.Getcontext()
+	return shared.Trace(1, fmt.Sprintf("[uid=%v,gid=%v]", uid, gid), vals...)
 }
 
 func errno(err error) int {
@@ -39,9 +35,13 @@ func errno(err error) int {
 	}
 }
 
-func trace(vals ...interface{}) func(vals ...interface{}) {
-	uid, gid, _ := fuse.Getcontext()
-	return Trace(1, fmt.Sprintf("[uid=%v,gid=%v]", uid, gid), vals...)
+var (
+	_host *fuse.FileSystemHost
+)
+
+type Ptfs struct {
+	fuse.FileSystemBase
+	root string
 }
 
 func (self *Ptfs) Init() {

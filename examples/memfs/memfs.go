@@ -14,6 +14,8 @@
 package main
 
 import (
+	"fmt"
+	"github.com/billziss-gh/cgofuse/examples/shared"
 	"github.com/billziss-gh/cgofuse/fuse"
 	"os"
 	"strings"
@@ -22,8 +24,8 @@ import (
 )
 
 func trace(vals ...interface{}) func(vals ...interface{}) {
-	return func(vals ...interface{}) {
-	}
+	uid, gid, _ := fuse.Getcontext()
+	return shared.Trace(1, fmt.Sprintf("[uid=%v,gid=%v]", uid, gid), vals...)
 }
 
 func split(path string) []string {

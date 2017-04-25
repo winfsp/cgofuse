@@ -11,7 +11,7 @@
  * Foundation.
  */
 
-package main
+package shared
 
 import (
 	"fmt"
@@ -22,7 +22,7 @@ import (
 )
 
 var (
-	TracePattern = os.Getenv("TRACE_PATTERN")
+	TracePattern = os.Getenv("CGOFUSE_TRACE")
 )
 
 func traceJoin(deref bool, vals []interface{}) string {
