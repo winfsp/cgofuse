@@ -18,8 +18,7 @@ package fuse
 #cgo darwin LDFLAGS: -L/usr/local/lib -losxfuse
 #cgo linux CFLAGS: -DFUSE_USE_VERSION=28 -D_FILE_OFFSET_BITS=64 -I/usr/include/fuse
 #cgo linux LDFLAGS: -lfuse
-#cgo windows CFLAGS: -DFUSE_USE_VERSION=28 -Iwinfsp/inc/fuse
-#cgo windows LDFLAGS: -Lwinfsp/lib -lwinfsp-x64
+#cgo windows CFLAGS: -D_WIN32_WINNT=0x0600 -DFUSE_USE_VERSION=28
 
 #if !(defined(__APPLE__) || defined(__linux__) || defined(_WIN32))
 #error platform not supported
@@ -27,7 +26,147 @@ package fuse
 
 #include <stdlib.h>
 #include <string.h>
+
+#if defined(__APPLE__) || defined(__linux__)
+
 #include <fuse.h>
+
+#elif defined(_WIN32)
+
+#include <windows.h>
+
+static PVOID cgofuse_init_winfsp(VOID);
+static PVOID cgofuse_init_fail();
+static inline VOID cgofuse_init(VOID)
+{
+	static SRWLOCK Lock = SRWLOCK_INIT;
+	static PVOID Module = 0;
+	AcquireSRWLockExclusive(&Lock);
+	if (0 == Module)
+		Module = cgofuse_init_winfsp();
+	ReleaseSRWLockExclusive(&Lock);
+}
+
+#define FSP_FUSE_API                    static
+#define FSP_FUSE_API_NAME(api)          (* pfn_ ## api)
+#define FSP_FUSE_API_CALL(api)          (cgofuse_init(), pfn_ ## api)
+#define FSP_FUSE_SYM(proto, ...)        static inline proto { __VA_ARGS__ }
+//#include <fuse_common.h>
+#include <fuse.h>
+//#include <fuse_opt.h>
+
+static inline NTSTATUS FspLoad(PVOID *PModule)
+{
+#if defined(_WIN64)
+#define FSP_DLLNAME                     "winfsp-x64.dll"
+#else
+#define FSP_DLLNAME                     "winfsp-x86.dll"
+#endif
+#define FSP_DLLPATH                     "bin\\" FSP_DLLNAME
+
+	WINADVAPI
+	LSTATUS
+	APIENTRY
+	RegGetValueW(
+		HKEY hkey,
+		LPCWSTR lpSubKey,
+		LPCWSTR lpValue,
+		DWORD dwFlags,
+		LPDWORD pdwType,
+		PVOID pvData,
+		LPDWORD pcbData);
+
+	WCHAR PathBuf[MAX_PATH];
+	DWORD Size;
+	HKEY RegKey;
+	LONG Result;
+	HMODULE Module;
+
+	if (0 != PModule)
+		*PModule = 0;
+
+	Module = LoadLibraryW(L"" FSP_DLLNAME);
+	if (0 == Module)
+	{
+		Result = RegOpenKeyExW(HKEY_LOCAL_MACHINE, L"Software\\WinFsp",
+			0, KEY_READ | KEY_WOW64_32KEY, &RegKey);
+		if (ERROR_SUCCESS == Result)
+		{
+			Size = sizeof PathBuf - sizeof L"" FSP_DLLPATH + sizeof(WCHAR);
+			Result = RegGetValueW(RegKey, 0, L"InstallDir",
+				RRF_RT_REG_SZ, 0, PathBuf, &Size);
+			RegCloseKey(RegKey);
+		}
+		if (ERROR_SUCCESS != Result)
+			return 0xC0000034;//STATUS_OBJECT_NAME_NOT_FOUND
+
+		RtlCopyMemory(PathBuf + (Size / sizeof(WCHAR) - 1), L"" FSP_DLLPATH, sizeof L"" FSP_DLLPATH);
+		Module = LoadLibraryW(PathBuf);
+		if (0 == Module)
+			return 0xC0000135;//STATUS_DLL_NOT_FOUND
+	}
+
+	if (0 != PModule)
+		*PModule = Module;
+
+	return 0;//STATUS_SUCCESS
+
+#undef FSP_DLLNAME
+#undef FSP_DLLPATH
+}
+
+#define CGOFUSE_GET_API(h, n)           \
+	if (0 == (*(void **)&(pfn_ ## n) = GetProcAddress(Module, #n)))\
+		return cgofuse_init_fail();
+
+static PVOID cgofuse_init_winfsp(VOID)
+{
+	PVOID Module;
+	NTSTATUS Result;
+
+	Result = FspLoad(&Module);
+	if (0 > Result)
+		return cgofuse_init_fail();
+
+#if 0
+	// fuse_common.h
+	CGOFUSE_GET_API(h, fsp_fuse_version);
+	CGOFUSE_GET_API(h, fsp_fuse_mount);
+	CGOFUSE_GET_API(h, fsp_fuse_unmount);
+	CGOFUSE_GET_API(h, fsp_fuse_parse_cmdline);
+	CGOFUSE_GET_API(h, fsp_fuse_ntstatus_from_errno);
+#endif
+
+	// fuse.h
+	CGOFUSE_GET_API(h, fsp_fuse_main_real);
+	CGOFUSE_GET_API(h, fsp_fuse_is_lib_option);
+	CGOFUSE_GET_API(h, fsp_fuse_new);
+	CGOFUSE_GET_API(h, fsp_fuse_destroy);
+	CGOFUSE_GET_API(h, fsp_fuse_loop);
+	CGOFUSE_GET_API(h, fsp_fuse_loop_mt);
+	CGOFUSE_GET_API(h, fsp_fuse_exit);
+	CGOFUSE_GET_API(h, fsp_fuse_get_context);
+
+#if 0
+	// fuse_opt.h
+	CGOFUSE_GET_API(h, fsp_fuse_opt_parse);
+	CGOFUSE_GET_API(h, fsp_fuse_opt_add_arg);
+	CGOFUSE_GET_API(h, fsp_fuse_opt_insert_arg);
+	CGOFUSE_GET_API(h, fsp_fuse_opt_free_args);
+	CGOFUSE_GET_API(h, fsp_fuse_opt_add_opt);
+	CGOFUSE_GET_API(h, fsp_fuse_opt_add_opt_escaped);
+	CGOFUSE_GET_API(h, fsp_fuse_opt_match);
+#endif
+
+	return Module;
+}
+
+static PVOID cgofuse_init_fail()
+{
+	return 0;
+}
+
+#endif
 
 #if defined(__APPLE__) || defined(__linux__)
 typedef struct stat fuse_stat_t;
@@ -58,9 +197,9 @@ extern int hostChown(char *path, fuse_uid_t uid, fuse_gid_t gid);
 extern int hostTruncate(char *path, fuse_off_t size);
 extern int hostOpen(char *path, struct fuse_file_info *fi);
 extern int hostRead(char *path, char *buf, size_t size, fuse_off_t off,
-    struct fuse_file_info *fi);
+	struct fuse_file_info *fi);
 extern int hostWrite(char *path, char *buf, size_t size, fuse_off_t off,
-    struct fuse_file_info *fi);
+	struct fuse_file_info *fi);
 extern int hostStatfs(char *path, fuse_statvfs_t *stbuf);
 extern int hostFlush(char *path, struct fuse_file_info *fi);
 extern int hostRelease(char *path, struct fuse_file_info *fi);
@@ -71,7 +210,7 @@ extern int hostListxattr(char *path, char *namebuf, size_t size);
 extern int hostRemovexattr(char *path, char *name);
 extern int hostOpendir(char *path, struct fuse_file_info *fi);
 extern int hostReaddir(char *path, void *buf, fuse_fill_dir_t filler, fuse_off_t off,
-    struct fuse_file_info *fi);
+	struct fuse_file_info *fi);
 extern int hostReleasedir(char *path, struct fuse_file_info *fi);
 extern int hostFsyncdir(char *path, int datasync, struct fuse_file_info *fi);
 extern void *hostInit(struct fuse_conn_info *conn);
@@ -84,89 +223,89 @@ extern int hostFgetattr(char *path, fuse_stat_t *stbuf, struct fuse_file_info *f
 extern int hostUtimens(char *path, fuse_timespec_t tv[2]);
 
 static inline void hostCstatvfsFromFusestatfs(fuse_statvfs_t *stbuf,
-    uint64_t bsize,
-    uint64_t frsize,
-    uint64_t blocks,
-    uint64_t bfree,
-    uint64_t bavail,
-    uint64_t files,
-    uint64_t ffree,
-    uint64_t favail,
-    uint64_t fsid,
-    uint64_t flag,
-    uint64_t namemax)
+	uint64_t bsize,
+	uint64_t frsize,
+	uint64_t blocks,
+	uint64_t bfree,
+	uint64_t bavail,
+	uint64_t files,
+	uint64_t ffree,
+	uint64_t favail,
+	uint64_t fsid,
+	uint64_t flag,
+	uint64_t namemax)
 {
-    memset(stbuf, 0, sizeof *stbuf);
-    stbuf->f_bsize = bsize;
-    stbuf->f_frsize = frsize;
-    stbuf->f_blocks = blocks;
-    stbuf->f_bfree = bfree;
-    stbuf->f_bavail = bavail;
-    stbuf->f_files = files;
-    stbuf->f_ffree = ffree;
-    stbuf->f_favail = favail;
-    stbuf->f_fsid = fsid;
-    stbuf->f_flag = flag;
-    stbuf->f_namemax = namemax;
+	memset(stbuf, 0, sizeof *stbuf);
+	stbuf->f_bsize = bsize;
+	stbuf->f_frsize = frsize;
+	stbuf->f_blocks = blocks;
+	stbuf->f_bfree = bfree;
+	stbuf->f_bavail = bavail;
+	stbuf->f_files = files;
+	stbuf->f_ffree = ffree;
+	stbuf->f_favail = favail;
+	stbuf->f_fsid = fsid;
+	stbuf->f_flag = flag;
+	stbuf->f_namemax = namemax;
 }
 
 static inline void hostCstatFromFusestat(fuse_stat_t *stbuf,
-    uint64_t dev,
-    uint64_t ino,
-    uint32_t mode,
-    uint32_t nlink,
-    uint32_t uid,
-    uint32_t gid,
-    uint64_t rdev,
-    int64_t size,
-    int64_t atimSec, int64_t atimNsec,
-    int64_t mtimSec, int64_t mtimNsec,
-    int64_t ctimSec, int64_t ctimNsec,
-    int64_t blksize,
-    int64_t blocks,
-    int64_t birthtimSec, int64_t birthtimNsec)
+	uint64_t dev,
+	uint64_t ino,
+	uint32_t mode,
+	uint32_t nlink,
+	uint32_t uid,
+	uint32_t gid,
+	uint64_t rdev,
+	int64_t size,
+	int64_t atimSec, int64_t atimNsec,
+	int64_t mtimSec, int64_t mtimNsec,
+	int64_t ctimSec, int64_t ctimNsec,
+	int64_t blksize,
+	int64_t blocks,
+	int64_t birthtimSec, int64_t birthtimNsec)
 {
-    memset(stbuf, 0, sizeof *stbuf);
-    stbuf->st_dev = dev;
-    stbuf->st_ino = ino;
-    stbuf->st_mode = mode;
-    stbuf->st_nlink = nlink;
-    stbuf->st_uid = uid;
-    stbuf->st_gid = gid;
-    stbuf->st_rdev = rdev;
-    stbuf->st_size = size;
+	memset(stbuf, 0, sizeof *stbuf);
+	stbuf->st_dev = dev;
+	stbuf->st_ino = ino;
+	stbuf->st_mode = mode;
+	stbuf->st_nlink = nlink;
+	stbuf->st_uid = uid;
+	stbuf->st_gid = gid;
+	stbuf->st_rdev = rdev;
+	stbuf->st_size = size;
 #if defined(__APPLE__)
-    stbuf->st_atimespec.tv_sec = atimSec; stbuf->st_atimespec.tv_nsec = atimNsec;
-    stbuf->st_mtimespec.tv_sec = mtimSec; stbuf->st_mtimespec.tv_nsec = mtimNsec;
-    stbuf->st_ctimespec.tv_sec = ctimSec; stbuf->st_ctimespec.tv_nsec = ctimNsec;
-    stbuf->st_birthtimespec.tv_sec = birthtimSec; stbuf->st_birthtimespec.tv_nsec = birthtimNsec;
+	stbuf->st_atimespec.tv_sec = atimSec; stbuf->st_atimespec.tv_nsec = atimNsec;
+	stbuf->st_mtimespec.tv_sec = mtimSec; stbuf->st_mtimespec.tv_nsec = mtimNsec;
+	stbuf->st_ctimespec.tv_sec = ctimSec; stbuf->st_ctimespec.tv_nsec = ctimNsec;
+	stbuf->st_birthtimespec.tv_sec = birthtimSec; stbuf->st_birthtimespec.tv_nsec = birthtimNsec;
 #else
-    stbuf->st_atim.tv_sec = atimSec; stbuf->st_atim.tv_nsec = atimNsec;
-    stbuf->st_mtim.tv_sec = mtimSec; stbuf->st_mtim.tv_nsec = mtimNsec;
-    stbuf->st_ctim.tv_sec = ctimSec; stbuf->st_ctim.tv_nsec = ctimNsec;
+	stbuf->st_atim.tv_sec = atimSec; stbuf->st_atim.tv_nsec = atimNsec;
+	stbuf->st_mtim.tv_sec = mtimSec; stbuf->st_mtim.tv_nsec = mtimNsec;
+	stbuf->st_ctim.tv_sec = ctimSec; stbuf->st_ctim.tv_nsec = ctimNsec;
 #endif
-    stbuf->st_blksize = blksize;
-    stbuf->st_blocks = blocks;
+	stbuf->st_blksize = blksize;
+	stbuf->st_blocks = blocks;
 }
 
 static inline int hostFilldir(fuse_fill_dir_t filler, void *buf,
-    char *name, fuse_stat_t *stbuf, fuse_off_t off)
+	char *name, fuse_stat_t *stbuf, fuse_off_t off)
 {
-    return filler(buf, name, stbuf, off);
+	return filler(buf, name, stbuf, off);
 }
 
 #if defined(__APPLE__)
 static int _hostSetxattr(char *path, char *name, char *value, size_t size, int flags,
-    uint32_t position)
+	uint32_t position)
 {
-    // OSX uses position only for the resource fork; we do not support it!
-    return hostSetxattr(path, name, value, size, flags);
+	// OSX uses position only for the resource fork; we do not support it!
+	return hostSetxattr(path, name, value, size, flags);
 }
 static int _hostGetxattr(char *path, char *name, char *value, size_t size,
-    uint32_t position)
+	uint32_t position)
 {
-    // OSX uses position only for the resource fork; we do not support it!
-    return hostGetxattr(path, name, value, size);
+	// OSX uses position only for the resource fork; we do not support it!
+	return hostGetxattr(path, name, value, size);
 }
 #else
 #define _hostSetxattr hostSetxattr
@@ -179,45 +318,45 @@ static inline struct fuse_operations *hostFsop(void)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wincompatible-pointer-types"
 #endif
-    static struct fuse_operations fsop =
-    {
-        .getattr = hostGetattr,
-        .readlink = hostReadlink,
-        .mknod = hostMknod,
-        .mkdir = hostMkdir,
-        .unlink = hostUnlink,
-        .rmdir = hostRmdir,
-        .symlink = hostSymlink,
-        .rename = hostRename,
-        .link = hostLink,
-        .chmod = hostChmod,
-        .chown = hostChown,
-        .truncate = hostTruncate,
-        .open = hostOpen,
-        .read = hostRead,
-        .write = hostWrite,
-        .statfs = hostStatfs,
-        .flush = hostFlush,
-        .release = hostRelease,
-        .fsync = hostFsync,
-        .setxattr = _hostSetxattr,
-        .getxattr = _hostGetxattr,
-        .listxattr = hostListxattr,
-        .removexattr = hostRemovexattr,
-        .opendir = hostOpendir,
-        .readdir = hostReaddir,
-        .releasedir = hostReleasedir,
-        .fsyncdir = hostFsyncdir,
-        .init = hostInit,
-        .destroy = hostDestroy,
-        .access = hostAccess,
-        .create = hostCreate,
-        .ftruncate = hostFtruncate,
-        .fgetattr = hostFgetattr,
-        //.lock = hostFlock,
-        .utimens = hostUtimens,
-    };
-    return &fsop;
+	static struct fuse_operations fsop =
+	{
+		.getattr = hostGetattr,
+		.readlink = hostReadlink,
+		.mknod = hostMknod,
+		.mkdir = hostMkdir,
+		.unlink = hostUnlink,
+		.rmdir = hostRmdir,
+		.symlink = hostSymlink,
+		.rename = hostRename,
+		.link = hostLink,
+		.chmod = hostChmod,
+		.chown = hostChown,
+		.truncate = hostTruncate,
+		.open = hostOpen,
+		.read = hostRead,
+		.write = hostWrite,
+		.statfs = hostStatfs,
+		.flush = hostFlush,
+		.release = hostRelease,
+		.fsync = hostFsync,
+		.setxattr = _hostSetxattr,
+		.getxattr = _hostGetxattr,
+		.listxattr = hostListxattr,
+		.removexattr = hostRemovexattr,
+		.opendir = hostOpendir,
+		.readdir = hostReaddir,
+		.releasedir = hostReleasedir,
+		.fsyncdir = hostFsyncdir,
+		.init = hostInit,
+		.destroy = hostDestroy,
+		.access = hostAccess,
+		.create = hostCreate,
+		.ftruncate = hostFtruncate,
+		.fgetattr = hostFgetattr,
+		//.lock = hostFlock,
+		.utimens = hostUtimens,
+	};
+	return &fsop;
 #if defined(__GNUC__)
 #pragma GCC diagnostic pop
 #endif
@@ -225,7 +364,7 @@ static inline struct fuse_operations *hostFsop(void)
 
 static inline size_t hostFsopSize(void)
 {
-    return sizeof(struct fuse_operations);
+	return sizeof(struct fuse_operations);
 }
 */
 import "C"
