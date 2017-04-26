@@ -626,7 +626,22 @@ func hostGetxattr(path0 *C.char, name0 *C.char, buff0 *C.char, size0 C.size_t) (
 	path := C.GoString(path0)
 	name := C.GoString(name0)
 	buff := (*[1 << 30]byte)(unsafe.Pointer(buff0))
-	nbyt := fsop.Getxattr(path, name, buff[:size0])
+	size := int(size0)
+	nbyt := 0
+	fill := func(value []byte) bool {
+		nbyt = len(value)
+		if 0 != size {
+			if nbyt > size {
+				return false
+			}
+			copy(buff[:size], value)
+		}
+		return true
+	}
+	errc := fsop.Getxattr(path, name, fill)
+	if 0 != errc {
+		return C.int(errc)
+	}
 	return C.int(nbyt)
 }
 

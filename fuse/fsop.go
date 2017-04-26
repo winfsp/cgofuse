@@ -27,10 +27,16 @@ package fuse
 #include <errno.h>
 
 #if defined(__APPLE__) || defined(__linux__)
+
 #include <sys/xattr.h>
+
 #elif defined(_WIN32)
+
+#define ENOATTR ENODATA
+
 #define XATTR_CREATE  1
 #define XATTR_REPLACE 2
+
 #endif
 */
 import "C"
@@ -75,6 +81,7 @@ const (
 	ENETRESET       = C.ENETRESET
 	ENETUNREACH     = C.ENETUNREACH
 	ENFILE          = C.ENFILE
+	ENOATTR         = C.ENOATTR
 	ENOBUFS         = C.ENOBUFS
 	ENODATA         = C.ENODATA
 	ENODEV          = C.ENODEV
@@ -252,7 +259,7 @@ type FileSystemInterface interface {
 	Setxattr(path string, name string, value []byte, flags int) int
 
 	// Getxattr gets extended attributes.
-	Getxattr(path string, name string, value []byte) int
+	Getxattr(path string, name string, fill func(value []byte) bool) int
 
 	// Removexattr removes extended attributes.
 	Removexattr(path string, name string) int
@@ -388,7 +395,7 @@ func (*FileSystemBase) Setxattr(path string, name string, value []byte, flags in
 	return -ENOSYS
 }
 
-func (*FileSystemBase) Getxattr(path string, name string, value []byte) int {
+func (*FileSystemBase) Getxattr(path string, name string, fill func(value []byte) bool) int {
 	return -ENOSYS
 }
 

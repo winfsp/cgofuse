@@ -51,7 +51,7 @@ func resize(slice []byte, size int64, zeroinit bool) []byte {
 
 type node_t struct {
 	stat    fuse.Stat_t
-	xatr    map[string]string
+	xatr    map[string][]byte
 	chld    map[string]*node_t
 	data    []byte
 	opencnt int
@@ -329,6 +329,77 @@ func (self *Memfs) Releasedir(path string, fh uint64) (errc int) {
 	defer trace(path, fh)(&errc)
 	defer self.synchronize()()
 	return self.closeNode(fh)
+}
+
+func (self *Memfs) Setxattr(path string, name string, value []byte, flags int) (errc int) {
+	defer trace(path, name, value, flags)(&errc)
+	defer self.synchronize()()
+	_, _, node := self.lookupNode(path, nil)
+	if nil == node {
+		return -fuse.ENOENT
+	}
+	if fuse.XATTR_CREATE == flags {
+		if _, ok := node.xatr[name]; ok {
+			return -fuse.EEXIST
+		}
+	} else if fuse.XATTR_REPLACE == flags {
+		if _, ok := node.xatr[name]; !ok {
+			return -fuse.ENOATTR
+		}
+	}
+	xatr := make([]byte, len(value))
+	copy(xatr, value)
+	if nil == node.xatr {
+		node.xatr = map[string][]byte{}
+	}
+	node.xatr[name] = xatr
+	return 0
+}
+
+func (self *Memfs) Getxattr(path string, name string, fill func(value []byte) bool) (errc int) {
+	defer trace(path, name, fill)(&errc)
+	defer self.synchronize()()
+	_, _, node := self.lookupNode(path, nil)
+	if nil == node {
+		return -fuse.ENOENT
+	}
+	xatr, ok := node.xatr[name]
+	if !ok {
+		return -fuse.ENOATTR
+	}
+	if !fill(xatr) {
+		return -fuse.ERANGE
+	}
+	return 0
+}
+
+func (self *Memfs) Removexattr(path string, name string) (errc int) {
+	defer trace(path, name)(&errc)
+	defer self.synchronize()()
+	_, _, node := self.lookupNode(path, nil)
+	if nil == node {
+		return -fuse.ENOENT
+	}
+	if _, ok := node.xatr[name]; !ok {
+		return -fuse.ENOATTR
+	}
+	delete(node.xatr, name)
+	return 0
+}
+
+func (self *Memfs) Listxattr(path string, fill func(name string) bool) (errc int) {
+	defer trace(path, fill)(&errc)
+	defer self.synchronize()()
+	_, _, node := self.lookupNode(path, nil)
+	if nil == node {
+		return -fuse.ENOENT
+	}
+	for name := range node.xatr {
+		if !fill(name) {
+			return -fuse.ERANGE
+		}
+	}
+	return 0
 }
 
 func (self *Memfs) lookupNode(path string, ancestor *node_t) (prnt *node_t, name string, node *node_t) {
