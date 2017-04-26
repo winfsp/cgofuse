@@ -728,9 +728,9 @@ func hostInit(conn0 *C.struct_fuse_conn_info) (user_data unsafe.Pointer) {
 }
 
 //export hostDestroy
-func hostDestroy(data0 unsafe.Pointer) {
+func hostDestroy(user_data unsafe.Pointer) {
 	defer recover()
-	fsop := getInterfaceForHandle(C.fuse_get_context().private_data).(FileSystemInterface)
+	fsop := getInterfaceForHandle(user_data).(FileSystemInterface)
 	fsop.Destroy()
 }
 
