@@ -81,7 +81,7 @@ func newNode(dev uint64, ino uint64, mode uint32, uid uint32, gid uint32) *node_
 		nil,
 		nil,
 		0}
-	if 0040000 == self.stat.Mode&0170000 {
+	if fuse.S_IFDIR == self.stat.Mode&fuse.S_IFMT {
 		self.chld = map[string]*node_t{}
 	}
 	return &self
@@ -110,7 +110,7 @@ func (self *Memfs) Mknod(path string, mode uint32, dev uint64) (errc int) {
 func (self *Memfs) Mkdir(path string, mode uint32) (errc int) {
 	defer trace(path, mode)(&errc)
 	defer self.synchronize()()
-	return self.makeNode(path, 0040000|(mode&07777), 0, nil)
+	return self.makeNode(path, fuse.S_IFDIR|(mode&07777), 0, nil)
 }
 
 func (self *Memfs) Unlink(path string) (errc int) {
@@ -151,7 +151,7 @@ func (self *Memfs) Link(oldpath string, newpath string) (errc int) {
 func (self *Memfs) Symlink(target string, newpath string) (errc int) {
 	defer trace(target, newpath)(&errc)
 	defer self.synchronize()()
-	return self.makeNode(newpath, 0120777, 0, []byte(target))
+	return self.makeNode(newpath, fuse.S_IFLNK|00777, 0, []byte(target))
 }
 
 func (self *Memfs) Readlink(path string) (errc int, target string) {
@@ -161,7 +161,7 @@ func (self *Memfs) Readlink(path string) (errc int, target string) {
 	if nil == node {
 		return -fuse.ENOENT, ""
 	}
-	if 0120000 != node.stat.Mode&0170000 {
+	if fuse.S_IFLNK != node.stat.Mode&fuse.S_IFMT {
 		return -fuse.EINVAL, ""
 	}
 	return 0, string(node.data)
@@ -186,7 +186,7 @@ func (self *Memfs) Rename(oldpath string, newpath string) (errc int) {
 		return 0
 	}
 	if nil != newnode {
-		errc = self.removeNode(newpath, 0040000 == oldnode.stat.Mode&0170000)
+		errc = self.removeNode(newpath, fuse.S_IFDIR == oldnode.stat.Mode&fuse.S_IFMT)
 		if 0 != errc {
 			return errc
 		}
@@ -203,7 +203,7 @@ func (self *Memfs) Chmod(path string, mode uint32) (errc int) {
 	if nil == node {
 		return -fuse.ENOENT
 	}
-	node.stat.Mode = (node.stat.Mode & 0170000) | mode&07777
+	node.stat.Mode = (node.stat.Mode & fuse.S_IFMT) | mode&07777
 	node.stat.Ctim = now()
 	return 0
 }
@@ -462,10 +462,10 @@ func (self *Memfs) removeNode(path string, dir bool) int {
 	if nil == node {
 		return -fuse.ENOENT
 	}
-	if !dir && 0040000 == node.stat.Mode&0170000 {
+	if !dir && fuse.S_IFDIR == node.stat.Mode&fuse.S_IFMT {
 		return -fuse.EISDIR
 	}
-	if dir && 0040000 != node.stat.Mode&0170000 {
+	if dir && fuse.S_IFDIR != node.stat.Mode&fuse.S_IFMT {
 		return -fuse.ENOTDIR
 	}
 	if 0 < len(node.chld) {
@@ -485,10 +485,10 @@ func (self *Memfs) openNode(path string, dir bool) (int, uint64) {
 	if nil == node {
 		return -fuse.ENOENT, ^uint64(0)
 	}
-	if !dir && 0040000 == node.stat.Mode&0170000 {
+	if !dir && fuse.S_IFDIR == node.stat.Mode&fuse.S_IFMT {
 		return -fuse.EISDIR, ^uint64(0)
 	}
-	if dir && 0040000 != node.stat.Mode&0170000 {
+	if dir && fuse.S_IFDIR != node.stat.Mode&fuse.S_IFMT {
 		return -fuse.ENOTDIR, ^uint64(0)
 	}
 	node.opencnt++
@@ -527,7 +527,7 @@ func NewMemfs() *Memfs {
 	self := Memfs{}
 	defer self.synchronize()()
 	self.ino++
-	self.root = newNode(0, self.ino, 0040777, 0, 0)
+	self.root = newNode(0, self.ino, fuse.S_IFDIR|00777, 0, 0)
 	self.openmap = map[uint64]*node_t{}
 	return &self
 }

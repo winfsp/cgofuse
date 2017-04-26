@@ -765,7 +765,7 @@ func hostCreate(path0 *C.char, mode0 C.fuse_mode_t, fi0 *C.struct_fuse_file_info
 	path := C.GoString(path0)
 	errc, rslt := fsop.Create(path, uint32(mode0))
 	if -ENOSYS == errc {
-		errc = fsop.Mknod(path, 0100000|uint32(mode0), 0)
+		errc = fsop.Mknod(path, S_IFREG|uint32(mode0), 0)
 		if 0 == errc {
 			errc, rslt = fsop.Open(path, int(fi0.flags))
 		}
