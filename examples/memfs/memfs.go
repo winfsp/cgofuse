@@ -49,6 +49,11 @@ func resize(slice []byte, size int64, zeroinit bool) []byte {
 	return slice
 }
 
+func now() fuse.Timespec {
+	nano := time.Now().UnixNano()
+	return fuse.Timespec{nano / 1e9, nano % 1e9}
+}
+
 type node_t struct {
 	stat    fuse.Stat_t
 	xatr    map[string][]byte
@@ -58,8 +63,7 @@ type node_t struct {
 }
 
 func newNode(dev uint64, ino uint64, mode uint32, uid uint32, gid uint32) *node_t {
-	nano := time.Now().UnixNano()
-	tmsp := fuse.Timespec{nano / 1e9, nano % 1e9}
+	tmsp := now()
 	self := node_t{
 		fuse.Stat_t{
 			Dev:      dev,
@@ -137,6 +141,10 @@ func (self *Memfs) Link(oldpath string, newpath string) (errc int) {
 	}
 	oldnode.stat.Nlink++
 	newprnt.chld[newname] = oldnode
+	tmsp := now()
+	oldnode.stat.Ctim = tmsp
+	newprnt.stat.Ctim = tmsp
+	newprnt.stat.Mtim = tmsp
 	return 0
 }
 
@@ -196,6 +204,7 @@ func (self *Memfs) Chmod(path string, mode uint32) (errc int) {
 		return -fuse.ENOENT
 	}
 	node.stat.Mode = (node.stat.Mode & 0170000) | mode&07777
+	node.stat.Ctim = now()
 	return 0
 }
 
@@ -212,6 +221,7 @@ func (self *Memfs) Chown(path string, uid uint32, gid uint32) (errc int) {
 	if ^uint32(0) != gid {
 		node.stat.Gid = gid
 	}
+	node.stat.Ctim = now()
 	return 0
 }
 
@@ -223,11 +233,8 @@ func (self *Memfs) Utimens(path string, tmsp []fuse.Timespec) (errc int) {
 		return -fuse.ENOENT
 	}
 	if nil == tmsp {
-		nano := time.Now().UnixNano()
-		tmsa := [2]fuse.Timespec{
-			fuse.Timespec{nano / 1e9, nano % 1e9},
-			fuse.Timespec{nano / 1e9, nano % 1e9},
-		}
+		tmsp0 := now()
+		tmsa := [2]fuse.Timespec{tmsp0, tmsp0}
 		tmsp = tmsa[:]
 	}
 	node.stat.Atim = tmsp[0]
@@ -261,6 +268,9 @@ func (self *Memfs) Truncate(path string, size int64, fh uint64) (errc int) {
 	}
 	node.data = resize(node.data, size, true)
 	node.stat.Size = size
+	tmsp := now()
+	node.stat.Ctim = tmsp
+	node.stat.Mtim = tmsp
 	return 0
 }
 
@@ -278,7 +288,9 @@ func (self *Memfs) Read(path string, buff []byte, ofst int64, fh uint64) (n int)
 	if endofst < ofst {
 		return 0
 	}
-	return copy(buff, node.data[ofst:endofst])
+	n = copy(buff, node.data[ofst:endofst])
+	node.stat.Atim = now()
+	return
 }
 
 func (self *Memfs) Write(path string, buff []byte, ofst int64, fh uint64) (n int) {
@@ -293,7 +305,11 @@ func (self *Memfs) Write(path string, buff []byte, ofst int64, fh uint64) (n int
 		node.data = resize(node.data, endofst, false)
 		node.stat.Size = endofst
 	}
-	return copy(node.data[ofst:endofst], buff)
+	n = copy(node.data[ofst:endofst], buff)
+	tmsp := now()
+	node.stat.Ctim = tmsp
+	node.stat.Mtim = tmsp
+	return
 }
 
 func (self *Memfs) Release(path string, fh uint64) (errc int) {
@@ -436,6 +452,8 @@ func (self *Memfs) makeNode(path string, mode uint32, dev uint64, data []byte) i
 		copy(node.data, data)
 	}
 	prnt.chld[name] = node
+	prnt.stat.Ctim = node.stat.Ctim
+	prnt.stat.Mtim = node.stat.Ctim
 	return 0
 }
 
@@ -455,6 +473,10 @@ func (self *Memfs) removeNode(path string, dir bool) int {
 	}
 	node.stat.Nlink--
 	delete(prnt.chld, name)
+	tmsp := now()
+	node.stat.Ctim = tmsp
+	prnt.stat.Ctim = tmsp
+	prnt.stat.Mtim = tmsp
 	return 0
 }
 
