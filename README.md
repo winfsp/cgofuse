@@ -1,95 +1,48 @@
 # FUSE library for Go
 
-Cgofuse is a FUSE library for Go using cgo. The benefit is that this library can be ported to all platforms that have a FUSE implementation. This includes Windows with my own [WinFsp](https://github.com/billziss-gh/winfsp).
+Cgofuse is a cross-platform FUSE library for Go. It is implemented using [cgo](https://golang.org/cmd/cgo/) and can be ported to any platform that has a FUSE implementation.
 
-Please note that this library is written by an extreme Go novice. So keep the laughs to a minimum!
+Cgofuse currently runs on OSX, Linux and Windows (using [WinFsp](https://github.com/billziss-gh/winfsp)).
 
-## How to test on OSX
+## How to build
 
-Clone and build cgofuse:
+Cgofuse is regularly built on [Travis CI](https://travis-ci.org/billziss-gh/cgofuse) and [AppVeyor](https://ci.appveyor.com/project/billziss-gh/cgofuse).
 
-```
-$ cd $GOPATH/src
-$ git clone https://github.com/billziss-gh/cgofuse.git
-$ go install cgofuse/examples/passthrough
-```
+To build locally you will need a Go installation and a C compiler.
 
-Clone and build fstest:
+OSX:
 
-```
-$ cd ~/Projects
-$ git clone https://github.com/billziss-gh/secfs.test.git
-$ cd secfs.test/fstest/fstest
-$ make
-```
+- Prerequisites: [OSXFUSE](https://osxfuse.github.io), [command line tools](https://developer.apple.com/library/content/technotes/tn2339/_index.html)
+- Build:
+    ```
+    $ cd cgofuse
+    $ go install -v ./...
+    ```
 
-Apply the following patch to secfs.test:
+Linux:
 
-```diff
-diff --git a/fstest/ntfs-3g-pjd-fstest-8af5670/tests/conf b/fstest/ntfs-3g-pjd-fstest-8af5670/tests/conf
-index 18cd344..6c64086 100644
---- a/fstest/ntfs-3g-pjd-fstest-8af5670/tests/conf
-+++ b/fstest/ntfs-3g-pjd-fstest-8af5670/tests/conf
-@@ -5,4 +5,4 @@
- os=`uname`
- 
- # Known file systems: UFS, ZFS, ext3, ext4, ntfs-3g, xfs, btrfs, glusterfs, HFS+, secfs
--fs="secfs"
-+fs="HFS+"
-diff --git a/fstest/ntfs-3g-pjd-fstest-8af5670/tests/misc.sh b/fstest/ntfs-3g-pjd-fstest-8af5670/tests/misc.sh
-index 6714f8f..5d5c18f 100644
---- a/fstest/ntfs-3g-pjd-fstest-8af5670/tests/misc.sh
-+++ b/fstest/ntfs-3g-pjd-fstest-8af5670/tests/misc.sh
-@@ -137,7 +137,7 @@ supported()
-                        return 0
-                fi
-                if [ ${os} = "Darwin" ]; then
--                       return 0
-+                       return 1
-                fi
-         return 1
-                ;;
-```
+- Prerequisites: libfuse-dev, gcc
+- Build:
+    ```
+    $ cd cgofuse
+    $ go install -v ./...
+    ```
 
-The passthrough file system uses a system directory as its underlying storage (`/tmp/t/p`). We will also need a mount directory (`/tmp/t/m`) and we can then launch the file system:
+Windows:
 
-```
-$ mkdir -p /tmp/t/{p,m}
-$ chmod 777 /tmp/t/p
-sudo $GOPATH/bin/passthrough -f -o attr_timeout=0,use_ino,allow_other /tmp/t/p /tmp/t/m
-```
+- [WinFsp](https://github.com/billziss-gh/winfsp), gcc (e.g. from [Mingw-builds](http://mingw-w64.org/doku.php/download))
+- Build:
+    ```
+    > cd cgofuse
+    > set CPATH=C:\Program Files (x86)\WinFsp\inc\fuse
+    > go install -v ./examples/memfs
+    ```
 
-From a different command prompt run fstest against the file system:
+## How to use
 
-```
-$ cd /tmp/t/m
-$ sudo prove -fr ~/Projects/secfs.test/fstest/fstest/tests
-```
+User mode file systems are expected to implement `fuse.FileSystemInterface`. To make implementation simpler a file system can embed ("inherit") a `fuse.FileSystemBase` which provides default implementations for all operations. To mount a file system one must instantiate a `fuse.FileSystemHost` using `fuse.NewFileSystemHost`.
 
-To unmount the file system use:
+There are currently two example file systems:
 
-```
-$ cd
-$ sudo umount /tmp/t/m
-```
-
-### Failing tests
-
-Most fstest tests will pass, but there are a few failing tests:
-
-```
-/Users/billziss/Projects/secfs.test/fstest/fstest/tests/chown/00.t ............. 48/171 
-not ok 48 - expect 06555 lstat fstest_61de0b9fd8a698e01a34a150f0534f9b mode - got 0555
-not ok 55 - expect 06555 lstat fstest_61de0b9fd8a698e01a34a150f0534f9b mode - got 0555
-not ok 62 - expect 06555 lstat fstest_61de0b9fd8a698e01a34a150f0534f9b mode - got 0555
-
-/Users/billziss/Projects/secfs.test/fstest/fstest/tests/open/17.t .............. 1/3 
-not ok 2 - expect ENXIO open fstest_df12f85343217433ce784a53447310aa O_WRONLY,O_NONBLOCK - got EPERM
-
-/Users/billziss/Projects/secfs.test/fstest/fstest/tests/rmdir/12.t ............. 1/6 
-not ok 4 - expect ENOTEMPTY rmdir fstest_486cf7e2f6146f54f985f5816da63a24/fstest_85b2baba0a95d210d3092e33b04e02d4/.. - got EINVAL
-
-/Users/billziss/Projects/secfs.test/fstest/fstest/tests/zzz_ResourceFork/00.t .. 1/6 xattr: fstest_65b295c43f8cae84ea8a5b7b51e0f9be: No such xattr: com.apple.ResourceFork
-```
-
-Most of these failures are OSX API or OSXFUSE quirks. The last test (`zzz_ResourceFork`) does not pass because we do not have xattr support yet.
+- [Memfs](examples/memfs/memfs.go) is a simple in memory file system. Runs on OSX, Linux and Windows.
+- [Passthrough](examples/passthrough/passthrough.go) is a file system that passes all operations to the underlying file system. Runs on OSX, Linux.
