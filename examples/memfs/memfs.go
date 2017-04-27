@@ -271,7 +271,7 @@ func (self *Memfs) Read(path string, buff []byte, ofst int64, fh uint64) (n int)
 		return -fuse.ENOENT
 	}
 	endofst := ofst + int64(len(buff))
-	if endofst < node.stat.Size {
+	if endofst > node.stat.Size {
 		endofst = node.stat.Size
 	}
 	if endofst < ofst {
@@ -291,7 +291,7 @@ func (self *Memfs) Write(path string, buff []byte, ofst int64, fh uint64) (n int
 	}
 	endofst := ofst + int64(len(buff))
 	if endofst > node.stat.Size {
-		node.data = resize(node.data, endofst, false)
+		node.data = resize(node.data, endofst, true)
 		node.stat.Size = endofst
 	}
 	n = copy(node.data[ofst:endofst], buff)
