@@ -15,11 +15,12 @@ package main
 
 import (
 	"fmt"
-	"github.com/billziss-gh/cgofuse/examples/shared"
-	"github.com/billziss-gh/cgofuse/fuse"
 	"os"
 	"path/filepath"
 	"syscall"
+
+	"github.com/billziss-gh/cgofuse/examples/shared"
+	"github.com/billziss-gh/cgofuse/fuse"
 )
 
 func trace(vals ...interface{}) func(vals ...interface{}) {
