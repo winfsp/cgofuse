@@ -608,6 +608,9 @@ func hostFsync(path0 *C.char, datasync C.int, fi0 *C.struct_fuse_file_info) (err
 	fsop := getInterfaceForHandle(C.fuse_get_context().private_data).(FileSystemInterface)
 	path := C.GoString(path0)
 	errc := fsop.Fsync(path, 0 != datasync, uint64(fi0.fh))
+	if -ENOSYS == errc {
+		errc = 0
+	}
 	return C.int(errc)
 }
 
@@ -735,6 +738,9 @@ func hostFsyncdir(path0 *C.char, datasync C.int, fi0 *C.struct_fuse_file_info) (
 	fsop := getInterfaceForHandle(C.fuse_get_context().private_data).(FileSystemInterface)
 	path := C.GoString(path0)
 	errc := fsop.Fsyncdir(path, 0 != datasync, uint64(fi0.fh))
+	if -ENOSYS == errc {
+		errc = 0
+	}
 	return C.int(errc)
 }
 
