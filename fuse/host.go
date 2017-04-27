@@ -692,6 +692,9 @@ func hostOpendir(path0 *C.char, fi0 *C.struct_fuse_file_info) (errc0 C.int) {
 	fsop := getInterfaceForHandle(C.fuse_get_context().private_data).(FileSystemInterface)
 	path := C.GoString(path0)
 	errc, rslt := fsop.Opendir(path)
+	if -ENOSYS == errc {
+		errc = 0
+	}
 	fi0.fh = C.uint64_t(rslt)
 	return C.int(errc)
 }

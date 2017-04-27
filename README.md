@@ -17,7 +17,7 @@ Cgofuse is regularly built on [Travis CI](https://travis-ci.org/billziss-gh/cgof
 - Build:
     ```
     $ cd cgofuse
-    $ go install -v ./...
+    $ go install -v ./fuse ./examples/memfs ./examples/passthrough
     ```
 
 **Linux**
@@ -25,7 +25,7 @@ Cgofuse is regularly built on [Travis CI](https://travis-ci.org/billziss-gh/cgof
 - Build:
     ```
     $ cd cgofuse
-    $ go install -v ./...
+    $ go install -v ./fuse ./examples/memfs ./examples/passthrough
     ```
 **Windows**
 - [WinFsp](https://github.com/billziss-gh/winfsp), gcc (e.g. from [Mingw-builds](http://mingw-w64.org/doku.php/download))
@@ -33,14 +33,15 @@ Cgofuse is regularly built on [Travis CI](https://travis-ci.org/billziss-gh/cgof
     ```
     > cd cgofuse
     > set CPATH=C:\Program Files (x86)\WinFsp\inc\fuse
-    > go install -v ./examples/memfs
+    > go install -v ./fuse ./examples/memfs
     ```
 
 ## How to use
 
 User mode file systems are expected to implement `fuse.FileSystemInterface`. To make implementation simpler a file system can embed ("inherit") a `fuse.FileSystemBase` which provides default implementations for all operations. To mount a file system one must instantiate a `fuse.FileSystemHost` using `fuse.NewFileSystemHost`.
 
-There are currently two example file systems:
+There are currently three example file systems:
 
-- [Memfs](examples/memfs/memfs.go) is a simple in memory file system. Runs on OSX, Linux and Windows.
+- [Hellofs](examples/hellofs/hellofs.go) is an extremely simple file system. Runs on OSX, Linux and Windows.
+- [Memfs](examples/memfs/memfs.go) is an in memory file system. Runs on OSX, Linux and Windows.
 - [Passthrough](examples/passthrough/passthrough.go) is a file system that passes all operations to the underlying file system. Runs on OSX, Linux.

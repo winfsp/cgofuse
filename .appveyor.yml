@@ -11,4 +11,4 @@ install:
 build_script:
 - set PATH=C:\mingw-w64\x86_64-6.3.0-posix-seh-rt_v5-rev1\mingw64\bin;%PATH%
 - set CPATH=C:\Program Files (x86)\WinFsp\inc\fuse
-- go install -v ./examples/memfs
+- go install -v go install -v ./fuse ./examples/memfs ./examples/hellofs
