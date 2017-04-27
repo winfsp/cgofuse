@@ -125,6 +125,7 @@ package fuse
 #endif
 */
 import "C"
+import "time"
 
 const (
 	E2BIG           = int(C.E2BIG)
@@ -243,6 +244,21 @@ const (
 type Timespec struct {
 	Sec  int64
 	Nsec int64
+}
+
+// NewTimespec creates a Timespec from a time.Time
+func NewTimespec(t time.Time) Timespec {
+	return Timespec{t.Unix(), int64(t.Nanosecond())}
+}
+
+// Now creates a Timespec from a time.Now()
+func Now() Timespec {
+	return NewTimespec(time.Now())
+}
+
+// Time returns the Timespec as a time.Time
+func (ts *Timespec) Time() time.Time {
+	return time.Unix(ts.Sec, ts.Nsec)
 }
 
 type Statfs_t struct {
