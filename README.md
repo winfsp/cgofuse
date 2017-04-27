@@ -1,17 +1,18 @@
 # FUSE library for Go
 
+[![Travis CI](https://travis-ci.org/billziss-gh/cgofuse.svg?branch=master)](https://travis-ci.org/billziss-gh/cgofuse)
+[![AppVeyor](https://ci.appveyor.com/api/projects/status/github/billziss-gh/cgofuse?svg=true&branch=master)](https://ci.appveyor.com/project/billziss-gh/cgofuse)
+[![GoDoc](https://godoc.org/github.com/billziss-gh/cgofuse/fuse?status.svg)](https://godoc.org/github.com/billziss-gh/cgofuse/fuse)
+
 Cgofuse is a cross-platform FUSE library for Go. It is implemented using [cgo](https://golang.org/cmd/cgo/) and can be ported to any platform that has a FUSE implementation.
 
 Cgofuse currently runs on OSX, Linux and Windows (using [WinFsp](https://github.com/billziss-gh/winfsp)).
 
 ## How to build
 
-Cgofuse is regularly built on [Travis CI](https://travis-ci.org/billziss-gh/cgofuse) and [AppVeyor](https://ci.appveyor.com/project/billziss-gh/cgofuse).
+Cgofuse is regularly built on [Travis CI](https://travis-ci.org/billziss-gh/cgofuse) and [AppVeyor](https://ci.appveyor.com/project/billziss-gh/cgofuse). To build locally you will need a Go installation and a C compiler.
 
-To build locally you will need a Go installation and a C compiler.
-
-OSX:
-
+**OSX**
 - Prerequisites: [OSXFUSE](https://osxfuse.github.io), [command line tools](https://developer.apple.com/library/content/technotes/tn2339/_index.html)
 - Build:
     ```
@@ -19,17 +20,14 @@ OSX:
     $ go install -v ./...
     ```
 
-Linux:
-
+**Linux**
 - Prerequisites: libfuse-dev, gcc
 - Build:
     ```
     $ cd cgofuse
     $ go install -v ./...
     ```
-
-Windows:
-
+**Windows**
 - [WinFsp](https://github.com/billziss-gh/winfsp), gcc (e.g. from [Mingw-builds](http://mingw-w64.org/doku.php/download))
 - Build:
     ```
