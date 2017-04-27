@@ -24,103 +24,188 @@ package fuse
 #error platform not supported
 #endif
 
-#include <errno.h>
-
 #if defined(__APPLE__) || defined(__linux__)
 
-#include <sys/xattr.h>
+#include <errno.h>
 
 #elif defined(_WIN32)
 
-#define ENOATTR ENODATA
+#define EPERM           1
+#define ENOENT          2
+#define ESRCH           3
+#define EINTR           4
+#define EIO             5
+#define ENXIO           6
+#define E2BIG           7
+#define ENOEXEC         8
+#define EBADF           9
+#define ECHILD          10
+#define EAGAIN          11
+#define ENOMEM          12
+#define EACCES          13
+#define EFAULT          14
+#define EBUSY           16
+#define EEXIST          17
+#define EXDEV           18
+#define ENODEV          19
+#define ENOTDIR         20
+#define EISDIR          21
+#define ENFILE          23
+#define EMFILE          24
+#define ENOTTY          25
+#define EFBIG           27
+#define ENOSPC          28
+#define ESPIPE          29
+#define EROFS           30
+#define EMLINK          31
+#define EPIPE           32
+#define EDOM            33
+#define EDEADLK         36
+#define ENAMETOOLONG    38
+#define ENOLCK          39
+#define ENOSYS          40
+#define ENOTEMPTY       41
+#define EINVAL          22
+#define ERANGE          34
+#define EILSEQ          42
+#define EADDRINUSE      100
+#define EADDRNOTAVAIL   101
+#define EAFNOSUPPORT    102
+#define EALREADY        103
+#define EBADMSG         104
+#define ECANCELED       105
+#define ECONNABORTED    106
+#define ECONNREFUSED    107
+#define ECONNRESET      108
+#define EDESTADDRREQ    109
+#define EHOSTUNREACH    110
+#define EIDRM           111
+#define EINPROGRESS     112
+#define EISCONN         113
+#define ELOOP           114
+#define EMSGSIZE        115
+#define ENETDOWN        116
+#define ENETRESET       117
+#define ENETUNREACH     118
+#define ENOBUFS         119
+#define ENODATA         120
+#define ENOLINK         121
+#define ENOMSG          122
+#define ENOPROTOOPT     123
+#define ENOSR           124
+#define ENOSTR          125
+#define ENOTCONN        126
+#define ENOTRECOVERABLE 127
+#define ENOTSOCK        128
+#define ENOTSUP         129
+#define EOPNOTSUPP      130
+#define EOTHER          131
+#define EOVERFLOW       132
+#define EOWNERDEAD      133
+#define EPROTO          134
+#define EPROTONOSUPPORT 135
+#define EPROTOTYPE      136
+#define ETIME           137
+#define ETIMEDOUT       138
+#define ETXTBSY         139
+#define EWOULDBLOCK     140
 
+#endif
+
+#if defined(__linux__) || defined(_WIN32)
+// incantation needed for cgo to figure out "kind of name" for ENOATTR
+#define ENOATTR ((int)ENODATA)
+#endif
+
+#if defined(__APPLE__) || defined(__linux__)
+#include <sys/xattr.h>
+#elif defined(_WIN32)
 #define XATTR_CREATE  1
 #define XATTR_REPLACE 2
-
 #endif
 */
 import "C"
 
 const (
-	E2BIG           = C.E2BIG
-	EACCES          = C.EACCES
-	EADDRINUSE      = C.EADDRINUSE
-	EADDRNOTAVAIL   = C.EADDRNOTAVAIL
-	EAFNOSUPPORT    = C.EAFNOSUPPORT
-	EAGAIN          = C.EAGAIN
-	EALREADY        = C.EALREADY
-	EBADF           = C.EBADF
-	EBADMSG         = C.EBADMSG
-	EBUSY           = C.EBUSY
-	ECANCELED       = C.ECANCELED
-	ECHILD          = C.ECHILD
-	ECONNABORTED    = C.ECONNABORTED
-	ECONNREFUSED    = C.ECONNREFUSED
-	ECONNRESET      = C.ECONNRESET
-	EDEADLK         = C.EDEADLK
-	EDESTADDRREQ    = C.EDESTADDRREQ
-	EDOM            = C.EDOM
-	EEXIST          = C.EEXIST
-	EFAULT          = C.EFAULT
-	EFBIG           = C.EFBIG
-	EHOSTUNREACH    = C.EHOSTUNREACH
-	EIDRM           = C.EIDRM
-	EILSEQ          = C.EILSEQ
-	EINPROGRESS     = C.EINPROGRESS
-	EINTR           = C.EINTR
-	EINVAL          = C.EINVAL
-	EIO             = C.EIO
-	EISCONN         = C.EISCONN
-	EISDIR          = C.EISDIR
-	ELOOP           = C.ELOOP
-	EMFILE          = C.EMFILE
-	EMLINK          = C.EMLINK
-	EMSGSIZE        = C.EMSGSIZE
-	ENAMETOOLONG    = C.ENAMETOOLONG
-	ENETDOWN        = C.ENETDOWN
-	ENETRESET       = C.ENETRESET
-	ENETUNREACH     = C.ENETUNREACH
-	ENFILE          = C.ENFILE
-	ENOATTR         = C.ENOATTR
-	ENOBUFS         = C.ENOBUFS
-	ENODATA         = C.ENODATA
-	ENODEV          = C.ENODEV
-	ENOENT          = C.ENOENT
-	ENOEXEC         = C.ENOEXEC
-	ENOLCK          = C.ENOLCK
-	ENOLINK         = C.ENOLINK
-	ENOMEM          = C.ENOMEM
-	ENOMSG          = C.ENOMSG
-	ENOPROTOOPT     = C.ENOPROTOOPT
-	ENOSPC          = C.ENOSPC
-	ENOSR           = C.ENOSR
-	ENOSTR          = C.ENOSTR
-	ENOSYS          = C.ENOSYS
-	ENOTCONN        = C.ENOTCONN
-	ENOTDIR         = C.ENOTDIR
-	ENOTEMPTY       = C.ENOTEMPTY
-	ENOTRECOVERABLE = C.ENOTRECOVERABLE
-	ENOTSOCK        = C.ENOTSOCK
-	ENOTSUP         = C.ENOTSUP
-	ENOTTY          = C.ENOTTY
-	ENXIO           = C.ENXIO
-	EOPNOTSUPP      = C.EOPNOTSUPP
-	EOVERFLOW       = C.EOVERFLOW
-	EOWNERDEAD      = C.EOWNERDEAD
-	EPERM           = C.EPERM
-	EPIPE           = C.EPIPE
-	EPROTO          = C.EPROTO
-	EPROTONOSUPPORT = C.EPROTONOSUPPORT
-	EPROTOTYPE      = C.EPROTOTYPE
-	ERANGE          = C.ERANGE
-	EROFS           = C.EROFS
-	ESPIPE          = C.ESPIPE
-	ESRCH           = C.ESRCH
-	ETIME           = C.ETIME
-	ETIMEDOUT       = C.ETIMEDOUT
-	ETXTBSY         = C.ETXTBSY
-	EWOULDBLOCK     = C.EWOULDBLOCK
-	EXDEV           = C.EXDEV
+	E2BIG           = int(C.E2BIG)
+	EACCES          = int(C.EACCES)
+	EADDRINUSE      = int(C.EADDRINUSE)
+	EADDRNOTAVAIL   = int(C.EADDRNOTAVAIL)
+	EAFNOSUPPORT    = int(C.EAFNOSUPPORT)
+	EAGAIN          = int(C.EAGAIN)
+	EALREADY        = int(C.EALREADY)
+	EBADF           = int(C.EBADF)
+	EBADMSG         = int(C.EBADMSG)
+	EBUSY           = int(C.EBUSY)
+	ECANCELED       = int(C.ECANCELED)
+	ECHILD          = int(C.ECHILD)
+	ECONNABORTED    = int(C.ECONNABORTED)
+	ECONNREFUSED    = int(C.ECONNREFUSED)
+	ECONNRESET      = int(C.ECONNRESET)
+	EDEADLK         = int(C.EDEADLK)
+	EDESTADDRREQ    = int(C.EDESTADDRREQ)
+	EDOM            = int(C.EDOM)
+	EEXIST          = int(C.EEXIST)
+	EFAULT          = int(C.EFAULT)
+	EFBIG           = int(C.EFBIG)
+	EHOSTUNREACH    = int(C.EHOSTUNREACH)
+	EIDRM           = int(C.EIDRM)
+	EILSEQ          = int(C.EILSEQ)
+	EINPROGRESS     = int(C.EINPROGRESS)
+	EINTR           = int(C.EINTR)
+	EINVAL          = int(C.EINVAL)
+	EIO             = int(C.EIO)
+	EISCONN         = int(C.EISCONN)
+	EISDIR          = int(C.EISDIR)
+	ELOOP           = int(C.ELOOP)
+	EMFILE          = int(C.EMFILE)
+	EMLINK          = int(C.EMLINK)
+	EMSGSIZE        = int(C.EMSGSIZE)
+	ENAMETOOLONG    = int(C.ENAMETOOLONG)
+	ENETDOWN        = int(C.ENETDOWN)
+	ENETRESET       = int(C.ENETRESET)
+	ENETUNREACH     = int(C.ENETUNREACH)
+	ENFILE          = int(C.ENFILE)
+	ENOATTR         = int(C.ENOATTR)
+	ENOBUFS         = int(C.ENOBUFS)
+	ENODATA         = int(C.ENODATA)
+	ENODEV          = int(C.ENODEV)
+	ENOENT          = int(C.ENOENT)
+	ENOEXEC         = int(C.ENOEXEC)
+	ENOLCK          = int(C.ENOLCK)
+	ENOLINK         = int(C.ENOLINK)
+	ENOMEM          = int(C.ENOMEM)
+	ENOMSG          = int(C.ENOMSG)
+	ENOPROTOOPT     = int(C.ENOPROTOOPT)
+	ENOSPC          = int(C.ENOSPC)
+	ENOSR           = int(C.ENOSR)
+	ENOSTR          = int(C.ENOSTR)
+	ENOSYS          = int(C.ENOSYS)
+	ENOTCONN        = int(C.ENOTCONN)
+	ENOTDIR         = int(C.ENOTDIR)
+	ENOTEMPTY       = int(C.ENOTEMPTY)
+	ENOTRECOVERABLE = int(C.ENOTRECOVERABLE)
+	ENOTSOCK        = int(C.ENOTSOCK)
+	ENOTSUP         = int(C.ENOTSUP)
+	ENOTTY          = int(C.ENOTTY)
+	ENXIO           = int(C.ENXIO)
+	EOPNOTSUPP      = int(C.EOPNOTSUPP)
+	EOVERFLOW       = int(C.EOVERFLOW)
+	EOWNERDEAD      = int(C.EOWNERDEAD)
+	EPERM           = int(C.EPERM)
+	EPIPE           = int(C.EPIPE)
+	EPROTO          = int(C.EPROTO)
+	EPROTONOSUPPORT = int(C.EPROTONOSUPPORT)
+	EPROTOTYPE      = int(C.EPROTOTYPE)
+	ERANGE          = int(C.ERANGE)
+	EROFS           = int(C.EROFS)
+	ESPIPE          = int(C.ESPIPE)
+	ESRCH           = int(C.ESRCH)
+	ETIME           = int(C.ETIME)
+	ETIMEDOUT       = int(C.ETIMEDOUT)
+	ETXTBSY         = int(C.ETXTBSY)
+	EWOULDBLOCK     = int(C.EWOULDBLOCK)
+	EXDEV           = int(C.EXDEV)
 )
 
 const (
@@ -151,8 +236,8 @@ const (
 )
 
 const (
-	XATTR_CREATE  = C.XATTR_CREATE
-	XATTR_REPLACE = C.XATTR_REPLACE
+	XATTR_CREATE  = int(C.XATTR_CREATE)
+	XATTR_REPLACE = int(C.XATTR_REPLACE)
 )
 
 type Timespec struct {
