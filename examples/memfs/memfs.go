@@ -90,12 +90,6 @@ type Memfs struct {
 	openmap map[uint64]*node_t
 }
 
-func (self *Memfs) Statfs(path string, stat *fuse.Statfs_t) (errc int) {
-	defer trace(path)(&errc, stat)
-	*stat = fuse.Statfs_t{}
-	return 0
-}
-
 func (self *Memfs) Mknod(path string, mode uint32, dev uint64) (errc int) {
 	defer trace(path, mode, dev)(&errc)
 	defer self.synchronize()()

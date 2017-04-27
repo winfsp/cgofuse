@@ -576,6 +576,10 @@ func hostStatfs(path0 *C.char, stat0 *C.fuse_statvfs_t) (errc0 C.int) {
 	path := C.GoString(path0)
 	stat := &Statfs_t{}
 	errc := fsop.Statfs(path, stat)
+	if -ENOSYS == errc {
+		stat = &Statfs_t{}
+		errc = 0
+	}
 	copyCstatvfsFromFusestatfs(stat0, stat)
 	return C.int(errc)
 }
