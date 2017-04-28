@@ -118,6 +118,9 @@ package fuse
 #define O_CREAT         _O_CREAT
 #define O_EXCL          _O_EXCL
 #define O_TRUNC         _O_TRUNC
+#if !defined(O_ACCMODE)
+#define O_ACCMODE       (_O_RDONLY|_O_WRONLY|_O_RDWR)
+#endif
 
 #endif
 
@@ -222,13 +225,14 @@ const (
 )
 
 const (
-	O_RDONLY = int(C.O_RDONLY)
-	O_WRONLY = int(C.O_WRONLY)
-	O_RDWR   = int(C.O_RDWR)
-	O_APPEND = int(C.O_APPEND)
-	O_CREAT  = int(C.O_CREAT)
-	O_EXCL   = int(C.O_EXCL)
-	O_TRUNC  = int(C.O_TRUNC)
+	O_RDONLY  = int(C.O_RDONLY)
+	O_WRONLY  = int(C.O_WRONLY)
+	O_RDWR    = int(C.O_RDWR)
+	O_APPEND  = int(C.O_APPEND)
+	O_CREAT   = int(C.O_CREAT)
+	O_EXCL    = int(C.O_EXCL)
+	O_TRUNC   = int(C.O_TRUNC)
+	O_ACCMODE = int(C.O_ACCMODE)
 )
 
 const (
