@@ -28,7 +28,7 @@ Cgofuse currently runs on **OSX**, **Linux** and **Windows** (using [WinFsp](htt
 **Windows**
 - [WinFsp](https://github.com/billziss-gh/winfsp), gcc (e.g. from [Mingw-builds](http://mingw-w64.org/doku.php/download))
 - Build:
-    ```https://github.com/billziss-gh/secfs.test/tree/master/fstools/src/fsx
+    ```
     > cd cgofuse
     > set CPATH=C:\Program Files (x86)\WinFsp\inc\fuse
     > go install -v ./fuse ./examples/memfs
