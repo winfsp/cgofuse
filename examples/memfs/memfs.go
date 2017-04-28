@@ -36,7 +36,15 @@ func resize(slice []byte, size int64, zeroinit bool) []byte {
 	const allocunit = 64 * 1024
 	allocsize := (size + allocunit - 1) / allocunit * allocunit
 	if cap(slice) != int(allocsize) {
-		newslice := make([]byte, size, allocsize)
+		var newslice []byte
+		{
+			defer func() {
+				if r := recover(); nil != r {
+					panic(fuse.Error(-fuse.ENOSPC))
+				}
+			}()
+			newslice = make([]byte, size, allocsize)
+		}
 		copy(newslice, slice)
 		slice = newslice
 	} else if zeroinit {
