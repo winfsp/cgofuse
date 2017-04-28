@@ -14,9 +14,8 @@ before_install:
 - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get -qq install libacl1-dev; fi
 - mkdir -p /tmp/t/{m,p}
 - git clone https://github.com/billziss-gh/secfs.test.git /tmp/t/secfs.test
-- if [[ "$TRAVIS_OS_NAME" == "osx"   ]]; then sed -e 's/^fs=.*$/fs="HFS+"/' -i "" /tmp/t/secfs.test/fstest/fstest/tests/conf; fi
-- if [[ "$TRAVIS_OS_NAME" == "osx"   ]]; then sed -e 's/lchmod)/lchmod) return 1/' -i "" /tmp/t/secfs.test/fstest/fstest/tests/misc.sh; fi
-- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sed -e 's/^fs=.*$/fs="ext4"/' -i""  /tmp/t/secfs.test/fstest/fstest/tests/conf; fi
+- if [[ "$TRAVIS_OS_NAME" == "osx"   ]]; then sed -e 's/^fs=.*$/fs="cgofuse"/' -i "" /tmp/t/secfs.test/fstest/fstest/tests/conf; fi
+- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sed -e 's/^fs=.*$/fs="cgofuse"/' -i""  /tmp/t/secfs.test/fstest/fstest/tests/conf; fi
 - mv /tmp/t/secfs.test/fstest/fstest/tests/{,.}zzz_ResourceFork
 - make -C /tmp/t/secfs.test
 
@@ -24,11 +23,14 @@ install:
 - go install -v ./...
 
 script:
+# cgofuse/memfs
 - sudo $GOPATH/bin/memfs -o allow_other,default_permissions,use_ino,attr_timeout=0 /tmp/t/m &
 - (cd /tmp/t/m && sudo prove -fr /tmp/t/secfs.test/fstest/fstest/tests)
 - (cd /tmp/t/m && /tmp/t/secfs.test/tools/bin/fsx -N 10000 test xxxxxx)
 - (cd /tmp/t/m && /tmp/t/secfs.test/tools/bin/fsx -e -N 1000 test xxxx)
 - sudo umount /tmp/t/m
+# cgofuse/passthrough
+- if [[ "$TRAVIS_OS_NAME" == "osx"   ]]; then sed -e 's/lchmod)/lchmod) return 1/' -i "" /tmp/t/secfs.test/fstest/fstest/tests/misc.sh; fi
 - sudo $GOPATH/bin/passthrough -o allow_other,default_permissions,use_ino,attr_timeout=0 /tmp/t/p /tmp/t/m &
 - (cd /tmp/t/m && sudo prove -fr /tmp/t/secfs.test/fstest/fstest/tests)
 - (cd /tmp/t/m && /tmp/t/secfs.test/tools/bin/fsx -N 10000 test xxxxxx)
