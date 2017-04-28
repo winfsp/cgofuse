@@ -14,7 +14,8 @@ build_script:
 - go install -v ./fuse ./examples/memfs ./examples/hellofs
 
 test_script:
-- git clone https://github.com/billziss-gh/winfsp.git C:\projects\winfsp
+- git clone -q https://github.com/billziss-gh/winfsp.git C:\projects\winfsp
+- git -C C:\projects\winfsp checkout -q v1.0
 - call "%VS140COMNTOOLS%\..\..\VC\vcvarsall.bat" x64
 - devenv C:\projects\winfsp\build\VStudio\winfsp.sln /build "Release|x64"
 # hard code fsreg parameters because appveyor does not like percents ("--VolumePrefix=%1 %2")
