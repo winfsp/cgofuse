@@ -417,7 +417,12 @@ func copyFusetimespecFromCtimespec(dst *Timespec, src *C.fuse_timespec_t) {
 
 func recoverAsErrno(errc0 *C.int) {
 	if r := recover(); nil != r {
-		*errc0 = -C.int(EIO)
+		switch e := r.(type) {
+		case Error:
+			*errc0 = C.int(e)
+		default:
+			*errc0 = -C.int(EIO)
+		}
 	}
 }
 

@@ -125,7 +125,10 @@ package fuse
 #endif
 */
 import "C"
-import "time"
+import (
+	"strconv"
+	"time"
+)
 
 const (
 	E2BIG           = int(C.E2BIG)
@@ -398,6 +401,18 @@ type FileSystemInterface interface {
 	// Listxattr lists extended attributes.
 	Listxattr(path string, fill func(name string) bool) int
 }
+
+// Error encapsulates a FUSE error code. In some rare circumstances it is useful
+// to signal an error to the FUSE layer by boxing the error code using Error and
+// calling panic(). The FUSE layer will recover and report the boxed error code
+// to the OS.
+type Error int
+
+func (self Error) Error() string {
+	return "fuse.Error(" + strconv.Itoa(int(self)) + ")"
+}
+
+var _ error = (*Error)(nil)
 
 // FileSystemBase provides default implementations of the methods in FileSystemInterface.
 type FileSystemBase struct {

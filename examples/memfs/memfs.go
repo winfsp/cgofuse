@@ -422,6 +422,9 @@ func (self *Memfs) lookupNode(path string, ancestor *node_t) (prnt *node_t, name
 	node = self.root
 	for _, c := range split(path) {
 		if "" != c {
+			if 255 < len(c) {
+				panic(fuse.Error(-fuse.ENAMETOOLONG))
+			}
 			prnt, name = node, c
 			node = node.chld[c]
 			if nil != ancestor && node == ancestor {
