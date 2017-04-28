@@ -343,6 +343,9 @@ func (self *Memfs) Setxattr(path string, name string, value []byte, flags int) (
 	if nil == node {
 		return -fuse.ENOENT
 	}
+	if "com.apple.ResourceFork" == name {
+		return -fuse.ENOTSUP
+	}
 	if fuse.XATTR_CREATE == flags {
 		if _, ok := node.xatr[name]; ok {
 			return -fuse.EEXIST
@@ -368,6 +371,9 @@ func (self *Memfs) Getxattr(path string, name string, fill func(value []byte) bo
 	if nil == node {
 		return -fuse.ENOENT
 	}
+	if "com.apple.ResourceFork" == name {
+		return -fuse.ENOTSUP
+	}
 	xatr, ok := node.xatr[name]
 	if !ok {
 		return -fuse.ENOATTR
@@ -384,6 +390,9 @@ func (self *Memfs) Removexattr(path string, name string) (errc int) {
 	_, _, node := self.lookupNode(path, nil)
 	if nil == node {
 		return -fuse.ENOENT
+	}
+	if "com.apple.ResourceFork" == name {
+		return -fuse.ENOTSUP
 	}
 	if _, ok := node.xatr[name]; !ok {
 		return -fuse.ENOATTR
