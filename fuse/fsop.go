@@ -27,6 +27,7 @@ package fuse
 #if defined(__APPLE__) || defined(__linux__)
 
 #include <errno.h>
+#include <fcntl.h>
 
 #elif defined(_WIN32)
 
@@ -109,6 +110,15 @@ package fuse
 #define ETIMEDOUT       138
 #define ETXTBSY         139
 #define EWOULDBLOCK     140
+
+#include <fcntl.h>
+#define O_RDONLY        _O_RDONLY
+#define O_WRONLY        _O_WRONLY
+#define O_RDWR          _O_RDWR
+#define O_APPEND        _O_APPEND
+#define O_CREAT         _O_CREAT
+#define O_EXCL          _O_EXCL
+#define O_TRUNC         _O_TRUNC
 
 #endif
 
@@ -210,6 +220,16 @@ const (
 	ETXTBSY         = int(C.ETXTBSY)
 	EWOULDBLOCK     = int(C.EWOULDBLOCK)
 	EXDEV           = int(C.EXDEV)
+)
+
+const (
+	O_RDONLY = int(C.O_RDONLY)
+	O_WRONLY = int(C.O_WRONLY)
+	O_RDWR   = int(C.O_RDWR)
+	O_APPEND = int(C.O_APPEND)
+	O_CREAT  = int(C.O_CREAT)
+	O_EXCL   = int(C.O_EXCL)
+	O_TRUNC  = int(C.O_TRUNC)
 )
 
 const (
