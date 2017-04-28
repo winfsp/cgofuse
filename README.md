@@ -50,7 +50,7 @@ There are currently three example file systems:
 
 Cgofuse is regularly built and tested on [Travis CI](https://travis-ci.org/billziss-gh/cgofuse) and [AppVeyor](https://ci.appveyor.com/project/billziss-gh/cgofuse). The following software is being used to test cgofuse.
 
-**OSX**
+**OSX/Linux**
 - [fstest](https://github.com/billziss-gh/secfs.test/tree/master/fstest/ntfs-3g-pjd-fstest-8af5670)
 - [fsx](https://github.com/billziss-gh/secfs.test/tree/master/fstools/src/fsx)
 
