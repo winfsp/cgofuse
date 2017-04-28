@@ -1,7 +1,7 @@
 # FUSE library for Go
 
-[![Travis CI](https://travis-ci.org/billziss-gh/cgofuse.svg?branch=master)](https://travis-ci.org/billziss-gh/cgofuse)
-[![AppVeyor](https://ci.appveyor.com/api/projects/status/github/billziss-gh/cgofuse?svg=true&branch=master)](https://ci.appveyor.com/project/billziss-gh/cgofuse)
+[![Travis](https://img.shields.io/travis/billziss-gh/cgofuse.svg?label=osx/linux)](https://travis-ci.org/billziss-gh/cgofuse)
+[![AppVeyor](https://img.shields.io/appveyor/ci/billziss-gh/cgofuse.svg?label=windows)](https://ci.appveyor.com/project/billziss-gh/cgofuse)
 [![GoDoc](https://godoc.org/github.com/billziss-gh/cgofuse/fuse?status.svg)](https://godoc.org/github.com/billziss-gh/cgofuse/fuse)
 
 Cgofuse is a cross-platform FUSE library for Go. It is implemented using [cgo](https://golang.org/cmd/cgo/) and can be ported to any platform that has a FUSE implementation.
