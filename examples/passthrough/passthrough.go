@@ -143,26 +143,20 @@ func (self *Ptfs) Utimens(path string, tmsp1 []fuse.Timespec) (errc int) {
 	return errno(syscall.UtimesNano(path, tmsp[:]))
 }
 
-func (self *Ptfs) Create(path string, mode uint32) (errc int, fh uint64) {
-	defer trace(path, mode)(&errc, &fh)
+func (self *Ptfs) Create(path string, flags int, mode uint32) (errc int, fh uint64) {
+	defer trace(path, flags, mode)(&errc, &fh)
 	defer setuidgid()()
-	if "/$$quit$$" == path {
-		// for testing!
-		_host.Unmount()
-		return -fuse.EIO, ^uint64(0)
-	}
-	path = filepath.Join(self.root, path)
-	f, e := syscall.Open(path, syscall.O_WRONLY|syscall.O_CREAT|syscall.O_TRUNC, mode)
-	if nil != e {
-		return errno(e), ^uint64(0)
-	}
-	return 0, uint64(f)
+	return self.open(path, flags, mode)
 }
 
 func (self *Ptfs) Open(path string, flags int) (errc int, fh uint64) {
 	defer trace(path, flags)(&errc, &fh)
+	return self.open(path, flags, 0)
+}
+
+func (self *Ptfs) open(path string, flags int, mode uint32) (errc int, fh uint64) {
 	path = filepath.Join(self.root, path)
-	f, e := syscall.Open(path, flags, 0)
+	f, e := syscall.Open(path, flags, mode)
 	if nil != e {
 		return errno(e), ^uint64(0)
 	}

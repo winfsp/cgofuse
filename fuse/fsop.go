@@ -343,7 +343,7 @@ type FileSystemInterface interface {
 	Access(path string, mask uint32) int
 
 	// Create creates and opens a file.
-	Create(path string, mode uint32) (int, uint64)
+	Create(path string, flags int, mode uint32) (int, uint64)
 
 	// Open opens a file.
 	Open(path string, flags int) (int, uint64)
@@ -461,7 +461,7 @@ func (*FileSystemBase) Access(path string, mask uint32) int {
 	return -ENOSYS
 }
 
-func (*FileSystemBase) Create(path string, mode uint32) (int, uint64) {
+func (*FileSystemBase) Create(path string, flags int, mode uint32) (int, uint64) {
 	return -ENOSYS, ^uint64(0)
 }
 

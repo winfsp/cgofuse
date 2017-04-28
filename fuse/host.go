@@ -776,7 +776,7 @@ func hostCreate(path0 *C.char, mode0 C.fuse_mode_t, fi0 *C.struct_fuse_file_info
 	defer recoverAsErrno(&errc0)
 	fsop := getInterfaceForHandle(C.fuse_get_context().private_data).(FileSystemInterface)
 	path := C.GoString(path0)
-	errc, rslt := fsop.Create(path, uint32(mode0))
+	errc, rslt := fsop.Create(path, int(fi0.flags), uint32(mode0))
 	if -ENOSYS == errc {
 		errc = fsop.Mknod(path, S_IFREG|uint32(mode0), 0)
 		if 0 == errc {
