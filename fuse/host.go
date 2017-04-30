@@ -407,7 +407,7 @@ static int hostUnmount(struct fuse *fuse, char *mountpoint)
 import "C"
 import "unsafe"
 
-// FileSystemHost is used to host a Cgofuse file system.
+// FileSystemHost is used to host a file system.
 type FileSystemHost struct {
 	fsop FileSystemInterface
 	hndl unsafe.Pointer
@@ -875,6 +875,7 @@ func NewFileSystemHost(fsop FileSystemInterface) *FileSystemHost {
 }
 
 // Mount mounts a file system.
+// The file system is considered mounted only after its Init() method has been called.
 func (host *FileSystemHost) Mount(args []string) bool {
 	argc := len(args) + 1
 	argv := make([]*C.char, argc+1)
@@ -899,7 +900,8 @@ func (host *FileSystemHost) Mount(args []string) bool {
 	return 0 != C.hostMount(C.int(argc), &argv[0], hosthndl)
 }
 
-// Unmount unmounts a file system.
+// Unmount unmounts a mounted file system.
+// Unmount may be called at any time after the Init() method has been called.
 func (host *FileSystemHost) Unmount() bool {
 	if nil == host.fuse {
 		return false

@@ -268,6 +268,7 @@ const (
 )
 
 // Timespec contains a time as the UNIX time in seconds and nanoseconds.
+// This structure is analogous to the POSIX struct timespec.
 type Timespec struct {
 	Sec  int64
 	Nsec int64
@@ -289,39 +290,99 @@ func (ts *Timespec) Time() time.Time {
 }
 
 // Statfs_t contains file system information.
+// This structure is analogous to the POSIX struct statvfs (NOT struct statfs).
+// Not all fields are honored by all FUSE implementations.
 type Statfs_t struct {
-	Bsize   uint64
-	Frsize  uint64
-	Blocks  uint64
-	Bfree   uint64
-	Bavail  uint64
-	Files   uint64
-	Ffree   uint64
-	Favail  uint64
-	Fsid    uint64
-	Flag    uint64
+	// File system block size.
+	Bsize uint64
+
+	// Fundamental file system block size.
+	Frsize uint64
+
+	// Total number of blocks on file system in units of Frsize.
+	Blocks uint64
+
+	// Total number of free blocks.
+	Bfree uint64
+
+	// Number of free blocks available to non-privileged process.
+	Bavail uint64
+
+	// Total number of file serial numbers.
+	Files uint64
+
+	// Total number of free file serial numbers.
+	Ffree uint64
+
+	// Number of file serial numbers available to non-privileged process.
+	Favail uint64
+
+	// File system ID. [IGNORED]
+	Fsid uint64
+
+	// Bit mask of Flag values. [IGNORED]
+	Flag uint64
+
+	// Maximum filename length.
 	Namemax uint64
 }
 
 // Stat contains file metadata information.
+// This structure is analogous to the POSIX struct stat.
+// Not all fields are honored by all FUSE implementations.
 type Stat_t struct {
-	Dev      uint64
-	Ino      uint64
-	Mode     uint32
-	Nlink    uint32
-	Uid      uint32
-	Gid      uint32
-	Rdev     uint64
-	Size     int64
-	Atim     Timespec
-	Mtim     Timespec
-	Ctim     Timespec
-	Blksize  int64
-	Blocks   int64
+	// Device ID of device containing file. [IGNORED]
+	Dev uint64
+
+	// File serial number. [IGNORED unless the use_ino mount option is given.]
+	Ino uint64
+
+	// Mode of file.
+	Mode uint32
+
+	// Number of hard links to the file.
+	Nlink uint32
+
+	// User ID of file.
+	Uid uint32
+
+	// Group ID of file.
+	Gid uint32
+
+	// Device ID (if file is character or block special).
+	Rdev uint64
+
+	// For regular files, the file size in bytes.
+	// For symbolic links, the length in bytes of the
+	// pathname contained in the symbolic link.
+	Size int64
+
+	// Last data access timestamp.
+	Atim Timespec
+
+	// Last data modification timestamp.
+	Mtim Timespec
+
+	// Last file status change timestamp.
+	Ctim Timespec
+
+	// A file system-specific preferred I/O block size for this object.
+	Blksize int64
+
+	// Number of blocks allocated for this object.
+	Blocks int64
+
+	// File creation (birth) timestamp. [OSX only]
 	Birthtim Timespec
 }
 
-// FileSystemInterface is the interface that Cgofuse file systems must implement.
+// FileSystemInterface is the interface that all file systems must implement.
+// The file system will receive an Init() call when it is mounted and a Destroy()
+// call when it is unmounted (note that depending on how the file system is
+// terminated the file system may not receive the Destroy() call). All other
+// operations must return 0 on success or a FUSE error on failure. To return an
+// error return the NEGATIVE value of a particular error.  For example, to report
+// "file not found" return -fuse.ENOENT.
 type FileSystemInterface interface {
 	// Init is called when the file system is mounted.
 	Init()
@@ -438,99 +499,149 @@ func (self Error) Error() string {
 var _ error = (*Error)(nil)
 
 // FileSystemBase provides default implementations of the methods in FileSystemInterface.
+// The default implementations are either empty or return -ENOSYS to signal that the
+// file system does not implement a particular operation to the FUSE layer.
 type FileSystemBase struct {
 }
 
+// Init is called when the file system is mounted.
+// The FileSystemBase implementation does nothing.
 func (*FileSystemBase) Init() {
 }
 
+// Destroy is called when the file system is unmounted.
+// The FileSystemBase implementation does nothing.
 func (*FileSystemBase) Destroy() {
 }
 
+// Statfs gets file system statistics.
+// The FileSystemBase implementation returns -ENOSYS.
 func (*FileSystemBase) Statfs(path string, stat *Statfs_t) int {
 	return -ENOSYS
 }
 
+// Mknod creates a file node.
+// The FileSystemBase implementation returns -ENOSYS.
 func (*FileSystemBase) Mknod(path string, mode uint32, dev uint64) int {
 	return -ENOSYS
 }
 
+// Mkdir creates a directory.
+// The FileSystemBase implementation returns -ENOSYS.
 func (*FileSystemBase) Mkdir(path string, mode uint32) int {
 	return -ENOSYS
 }
 
+// Unlink removes a file.
+// The FileSystemBase implementation returns -ENOSYS.
 func (*FileSystemBase) Unlink(path string) int {
 	return -ENOSYS
 }
 
+// Rmdir removes a directory.
+// The FileSystemBase implementation returns -ENOSYS.
 func (*FileSystemBase) Rmdir(path string) int {
 	return -ENOSYS
 }
 
+// Link creates a hard link to a file.
+// The FileSystemBase implementation returns -ENOSYS.
 func (*FileSystemBase) Link(oldpath string, newpath string) int {
 	return -ENOSYS
 }
 
+// Symlink creates a symbolic link.
+// The FileSystemBase implementation returns -ENOSYS.
 func (*FileSystemBase) Symlink(target string, newpath string) int {
 	return -ENOSYS
 }
 
+// Readlink reads the target of a symbolic link.
+// The FileSystemBase implementation returns -ENOSYS.
 func (*FileSystemBase) Readlink(path string) (int, string) {
 	return -ENOSYS, ""
 }
 
+// Rename renames a file.
+// The FileSystemBase implementation returns -ENOSYS.
 func (*FileSystemBase) Rename(oldpath string, newpath string) int {
 	return -ENOSYS
 }
 
+// Chmod changes the permission bits of a file.
+// The FileSystemBase implementation returns -ENOSYS.
 func (*FileSystemBase) Chmod(path string, mode uint32) int {
 	return -ENOSYS
 }
 
+// Chown changes the owner and group of a file.
+// The FileSystemBase implementation returns -ENOSYS.
 func (*FileSystemBase) Chown(path string, uid uint32, gid uint32) int {
 	return -ENOSYS
 }
 
+// Utimens changes the access and modification times of a file.
+// The FileSystemBase implementation returns -ENOSYS.
 func (*FileSystemBase) Utimens(path string, tmsp []Timespec) int {
 	return -ENOSYS
 }
 
+// Access checks file access permissions.
+// The FileSystemBase implementation returns -ENOSYS.
 func (*FileSystemBase) Access(path string, mask uint32) int {
 	return -ENOSYS
 }
 
+// Create creates and opens a file.
+// The FileSystemBase implementation returns -ENOSYS.
 func (*FileSystemBase) Create(path string, flags int, mode uint32) (int, uint64) {
 	return -ENOSYS, ^uint64(0)
 }
 
+// Open opens a file.
+// The FileSystemBase implementation returns -ENOSYS.
 func (*FileSystemBase) Open(path string, flags int) (int, uint64) {
 	return -ENOSYS, ^uint64(0)
 }
 
+// Getattr gets file attributes.
+// The FileSystemBase implementation returns -ENOSYS.
 func (*FileSystemBase) Getattr(path string, stat *Stat_t, fh uint64) int {
 	return -ENOSYS
 }
 
+// Truncate changes the size of a file.
+// The FileSystemBase implementation returns -ENOSYS.
 func (*FileSystemBase) Truncate(path string, size int64, fh uint64) int {
 	return -ENOSYS
 }
 
+// Read reads data from a file.
+// The FileSystemBase implementation returns -ENOSYS.
 func (*FileSystemBase) Read(path string, buff []byte, ofst int64, fh uint64) int {
 	return -ENOSYS
 }
 
+// Write writes data to a file.
+// The FileSystemBase implementation returns -ENOSYS.
 func (*FileSystemBase) Write(path string, buff []byte, ofst int64, fh uint64) int {
 	return -ENOSYS
 }
 
+// Flush flushes cached file data.
+// The FileSystemBase implementation returns -ENOSYS.
 func (*FileSystemBase) Flush(path string, fh uint64) int {
 	return -ENOSYS
 }
 
+// Release closes an open file.
+// The FileSystemBase implementation returns -ENOSYS.
 func (*FileSystemBase) Release(path string, fh uint64) int {
 	return -ENOSYS
 }
 
+// Fsync synchronizes file contents.
+// The FileSystemBase implementation returns -ENOSYS.
 func (*FileSystemBase) Fsync(path string, datasync bool, fh uint64) int {
 	return -ENOSYS
 }
@@ -541,10 +652,14 @@ func (*FileSystemBase) Lock(path string, fh uint64, cmd int, lock Flock_t) int {
 }
 */
 
+// Opendir opens a directory.
+// The FileSystemBase implementation returns -ENOSYS.
 func (*FileSystemBase) Opendir(path string) (int, uint64) {
 	return -ENOSYS, ^uint64(0)
 }
 
+// Readdir reads a directory.
+// The FileSystemBase implementation returns -ENOSYS.
 func (*FileSystemBase) Readdir(path string,
 	fill func(name string, stat *Stat_t, ofst int64) bool,
 	ofst int64,
@@ -552,26 +667,38 @@ func (*FileSystemBase) Readdir(path string,
 	return -ENOSYS
 }
 
+// Releasedir closes an open directory.
+// The FileSystemBase implementation returns -ENOSYS.
 func (*FileSystemBase) Releasedir(path string, fh uint64) int {
 	return -ENOSYS
 }
 
+// Fsyncdir synchronizes directory contents.
+// The FileSystemBase implementation returns -ENOSYS.
 func (*FileSystemBase) Fsyncdir(path string, datasync bool, fh uint64) int {
 	return -ENOSYS
 }
 
+// Setxattr sets extended attributes.
+// The FileSystemBase implementation returns -ENOSYS.
 func (*FileSystemBase) Setxattr(path string, name string, value []byte, flags int) int {
 	return -ENOSYS
 }
 
+// Getxattr gets extended attributes.
+// The FileSystemBase implementation returns -ENOSYS.
 func (*FileSystemBase) Getxattr(path string, name string, fill func(value []byte) bool) int {
 	return -ENOSYS
 }
 
+// Removexattr removes extended attributes.
+// The FileSystemBase implementation returns -ENOSYS.
 func (*FileSystemBase) Removexattr(path string, name string) int {
 	return -ENOSYS
 }
 
+// Listxattr lists extended attributes.
+// The FileSystemBase implementation returns -ENOSYS.
 func (*FileSystemBase) Listxattr(path string, fill func(name string) bool) int {
 	return -ENOSYS
 }
