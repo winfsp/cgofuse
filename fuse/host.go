@@ -37,31 +37,50 @@ package fuse
 
 #include <windows.h>
 
+static PVOID cgofuse_init_slow(int hardfail);
+static VOID  cgofuse_init_fail(VOID);
 static PVOID cgofuse_init_winfsp(VOID);
-static PVOID cgofuse_init_fail();
-static inline VOID cgofuse_init(VOID)
+
+static SRWLOCK cgofuse_lock = SRWLOCK_INIT;
+static PVOID cgofuse_module = 0;
+
+static inline PVOID cgofuse_init_fast(int hardfail)
 {
-	static SRWLOCK Lock = SRWLOCK_INIT;
-	static PVOID _Module = 0;
-	PVOID Module = _Module;
+	PVOID Module = cgofuse_module;
 	MemoryBarrier();
 	if (0 == Module)
+		Module = cgofuse_init_slow(hardfail);
+	return Module;
+}
+
+static PVOID cgofuse_init_slow(int hardfail)
+{
+	PVOID Module;
+	AcquireSRWLockExclusive(&cgofuse_lock);
+	Module = cgofuse_module;
+	if (0 == Module)
 	{
-		AcquireSRWLockExclusive(&Lock);
-		Module = _Module;
-		if (0 == Module)
-		{
-			Module = cgofuse_init_winfsp();
-			MemoryBarrier();
-			_Module = Module;
-		}
-		ReleaseSRWLockExclusive(&Lock);
+		Module = cgofuse_init_winfsp();
+		MemoryBarrier();
+		cgofuse_module = Module;
 	}
+	ReleaseSRWLockExclusive(&cgofuse_lock);
+	if (0 == Module && hardfail)
+		cgofuse_init_fail();
+	return Module;
+}
+
+static VOID cgofuse_init_fail(VOID)
+{
+	static const char *message = "cgofuse: cannot find winfsp\n";
+	DWORD BytesTransferred;
+	WriteFile(GetStdHandle(STD_ERROR_HANDLE), message, lstrlenA(message), &BytesTransferred, 0);
+	ExitProcess(ERROR_DLL_NOT_FOUND);
 }
 
 #define FSP_FUSE_API                    static
 #define FSP_FUSE_API_NAME(api)          (* pfn_ ## api)
-#define FSP_FUSE_API_CALL(api)          (cgofuse_init(), pfn_ ## api)
+#define FSP_FUSE_API_CALL(api)          (cgofuse_init_fast(1), pfn_ ## api)
 #define FSP_FUSE_SYM(proto, ...)        static inline proto { __VA_ARGS__ }
 #include <fuse_common.h>
 #include <fuse.h>
@@ -129,7 +148,7 @@ static NTSTATUS FspLoad(PVOID *PModule)
 
 #define CGOFUSE_GET_API(h, n)           \
 	if (0 == (*(void **)&(pfn_ ## n) = GetProcAddress(Module, #n)))\
-		return cgofuse_init_fail();
+		return 0;
 
 static PVOID cgofuse_init_winfsp(VOID)
 {
@@ -138,7 +157,7 @@ static PVOID cgofuse_init_winfsp(VOID)
 
 	Result = FspLoad(&Module);
 	if (0 > Result)
-		return cgofuse_init_fail();
+		return 0;
 
 	// fuse_common.h
 	CGOFUSE_GET_API(h, fsp_fuse_version);
@@ -167,15 +186,6 @@ static PVOID cgofuse_init_winfsp(VOID)
 	CGOFUSE_GET_API(h, fsp_fuse_opt_match);
 
 	return Module;
-}
-
-static PVOID cgofuse_init_fail()
-{
-	static const char *message = "cgofuse: cannot find winfsp\n";
-	DWORD BytesTransferred;
-	WriteFile(GetStdHandle(STD_ERROR_HANDLE), message, lstrlenA(message), &BytesTransferred, 0);
-	ExitProcess(ERROR_DLL_NOT_FOUND);
-	return 0;
 }
 
 #endif
@@ -323,6 +333,15 @@ static int _hostGetxattr(char *path, char *name, char *value, size_t size,
 #define _hostSetxattr hostSetxattr
 #define _hostGetxattr hostGetxattr
 #endif
+
+static int hostInitializeFuse(void)
+{
+#if defined(__APPLE__) || defined(__linux__)
+	return 1;
+#elif defined(_WIN32)
+	return 0 != cgofuse_init_fast(0);
+#endif
+}
 
 static const char *hostMountpoint(int argc, char *argv[])
 {
@@ -891,6 +910,9 @@ func NewFileSystemHost(fsop FileSystemInterface) *FileSystemHost {
 // Mount mounts a file system.
 // The file system is considered mounted only after its Init() method has been called.
 func (host *FileSystemHost) Mount(args []string) bool {
+	if 0 == C.hostInitializeFuse() {
+		panic("cgofuse: cannot find winfsp")
+	}
 	argc := len(args) + 1
 	argv := make([]*C.char, argc+1)
 	argv[0] = C.CString(args[0])
