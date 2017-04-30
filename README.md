@@ -1,4 +1,4 @@
-# FUSE library for Go
+# Cross-platform FUSE library for Go
 
 [![Travis CI](https://img.shields.io/travis/billziss-gh/cgofuse.svg?label=osx/linux)](https://travis-ci.org/billziss-gh/cgofuse)
 [![AppVeyor](https://img.shields.io/appveyor/ci/billziss-gh/cgofuse.svg?label=windows)](https://ci.appveyor.com/project/billziss-gh/cgofuse)
@@ -26,7 +26,7 @@ Cgofuse currently runs on **OSX**, **Linux** and **Windows** (using [WinFsp](htt
     $ go install -v ./fuse ./examples/memfs ./examples/passthrough
     ```
 **Windows**
-- [WinFsp](https://github.com/billziss-gh/winfsp), gcc (e.g. from [Mingw-builds](http://mingw-w64.org/doku.php/download))
+- Prerequisites: [WinFsp](https://github.com/billziss-gh/winfsp), gcc (e.g. from [Mingw-builds](http://mingw-w64.org/doku.php/download))
 - Build:
     ```
     > cd cgofuse
