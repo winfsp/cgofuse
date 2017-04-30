@@ -15,6 +15,7 @@ build_script:
 - go install -v ./fuse ./examples/memfs ./examples/hellofs
 
 test_script:
+- go test ./fuse
 - git clone -q https://github.com/billziss-gh/winfsp.git C:\projects\winfsp
 - git -C C:\projects\winfsp checkout -q v1.0
 - call "%VS140COMNTOOLS%\..\..\VC\vcvarsall.bat" x64

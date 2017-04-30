@@ -13,7 +13,7 @@
 package fuse
 
 /*
-#cgo darwin CFLAGS: -DFUSE_USE_VERSION=28 -D_FILE_OFFSET_BITS=64 -I/usr/local/include/osxfuse
+#cgo darwin CFLAGS: -DFUSE_USE_VERSION=28 -D_FILE_OFFSET_BITS=64 -I/usr/local/include/osxfuse/fuse
 #cgo darwin LDFLAGS: -L/usr/local/lib -losxfuse
 #cgo linux CFLAGS: -DFUSE_USE_VERSION=28 -D_FILE_OFFSET_BITS=64 -I/usr/include/fuse
 #cgo linux LDFLAGS: -lfuse
@@ -28,6 +28,9 @@ package fuse
 
 #if defined(__APPLE__) || defined(__linux__)
 
+#include <spawn.h>
+#include <sys/mount.h>
+#include <sys/wait.h>
 #include <fuse.h>
 
 #elif defined(_WIN32)
@@ -127,14 +130,12 @@ static PVOID cgofuse_init_winfsp(VOID)
 	if (0 > Result)
 		return cgofuse_init_fail();
 
-#if 0
 	// fuse_common.h
 	CGOFUSE_GET_API(h, fsp_fuse_version);
 	CGOFUSE_GET_API(h, fsp_fuse_mount);
 	CGOFUSE_GET_API(h, fsp_fuse_unmount);
 	CGOFUSE_GET_API(h, fsp_fuse_parse_cmdline);
 	CGOFUSE_GET_API(h, fsp_fuse_ntstatus_from_errno);
-#endif
 
 	// fuse.h
 	CGOFUSE_GET_API(h, fsp_fuse_main_real);
@@ -146,7 +147,6 @@ static PVOID cgofuse_init_winfsp(VOID)
 	CGOFUSE_GET_API(h, fsp_fuse_exit);
 	CGOFUSE_GET_API(h, fsp_fuse_get_context);
 
-#if 0
 	// fuse_opt.h
 	CGOFUSE_GET_API(h, fsp_fuse_opt_parse);
 	CGOFUSE_GET_API(h, fsp_fuse_opt_add_arg);
@@ -155,7 +155,6 @@ static PVOID cgofuse_init_winfsp(VOID)
 	CGOFUSE_GET_API(h, fsp_fuse_opt_add_opt);
 	CGOFUSE_GET_API(h, fsp_fuse_opt_add_opt_escaped);
 	CGOFUSE_GET_API(h, fsp_fuse_opt_match);
-#endif
 
 	return Module;
 }
@@ -311,7 +310,17 @@ static int _hostGetxattr(char *path, char *name, char *value, size_t size,
 #define _hostGetxattr hostGetxattr
 #endif
 
-static inline struct fuse_operations *hostFsop(void)
+static const char *hostMountpoint(int argc, char *argv[])
+{
+	struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
+	char *mountpoint;
+	if (-1 == fuse_parse_cmdline(&args, &mountpoint, 0, 0))
+		return 0;
+	fuse_opt_free_args(&args);
+	return mountpoint;
+}
+
+static int hostMount(int argc, char *argv[], void *data)
 {
 #if defined(__GNUC__)
 #pragma GCC diagnostic push
@@ -355,15 +364,44 @@ static inline struct fuse_operations *hostFsop(void)
 		//.lock = (int (*)())hostFlock,
 		.utimens = (int (*)())hostUtimens,
 	};
-	return &fsop;
 #if defined(__GNUC__)
 #pragma GCC diagnostic pop
 #endif
+	return 0 == fuse_main_real(argc, argv, &fsop, sizeof fsop, data);
 }
 
-static inline size_t hostFsopSize(void)
+static int hostUnmount(struct fuse *fuse, char *mountpoint)
 {
-	return sizeof(struct fuse_operations);
+#if defined(__APPLE__)
+	if (0 == mountpoint)
+		return 0;
+	// darwin: unmount is available to non-root
+	return 0 == unmount(mountpoint, MNT_FORCE);
+#elif defined(__linux__)
+	if (0 == mountpoint)
+		return 0;
+	// linux: try umount2 first in case we are root
+	if (0 == umount2(mountpoint, MNT_FORCE))
+		return 1;
+	// linux: umount2 failed; try fusermount
+	char *argv[] =
+	{
+		"/bin/fusermount",
+		"-u",
+		mountpoint,
+		0,
+	};
+	pid_t pid = 0;
+	int status = 0;
+	return
+		0 == posix_spawn(&pid, argv[0], 0, 0, argv, 0) &&
+		pid == waitpid(pid, &status, 0) &&
+		WIFEXITED(status) && 0 == WEXITSTATUS(status);
+#elif defined(_WIN32)
+	// windows/winfsp: fuse_exit just works from anywhere
+	fuse_exit(fuse);
+	return 1;
+#endif
 }
 */
 import "C"
@@ -374,6 +412,7 @@ type FileSystemHost struct {
 	fsop FileSystemInterface
 	hndl unsafe.Pointer
 	fuse *C.struct_fuse
+	mntp *C.char
 }
 
 func copyCstatvfsFromFusestatfs(dst *C.fuse_statvfs_t, src *Statfs_t) {
@@ -832,7 +871,7 @@ func hostUtimens(path0 *C.char, tmsp0 *C.fuse_timespec_t) (errc0 C.int) {
 
 // NewFileSystemHost creates a file system host.
 func NewFileSystemHost(fsop FileSystemInterface) *FileSystemHost {
-	return &FileSystemHost{fsop, nil, nil}
+	return &FileSystemHost{fsop, nil, nil, nil}
 }
 
 // Mount mounts a file system.
@@ -851,17 +890,21 @@ func (host *FileSystemHost) Mount(args []string) bool {
 	defer delHandleForInterface(host.hndl)
 	hosthndl := newHandleForInterface(host)
 	defer delHandleForInterface(hosthndl)
+	host.mntp = C.hostMountpoint(C.int(argc), &argv[0])
 	defer func() {
+		C.free(unsafe.Pointer(host.mntp))
+		host.mntp = nil
 		host.fuse = nil
 	}()
-	return 0 == C.fuse_main_real(C.int(argc), &argv[0], C.hostFsop(), C.hostFsopSize(), hosthndl)
+	return 0 != C.hostMount(C.int(argc), &argv[0], hosthndl)
 }
 
-// Mount unmounts a file system.
-func (host *FileSystemHost) Unmount() {
-	if nil != host.fuse {
-		C.fuse_exit(host.fuse)
+// Unmount unmounts a file system.
+func (host *FileSystemHost) Unmount() bool {
+	if nil == host.fuse {
+		return false
 	}
+	return 0 != C.hostUnmount(host.fuse, host.mntp)
 }
 
 // Getcontext gets information related to a file system operation.
