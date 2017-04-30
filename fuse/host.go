@@ -171,6 +171,10 @@ static PVOID cgofuse_init_winfsp(VOID)
 
 static PVOID cgofuse_init_fail()
 {
+	static const char *message = "cgofuse: cannot find winfsp\n";
+	DWORD BytesTransferred;
+	WriteFile(GetStdHandle(STD_ERROR_HANDLE), message, lstrlenA(message), &BytesTransferred, 0);
+	ExitProcess(ERROR_DLL_NOT_FOUND);
 	return 0;
 }
 
