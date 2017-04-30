@@ -42,22 +42,32 @@ static PVOID cgofuse_init_fail();
 static inline VOID cgofuse_init(VOID)
 {
 	static SRWLOCK Lock = SRWLOCK_INIT;
-	static PVOID Module = 0;
-	AcquireSRWLockExclusive(&Lock);
+	static PVOID _Module = 0;
+	PVOID Module = _Module;
+	MemoryBarrier();
 	if (0 == Module)
-		Module = cgofuse_init_winfsp();
-	ReleaseSRWLockExclusive(&Lock);
+	{
+		AcquireSRWLockExclusive(&Lock);
+		Module = _Module;
+		if (0 == Module)
+		{
+			Module = cgofuse_init_winfsp();
+			MemoryBarrier();
+			_Module = Module;
+		}
+		ReleaseSRWLockExclusive(&Lock);
+	}
 }
 
 #define FSP_FUSE_API                    static
 #define FSP_FUSE_API_NAME(api)          (* pfn_ ## api)
 #define FSP_FUSE_API_CALL(api)          (cgofuse_init(), pfn_ ## api)
 #define FSP_FUSE_SYM(proto, ...)        static inline proto { __VA_ARGS__ }
-//#include <fuse_common.h>
+#include <fuse_common.h>
 #include <fuse.h>
-//#include <fuse_opt.h>
+#include <fuse_opt.h>
 
-static inline NTSTATUS FspLoad(PVOID *PModule)
+static NTSTATUS FspLoad(PVOID *PModule)
 {
 #if defined(_WIN64)
 #define FSP_DLLNAME                     "winfsp-x64.dll"
