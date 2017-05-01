@@ -371,24 +371,21 @@ func (self *Memfs) Setxattr(path string, name string, value []byte, flags int) (
 	return 0
 }
 
-func (self *Memfs) Getxattr(path string, name string, fill func(value []byte) bool) (errc int) {
-	defer trace(path, name, fill)(&errc)
+func (self *Memfs) Getxattr(path string, name string) (errc int, xatr []byte) {
+	defer trace(path, name)(&errc, &xatr)
 	defer self.synchronize()()
 	_, _, node := self.lookupNode(path, nil)
 	if nil == node {
-		return -fuse.ENOENT
+		return -fuse.ENOENT, nil
 	}
 	if "com.apple.ResourceFork" == name {
-		return -fuse.ENOTSUP
+		return -fuse.ENOTSUP, nil
 	}
 	xatr, ok := node.xatr[name]
 	if !ok {
-		return -fuse.ENOATTR
+		return -fuse.ENOATTR, nil
 	}
-	if !fill(xatr) {
-		return -fuse.ERANGE
-	}
-	return 0
+	return 0, xatr
 }
 
 func (self *Memfs) Removexattr(path string, name string) (errc int) {

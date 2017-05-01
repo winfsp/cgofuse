@@ -477,7 +477,7 @@ type FileSystemInterface interface {
 	Setxattr(path string, name string, value []byte, flags int) int
 
 	// Getxattr gets extended attributes.
-	Getxattr(path string, name string, fill func(value []byte) bool) int
+	Getxattr(path string, name string) (int, []byte)
 
 	// Removexattr removes extended attributes.
 	Removexattr(path string, name string) int
@@ -687,8 +687,8 @@ func (*FileSystemBase) Setxattr(path string, name string, value []byte, flags in
 
 // Getxattr gets extended attributes.
 // The FileSystemBase implementation returns -ENOSYS.
-func (*FileSystemBase) Getxattr(path string, name string, fill func(value []byte) bool) int {
-	return -ENOSYS
+func (*FileSystemBase) Getxattr(path string, name string) (int, []byte) {
+	return -ENOSYS, nil
 }
 
 // Removexattr removes extended attributes.
