@@ -925,7 +925,8 @@ func NewFileSystemHost(fsop FileSystemInterface) *FileSystemHost {
 	return host
 }
 
-// SetCapCaseInsensitive informs the host that the hosted file system is case insensitive.
+// SetCapCaseInsensitive informs the host that the hosted file system is case insensitive
+// [OSX and Windows only].
 func (host *FileSystemHost) SetCapCaseInsensitive(value bool) {
 	host.capCaseInsensitive = value
 }
