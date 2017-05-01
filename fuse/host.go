@@ -23,6 +23,7 @@ package fuse
 #error platform not supported
 #endif
 
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -244,6 +245,22 @@ extern int hostFgetattr(char *path, fuse_stat_t *stbuf, struct fuse_file_info *f
 //extern int hostLock(char *path, struct fuse_file_info *fi, int cmd, struct fuse_flock *lock);
 extern int hostUtimens(char *path, fuse_timespec_t tv[2]);
 
+static inline void hostAsgnCconninfo(struct fuse_conn_info *conn,
+	bool capCaseInsensitive,
+	bool capReaddirPlus)
+{
+#if defined(__APPLE__)
+	if (capCaseInsensitive)
+		FUSE_ENABLE_CASE_INSENSITIVE(conn);
+#elif defined(__linux__)
+#elif defined(_WIN32)
+	if (capCaseInsensitive)
+		conn->want |= conn->capable & FSP_FUSE_CAP_CASE_INSENSITIVE;
+	if (capReaddirPlus)
+		conn->want |= conn->capable & FSP_FUSE_CAP_READDIR_PLUS;
+#endif
+}
+
 static inline void hostCstatvfsFromFusestatfs(fuse_statvfs_t *stbuf,
 	uint64_t bsize,
 	uint64_t frsize,
@@ -446,6 +463,8 @@ type FileSystemHost struct {
 	hndl unsafe.Pointer
 	fuse *C.struct_fuse
 	mntp *C.char
+
+	capCaseInsensitive, capReaddirPlus bool
 }
 
 func copyCstatvfsFromFusestatfs(dst *C.fuse_statvfs_t, src *Statfs_t) {
@@ -821,6 +840,9 @@ func hostInit(conn0 *C.struct_fuse_conn_info) (user_data unsafe.Pointer) {
 	host := getInterfaceForHandle(fctx.private_data).(*FileSystemHost)
 	host.fuse = fctx.fuse
 	user_data = host.hndl
+	C.hostAsgnCconninfo(conn0,
+		C.bool(host.capCaseInsensitive),
+		C.bool(host.capReaddirPlus))
 	host.fsop.Init()
 	return
 }
@@ -898,7 +920,21 @@ func hostUtimens(path0 *C.char, tmsp0 *C.fuse_timespec_t) (errc0 C.int) {
 
 // NewFileSystemHost creates a file system host.
 func NewFileSystemHost(fsop FileSystemInterface) *FileSystemHost {
-	return &FileSystemHost{fsop, nil, nil, nil}
+	host := &FileSystemHost{}
+	host.fsop = fsop
+	return host
+}
+
+// SetCapCaseInsensitive informs the host that the hosted file system is case insensitive.
+func (host *FileSystemHost) SetCapCaseInsensitive(value bool) {
+	host.capCaseInsensitive = value
+}
+
+// SetCapReaddirPlus informs the host that the hosted file system has the readdir-plus
+// capability [WinFsp only]. A file system that has the readdir-plus capability can send
+// full stat information during Readdir, thus avoiding extraneous Getattr calls.
+func (host *FileSystemHost) SetCapReaddirPlus(value bool) {
+	host.capReaddirPlus = value
 }
 
 // Mount mounts a file system.

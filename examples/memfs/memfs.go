@@ -540,5 +540,6 @@ func NewMemfs() *Memfs {
 func main() {
 	memfs := NewMemfs()
 	host := fuse.NewFileSystemHost(memfs)
+	host.SetCapReaddirPlus(true)
 	host.Mount(os.Args)
 }
