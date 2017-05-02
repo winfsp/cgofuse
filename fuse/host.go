@@ -437,6 +437,7 @@ static int hostUnmount(struct fuse *fuse, char *mountpoint)
 	char *argv[] =
 	{
 		"/bin/fusermount",
+		"-z",
 		"-u",
 		mountpoint,
 		0,
