@@ -361,24 +361,24 @@ static int hostInitializeFuse(void)
 }
 
 static int hostMountpointOptProc(void *opt_data, const char *arg, int key,
-    struct fuse_args *outargs)
+	struct fuse_args *outargs)
 {
 	char **pmountpoint = opt_data;
-    switch (key)
-    {
-    default:
-        return 1;
-    case FUSE_OPT_KEY_NONOPT:
-        if (0 == *pmountpoint)
-        {
-            size_t size = strlen(arg) + 1;
-            *pmountpoint = malloc(size);
-            if (0 == *pmountpoint)
-                return -1;
-            memcpy(*pmountpoint, arg, size);
-        }
-        return 1;
-    }
+	switch (key)
+	{
+	default:
+		return 1;
+	case FUSE_OPT_KEY_NONOPT:
+		if (0 == *pmountpoint)
+		{
+			size_t size = strlen(arg) + 1;
+			*pmountpoint = malloc(size);
+			if (0 == *pmountpoint)
+				return -1;
+			memcpy(*pmountpoint, arg, size);
+		}
+		return 1;
+	}
 }
 
 static const char *hostMountpoint(int argc, char *argv[])
@@ -386,8 +386,8 @@ static const char *hostMountpoint(int argc, char *argv[])
 	static struct fuse_opt opts[] = { FUSE_OPT_END };
 	struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
 	char *mountpoint = 0;
-    if (-1 == fuse_opt_parse(&args, &mountpoint, opts, hostMountpointOptProc))
-        return 0;
+	if (-1 == fuse_opt_parse(&args, &mountpoint, opts, hostMountpointOptProc))
+		return 0;
 	fuse_opt_free_args(&args);
 	return mountpoint;
 }
