@@ -431,7 +431,7 @@ static int hostUnmount(struct fuse *fuse, char *mountpoint)
 	if (0 == mountpoint)
 		return 0;
 	// linux: try umount2 first in case we are root
-	if (0 == umount2(mountpoint, MNT_FORCE))
+	if (0 == umount2(mountpoint, MNT_DETACH))
 		return 1;
 	// linux: umount2 failed; try fusermount
 	char *argv[] =
