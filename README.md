@@ -57,4 +57,7 @@ Cgofuse is regularly built and tested on [Travis CI](https://travis-ci.org/billz
 **Windows**
 - [winfsp-tests](https://github.com/billziss-gh/winfsp/tree/master/tst/winfsp-tests)
 
+## Contributors
 
+- Bill Zissimopoulos \<billziss at navimatics.com>
+- Nick Craig-Wood \<nick at craig-wood.com>
