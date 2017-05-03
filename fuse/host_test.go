@@ -23,6 +23,15 @@ import (
 
 type testfs struct {
 	FileSystemBase
+	init, dstr int
+}
+
+func (self *testfs) Init() {
+	self.init++
+}
+
+func (self *testfs) Destroy() {
+	self.dstr++
 }
 
 func (self *testfs) Getattr(path string, stat *Stat_t, fh uint64) (errc int) {
@@ -44,7 +53,7 @@ func (self *testfs) Readdir(path string,
 	return 0
 }
 
-func TestHost(t *testing.T) {
+func testHost(t *testing.T, unmount bool) {
 	path, err := ioutil.TempDir("", "test")
 	if nil != err {
 		panic(err)
@@ -60,14 +69,20 @@ func TestHost(t *testing.T) {
 	}
 	done := make(chan bool)
 	tmch := time.After(3 * time.Second)
-	host := NewFileSystemHost(&testfs{})
+	tstf := &testfs{}
+	host := NewFileSystemHost(tstf)
 	mres := false
+	ures := false
 	go func() {
 		mres = host.Mount([]string{"test", mntp})
 		done <- true
 	}()
 	<-tmch
-	ures := host.Unmount()
+	if unmount {
+		ures = host.Unmount()
+	} else {
+		ures = sendInterrupt()
+	}
 	<-done
 	if !mres {
 		t.Error("Mount failed")
@@ -75,4 +90,18 @@ func TestHost(t *testing.T) {
 	if !ures {
 		t.Error("Unmount failed")
 	}
+	if 1 != tstf.init {
+		t.Errorf("Init() called %v times; expected 1", tstf.init)
+	}
+	if 1 != tstf.dstr {
+		t.Errorf("Destroy() called %v times; expected 1", tstf.dstr)
+	}
+}
+
+func TestUnmount(t *testing.T) {
+	testHost(t, true)
+}
+
+func TestSignal(t *testing.T) {
+	testHost(t, false)
 }

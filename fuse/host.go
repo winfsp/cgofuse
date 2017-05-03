@@ -479,7 +479,11 @@ static int hostUnmount(struct fuse *fuse, char *mountpoint)
 */
 import "C"
 import (
+	"os"
+	"os/signal"
+	"runtime"
 	"sync"
+	"syscall"
 	"unsafe"
 )
 
@@ -488,6 +492,7 @@ type FileSystemHost struct {
 	fsop FileSystemInterface
 	fuse *C.struct_fuse
 	mntp *C.char
+	sigc chan os.Signal
 
 	capCaseInsensitive, capReaddirPlus bool
 }
@@ -902,6 +907,9 @@ func hostInit(conn0 *C.struct_fuse_conn_info) (user_data unsafe.Pointer) {
 		C.bool(host.capCaseInsensitive),
 		C.bool(host.capReaddirPlus))
 	host.fsop.Init()
+	if nil != host.sigc {
+		signal.Notify(host.sigc, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM)
+	}
 	return
 }
 
@@ -909,6 +917,9 @@ func hostInit(conn0 *C.struct_fuse_conn_info) (user_data unsafe.Pointer) {
 func hostDestroy(user_data unsafe.Pointer) {
 	defer recover()
 	host := hostHandleGet(user_data)
+	if nil != host.sigc {
+		signal.Stop(host.sigc)
+	}
 	host.fuse = nil
 	host.fsop.Destroy()
 }
@@ -998,7 +1009,8 @@ func (host *FileSystemHost) SetCapReaddirPlus(value bool) {
 }
 
 // Mount mounts a file system.
-// The file system is considered mounted only after its Init() method has been called.
+// The file system is considered mounted only after its Init() method has been called
+// and before its Destroy() method has been called.
 func (host *FileSystemHost) Mount(args []string) bool {
 	if 0 == C.hostInitializeFuse() {
 		panic("cgofuse: cannot find winfsp")
@@ -1020,11 +1032,27 @@ func (host *FileSystemHost) Mount(args []string) bool {
 		C.free(unsafe.Pointer(host.mntp))
 		host.mntp = nil
 	}()
+	if "windows" != runtime.GOOS {
+		done := make(chan bool)
+		defer func() {
+			<-done
+		}()
+		host.sigc = make(chan os.Signal, 1)
+		defer close(host.sigc)
+		go func() {
+			_, ok := <-host.sigc
+			if ok {
+				host.Unmount()
+			}
+			close(done)
+		}()
+	}
 	return 0 != C.hostMount(C.int(argc), &argv[0], hndl)
 }
 
 // Unmount unmounts a mounted file system.
-// Unmount may be called at any time after the Init() method has been called.
+// Unmount may be called at any time after the Init() method has been called
+// and before the Destroy() method has been called.
 func (host *FileSystemHost) Unmount() bool {
 	if nil == host.fuse {
 		return false
