@@ -895,9 +895,9 @@ func hostFsyncdir(path0 *C.char, datasync C.int, fi0 *C.struct_fuse_file_info) (
 func hostInit(conn0 *C.struct_fuse_conn_info) (user_data unsafe.Pointer) {
 	defer recover()
 	fctx := C.fuse_get_context()
-	host := hostHandleGet(fctx.private_data)
-	host.fuse = fctx.fuse
 	user_data = fctx.private_data
+	host := hostHandleGet(user_data)
+	host.fuse = fctx.fuse
 	C.hostAsgnCconninfo(conn0,
 		C.bool(host.capCaseInsensitive),
 		C.bool(host.capReaddirPlus))
@@ -908,8 +908,9 @@ func hostInit(conn0 *C.struct_fuse_conn_info) (user_data unsafe.Pointer) {
 //export hostDestroy
 func hostDestroy(user_data unsafe.Pointer) {
 	defer recover()
-	fsop := hostHandleGet(user_data).fsop
-	fsop.Destroy()
+	host := hostHandleGet(user_data)
+	host.fuse = nil
+	host.fsop.Destroy()
 }
 
 //export hostAccess
@@ -1018,7 +1019,6 @@ func (host *FileSystemHost) Mount(args []string) bool {
 	defer func() {
 		C.free(unsafe.Pointer(host.mntp))
 		host.mntp = nil
-		host.fuse = nil
 	}()
 	return 0 != C.hostMount(C.int(argc), &argv[0], hndl)
 }
