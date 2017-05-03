@@ -99,7 +99,9 @@ func testHost(t *testing.T, unmount bool) {
 }
 
 func TestUnmount(t *testing.T) {
-	testHost(t, true)
+	if "windows" != runtime.GOOS {
+		testHost(t, true)
+	}
 }
 
 func TestSignal(t *testing.T) {

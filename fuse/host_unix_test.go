@@ -1,5 +1,7 @@
+// +build darwin linux
+
 /*
- * host_test_unix.go
+ * host_unix_test.go
  *
  * Copyright 2017 Bill Zissimopoulos
  */
@@ -9,8 +11,6 @@
  * It is licensed under the MIT license. The full license text can be found
  * in the License.txt file at the root of this project.
  */
-
-// +build darwin, linux
 
 package fuse
 

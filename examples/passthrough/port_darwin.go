@@ -1,3 +1,5 @@
+// +build darwin
+
 /*
  * struct_darwin.go
  *
@@ -9,8 +11,6 @@
  * It is licensed under the MIT license. The full license text can be found
  * in the License.txt file at the root of this project.
  */
-
-// +build darwin
 
 package main
 

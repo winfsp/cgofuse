@@ -1,5 +1,7 @@
+// +build windows
+
 /*
- * host_test_unix.go
+ * host_windows_test.go
  *
  * Copyright 2017 Bill Zissimopoulos
  */
@@ -10,17 +12,16 @@
  * in the License.txt file at the root of this project.
  */
 
-// +build windows
-
 package fuse
 
 import (
+	"os"
 	"syscall"
 )
 
 func sendInterrupt() bool {
 	dll := syscall.MustLoadDLL("kernel32")
 	prc := dll.MustFindProc("GenerateConsoleCtrlEvent")
-	r, _, _ := p.Call(syscall.CTRL_BREAK_EVENT, ^uintptr(0))
+	r, _, _ := prc.Call(syscall.CTRL_BREAK_EVENT, uintptr(os.Getpid()))
 	return 0 != r
 }
