@@ -906,10 +906,10 @@ func hostInit(conn0 *C.struct_fuse_conn_info) (user_data unsafe.Pointer) {
 	C.hostAsgnCconninfo(conn0,
 		C.bool(host.capCaseInsensitive),
 		C.bool(host.capReaddirPlus))
-	host.fsop.Init()
 	if nil != host.sigc {
 		signal.Notify(host.sigc, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM)
 	}
+	host.fsop.Init()
 	return
 }
 
@@ -917,11 +917,11 @@ func hostInit(conn0 *C.struct_fuse_conn_info) (user_data unsafe.Pointer) {
 func hostDestroy(user_data unsafe.Pointer) {
 	defer recover()
 	host := hostHandleGet(user_data)
+	host.fsop.Destroy()
 	if nil != host.sigc {
 		signal.Stop(host.sigc)
 	}
 	host.fuse = nil
-	host.fsop.Destroy()
 }
 
 //export hostAccess
