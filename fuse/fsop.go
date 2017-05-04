@@ -327,7 +327,7 @@ type Statfs_t struct {
 	Namemax uint64
 }
 
-// Stat contains file metadata information.
+// Stat_t contains file metadata information.
 // This structure is analogous to the POSIX struct stat.
 // Not all fields are honored by all FUSE implementations.
 type Stat_t struct {
@@ -375,6 +375,27 @@ type Stat_t struct {
 	// File creation (birth) timestamp. [OSX only]
 	Birthtim Timespec
 }
+
+/*
+// Lock_t contains file locking information.
+// This structure is analogous to the POSIX struct flock.
+type Lock_t struct {
+	// Type of lock; F_RDLCK, F_WRLCK, F_UNLCK.
+	Type int16
+
+	// Flag for starting offset.
+	Whence int16
+
+	// Relative offset in bytes.
+	Start int64
+
+	// Size; if 0 then until EOF.
+	Len int64
+
+	// Process ID of the process holding the lock
+	Pid int
+}
+*/
 
 // FileSystemInterface is the interface that all file systems must implement.
 // The file system will receive an Init() call when it is mounted and a Destroy()
@@ -456,7 +477,8 @@ type FileSystemInterface interface {
 	// Fsync synchronizes file contents.
 	Fsync(path string, datasync bool, fh uint64) int
 
-	//Lock(path string, fh uint64, cmd int, lock Flock_t) int
+	// Lock performs a file locking operation.
+	//Lock(path string, cmd int, lock *Lock_t, fh uint64) int
 
 	// Opendir opens a directory.
 	Opendir(path string) (int, uint64)
@@ -647,7 +669,9 @@ func (*FileSystemBase) Fsync(path string, datasync bool, fh uint64) int {
 }
 
 /*
-func (*FileSystemBase) Lock(path string, fh uint64, cmd int, lock Flock_t) int {
+// Lock performs a file locking operation.
+// The FileSystemBase implementation returns -ENOSYS.
+func (*FileSystemBase) Lock(path string, cmd int, lock *Lock_t, fh uint64) int {
 	return -ENOSYS
 }
 */
