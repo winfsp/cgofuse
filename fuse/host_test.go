@@ -74,7 +74,7 @@ func testHost(t *testing.T, unmount bool) {
 	mres := false
 	ures := false
 	go func() {
-		mres = host.Mount([]string{"test", mntp})
+		mres = host.Mount(mntp, nil)
 		done <- true
 	}()
 	<-tmch

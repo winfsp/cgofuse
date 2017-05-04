@@ -541,5 +541,5 @@ func main() {
 	memfs := NewMemfs()
 	host := fuse.NewFileSystemHost(memfs)
 	host.SetCapReaddirPlus(true)
-	host.Mount(os.Args)
+	host.Mount("", os.Args[1:])
 }

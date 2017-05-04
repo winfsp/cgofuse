@@ -1002,36 +1002,90 @@ func (host *FileSystemHost) SetCapCaseInsensitive(value bool) {
 }
 
 // SetCapReaddirPlus informs the host that the hosted file system has the readdir-plus
-// capability [WinFsp only]. A file system that has the readdir-plus capability can send
+// capability [Windows only]. A file system that has the readdir-plus capability can send
 // full stat information during Readdir, thus avoiding extraneous Getattr calls.
 func (host *FileSystemHost) SetCapReaddirPlus(value bool) {
 	host.capReaddirPlus = value
 }
 
-// Mount mounts a file system.
+// Mount mounts a file system on the given mountpoint with the mount options in opts.
+//
+// Many of the mount options in opts are specific to the underlying FUSE implementation.
+// Some of the common options include:
+//
+//     -h   --help            print help
+//     -V   --version         print FUSE version
+//     -d   -o debug          enable FUSE debug output
+//     -s                     disable multi-threaded operation
+//
+// Please refer to the individual FUSE implementation documentation for additional options.
+//
+// It is allowed for the mountpoint to be the empty string ("") in which case opts is assumed
+// to contain the mountpoint. It is also allowed for opts to be nil, although in this case the
+// mountpoint must be non-empty.
+//
 // The file system is considered mounted only after its Init() method has been called
 // and before its Destroy() method has been called.
-func (host *FileSystemHost) Mount(args []string) bool {
+func (host *FileSystemHost) Mount(mountpoint string, opts []string) bool {
 	if 0 == C.hostInitializeFuse() {
 		panic("cgofuse: cannot find winfsp")
 	}
-	argc := len(args) + 1
-	argv := make([]*C.char, argc+1)
-	argv[0] = C.CString(args[0])
-	defer C.free(unsafe.Pointer(argv[0]))
-	argv[1] = C.CString("-f") // do not daemonize; Go cannot handle it (at least on OSX)
-	defer C.free(unsafe.Pointer(argv[1]))
-	for i := 1; len(args) > i; i++ {
-		argv[i+1] = C.CString(args[i])
-		defer C.free(unsafe.Pointer(argv[i+1]))
+
+	/*
+	 * Command line handling
+	 *
+	 * We must prepare a command line to send to FUSE. This command line will look like this:
+	 *
+	 *     execname [mountpoint] "-f" [opts...] NULL
+	 *
+	 * We add the "-f" option because Go cannot handle daemonization (at least on OSX).
+	 */
+	exec := "<UNKNOWN>"
+	if 0 < len(os.Args) {
+		exec = os.Args[0]
 	}
-	hndl := hostHandleNew(host)
-	defer hostHandleDel(hndl)
+	argc := len(opts) + 2
+	if "" != mountpoint {
+		argc++
+	}
+	argv := make([]*C.char, argc+1)
+	argv[0] = C.CString(exec)
+	defer C.free(unsafe.Pointer(argv[0]))
+	opti := 1
+	if "" != mountpoint {
+		argv[1] = C.CString(mountpoint)
+		defer C.free(unsafe.Pointer(argv[1]))
+		opti++
+	}
+	argv[opti] = C.CString("-f")
+	defer C.free(unsafe.Pointer(argv[opti]))
+	opti++
+	for i := 0; len(opts) > i; i++ {
+		argv[i+opti] = C.CString(opts[i])
+		defer C.free(unsafe.Pointer(argv[i+opti]))
+	}
+
+	/*
+	 * Mountpoint extraction
+	 *
+	 * We need to determine the mountpoint that FUSE is going (to try) to use, so that we
+	 * can unmount later.
+	 */
 	host.mntp = C.hostMountpoint(C.int(argc), &argv[0])
 	defer func() {
 		C.free(unsafe.Pointer(host.mntp))
 		host.mntp = nil
 	}()
+
+	/*
+	 * Handle zombie mounts
+	 *
+	 * FUSE on UNIX does not automatically unmount the file system, leaving behind "zombie"
+	 * mounts. So set things up to always unmount the file system (unless forcibly terminated).
+	 * This has the added benefit that the file system Destroy() always gets called.
+	 *
+	 * On Windows (WinFsp) this is handled by the FUSE layer and we do not have to do anything.
+	 */
 	if "windows" != runtime.GOOS {
 		done := make(chan bool)
 		defer func() {
@@ -1047,6 +1101,12 @@ func (host *FileSystemHost) Mount(args []string) bool {
 			close(done)
 		}()
 	}
+
+	/*
+	 * Tell FUSE to do its job!
+	 */
+	hndl := hostHandleNew(host)
+	defer hostHandleDel(hndl)
 	return 0 != C.hostMount(C.int(argc), &argv[0], hndl)
 }
 

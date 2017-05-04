@@ -75,5 +75,5 @@ func (self *Hellofs) Readdir(path string,
 func main() {
 	hellofs := &Hellofs{}
 	host := fuse.NewFileSystemHost(hellofs)
-	host.Mount(os.Args)
+	host.Mount("", os.Args[1:])
 }
