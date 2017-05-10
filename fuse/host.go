@@ -1023,9 +1023,6 @@ func (host *FileSystemHost) SetCapReaddirPlus(value bool) {
 // It is allowed for the mountpoint to be the empty string ("") in which case opts is assumed
 // to contain the mountpoint. It is also allowed for opts to be nil, although in this case the
 // mountpoint must be non-empty.
-//
-// The file system is considered mounted only after its Init() method has been called
-// and before its Destroy() method has been called.
 func (host *FileSystemHost) Mount(mountpoint string, opts []string) bool {
 	if 0 == C.hostInitializeFuse() {
 		panic("cgofuse: cannot find winfsp")
