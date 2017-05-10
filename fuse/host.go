@@ -907,7 +907,7 @@ func hostInit(conn0 *C.struct_fuse_conn_info) (user_data unsafe.Pointer) {
 		C.bool(host.capCaseInsensitive),
 		C.bool(host.capReaddirPlus))
 	if nil != host.sigc {
-		signal.Notify(host.sigc, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM)
+		signal.Notify(host.sigc, syscall.SIGINT, syscall.SIGTERM)
 	}
 	host.fsop.Init()
 	return
