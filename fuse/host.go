@@ -15,9 +15,13 @@ package fuse
 /*
 #cgo darwin CFLAGS: -DFUSE_USE_VERSION=28 -D_FILE_OFFSET_BITS=64 -I/usr/local/include/osxfuse/fuse
 #cgo darwin LDFLAGS: -L/usr/local/lib -losxfuse
+
 #cgo linux CFLAGS: -DFUSE_USE_VERSION=28 -D_FILE_OFFSET_BITS=64 -I/usr/include/fuse
 #cgo linux LDFLAGS: -lfuse
-#cgo windows CFLAGS: -D_WIN32_WINNT=0x0600 -DFUSE_USE_VERSION=28
+
+// Use `set CPATH=C:\Program Files (x86)\WinFsp\inc\fuse` on Windows.
+// The flag `I/usr/local/include/winfsp` only works on xgo and docker.
+#cgo windows CFLAGS: -D_WIN32_WINNT=0x0600 -DFUSE_USE_VERSION=28 -I/usr/local/include/winfsp
 
 #if !(defined(__APPLE__) || defined(__linux__) || defined(_WIN32))
 #error platform not supported
