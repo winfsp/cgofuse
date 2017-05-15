@@ -13,6 +13,8 @@ jobs:
     steps:
     - checkout
 
+    # Here we build the billziss/xgo-cgofuse image for testing.
+    # An alternative would be to just `docker pull billziss/xgo-cgofuse`.
     - run:
         name: Build xgo-cgofuse image
         command: docker build -t billziss/xgo-cgofuse .
