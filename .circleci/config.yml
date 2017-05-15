@@ -50,7 +50,7 @@ jobs:
     - deploy:
         name: Make github release
         command: |
-            if git describe --exact-match >/dev/null 2>&1; then
+            if [[ $(git describe --exact-match 2>/dev/null) == v* ]]; then
                 GIT_TAG=$(git describe --exact-match)
                 GIT_DSC=$(git describe --long)
                 go get -v github.com/aktau/github-release
