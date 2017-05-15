@@ -14,15 +14,15 @@ jobs:
     - checkout
 
     - run:
-        name: Build cgofuse image
-        command: docker build -t cgofuse .
+        name: Build xgo-cgofuse image
+        command: docker build -t billziss/xgo-cgofuse .
 
     - run:
         name: Cross-compile cgofuse
         command: |
             go get -v github.com/karalabe/xgo
             xgo \
-                --image=cgofuse \
+                --image=billziss/xgo-cgofuse \
                 --targets=darwin/386,darwin/amd64,linux/386,linux/amd64,windows/386,windows/amd64 \
                 --buildmode=archive \
                 ./fuse
@@ -50,7 +50,7 @@ jobs:
     - deploy:
         name: Make github release
         command: |
-            if [[ $(git describe --exact-match 2>/dev/null) == v* ]]; then
+            if false && [[ $(git describe --exact-match 2>/dev/null) == v* ]]; then
                 GIT_TAG=$(git describe --exact-match)
                 GIT_DSC=$(git describe --long)
                 go get -v github.com/aktau/github-release
