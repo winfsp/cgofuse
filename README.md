@@ -35,6 +35,20 @@ Cgofuse currently runs on **OSX**, **Linux** and **Windows** (using [WinFsp](htt
     > go install -v ./fuse ./examples/memfs
     ```
 
+## How to cross-compile your project using xgo
+
+You can easily cross-compile your project using [xgo](https://github.com/karalabe/xgo) and the [billziss/xgo-cgofuse](https://hub.docker.com/r/billziss/xgo-cgofuse/) docker image.
+
+- Prerequisites: [docker](https://www.docker.com), [xgo](https://github.com/karalabe/xgo)
+- Build:
+    ```
+    $ docker pull billziss/xgo-cgofuse
+    $ go get -u github.com/karalabe/xgo
+    $ cd YOUR-PROJECT-THAT-USES-CGOFUSE
+    $ xgo --image=billziss/xgo-cgofuse \
+        --targets=darwin/386,darwin/amd64,linux/386,linux/amd64,windows/386,windows/amd64 .
+    ```
+
 ## How to use
 
 User mode file systems are expected to implement `fuse.FileSystemInterface`. To make implementation simpler a file system can embed ("inherit") a `fuse.FileSystemBase` which provides default implementations for all operations. To mount a file system one must instantiate a `fuse.FileSystemHost` using `fuse.NewFileSystemHost`.
