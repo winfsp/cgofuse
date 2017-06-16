@@ -21,7 +21,7 @@ package fuse
 
 // Use `set CPATH=C:\Program Files (x86)\WinFsp\inc\fuse` on Windows.
 // The flag `I/usr/local/include/winfsp` only works on xgo and docker.
-#cgo windows CFLAGS: -D_WIN32_WINNT=0x0600 -DFUSE_USE_VERSION=28 -I/usr/local/include/winfsp
+#cgo windows CFLAGS: -D_WIN32_WINNT=0x0501 -DFUSE_USE_VERSION=28 -I/usr/local/include/winfsp
 
 #if !(defined(__APPLE__) || defined(__linux__) || defined(_WIN32))
 #error platform not supported
@@ -46,7 +46,7 @@ static PVOID cgofuse_init_slow(int hardfail);
 static VOID  cgofuse_init_fail(VOID);
 static PVOID cgofuse_init_winfsp(VOID);
 
-static SRWLOCK cgofuse_lock = SRWLOCK_INIT;
+static CRITICAL_SECTION cgofuse_lock;
 static PVOID cgofuse_module = 0;
 
 static inline PVOID cgofuse_init_fast(int hardfail)
@@ -61,7 +61,7 @@ static inline PVOID cgofuse_init_fast(int hardfail)
 static PVOID cgofuse_init_slow(int hardfail)
 {
 	PVOID Module;
-	AcquireSRWLockExclusive(&cgofuse_lock);
+	EnterCriticalSection(&cgofuse_lock);
 	Module = cgofuse_module;
 	if (0 == Module)
 	{
@@ -69,7 +69,7 @@ static PVOID cgofuse_init_slow(int hardfail)
 		MemoryBarrier();
 		cgofuse_module = Module;
 	}
-	ReleaseSRWLockExclusive(&cgofuse_lock);
+	LeaveCriticalSection(&cgofuse_lock);
 	if (0 == Module && hardfail)
 		cgofuse_init_fail();
 	return Module;
@@ -355,7 +355,22 @@ static int _hostGetxattr(char *path, char *name, char *value, size_t size,
 #define _hostGetxattr hostGetxattr
 #endif
 
-static int hostInitializeFuse(void)
+// hostStaticInit, hostFuseInit and hostInit serve different purposes.
+//
+// hostStaticInit and hostFuseInit are needed to provide static and dynamic initialization
+// of the FUSE layer. This is currently useful on Windows only.
+//
+// hostInit is simply the .init implementation of struct fuse_operations.
+
+static void hostStaticInit(void)
+{
+#if defined(__APPLE__) || defined(__linux__)
+#elif defined(_WIN32)
+	InitializeCriticalSection(&cgofuse_lock);
+#endif
+}
+
+static int hostFuseInit(void)
 {
 #if defined(__APPLE__) || defined(__linux__)
 	return 1;
@@ -1028,7 +1043,7 @@ func (host *FileSystemHost) SetCapReaddirPlus(value bool) {
 // to contain the mountpoint. It is also allowed for opts to be nil, although in this case the
 // mountpoint must be non-empty.
 func (host *FileSystemHost) Mount(mountpoint string, opts []string) bool {
-	if 0 == C.hostInitializeFuse() {
+	if 0 == C.hostFuseInit() {
 		panic("cgofuse: cannot find winfsp")
 	}
 
@@ -1127,4 +1142,8 @@ func Getcontext() (uid uint32, gid uint32, pid int) {
 	gid = uint32(C.fuse_get_context().gid)
 	pid = int(C.fuse_get_context().pid)
 	return
+}
+
+func init() {
+	C.hostStaticInit()
 }
