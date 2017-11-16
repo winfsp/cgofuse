@@ -377,8 +377,11 @@ type Stat_t struct {
 	// Number of blocks allocated for this object.
 	Blocks int64
 
-	// File creation (birth) timestamp. [OSX only]
+	// File creation (birth) timestamp. [OSX and Windows only]
 	Birthtim Timespec
+
+	// BSD flags (UF_*). [OSX and Windows only]
+	Flags uint32
 }
 
 /*
@@ -521,6 +524,27 @@ type FileSystemInterface interface {
 
 	// Listxattr lists extended attributes.
 	Listxattr(path string, fill func(name string) bool) int
+}
+
+// FileSystemChflags is the interface that wraps the Chflags method.
+//
+// Chflags changes the BSD file flags (Windows file attributes). [OSX and Windows only]
+type FileSystemChflags interface {
+	Chflags(path string, flags uint32) int
+}
+
+// FileSystemSetcrtime is the interface that wraps the Setcrtime method.
+//
+// Setcrtime changes the file creation (birth) time. [OSX and Windows only]
+type FileSystemSetcrtime interface {
+	Setcrtime(path string, tmsp Timespec) int
+}
+
+// FileSystemSetchgtime is the interface that wraps the Setchgtime method.
+//
+// Setchgtime changes the file change (ctime) time. [OSX and Windows only]
+type FileSystemSetchgtime interface {
+	Setchgtime(path string, tmsp Timespec) int
 }
 
 // Error encapsulates a FUSE error code. In some rare circumstances it is useful
