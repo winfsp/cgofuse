@@ -147,6 +147,7 @@ import (
 	"time"
 )
 
+// Error codes reported by FUSE file systems.
 const (
 	E2BIG           = int(C.E2BIG)
 	EACCES          = int(C.EACCES)
@@ -229,6 +230,7 @@ const (
 	EXDEV           = int(C.EXDEV)
 )
 
+// Flags used in FileSystemInterface.Create and FileSystemInterface.Open.
 const (
 	O_RDONLY  = int(C.O_RDONLY)
 	O_WRONLY  = int(C.O_WRONLY)
@@ -240,6 +242,7 @@ const (
 	O_ACCMODE = int(C.O_ACCMODE)
 )
 
+// File type and permission bits.
 const (
 	S_IFMT   = 0170000
 	S_IFBLK  = 0060000
@@ -267,6 +270,7 @@ const (
 	S_ISVTX = 01000
 )
 
+// BSD file flags (Windows file attributes).
 const (
 	UF_HIDDEN   = 0x00008000
 	UF_READONLY = 0x00001000
@@ -274,6 +278,7 @@ const (
 	UF_ARCHIVE  = 0x00000800
 )
 
+// Options that control Setxattr operation.
 const (
 	XATTR_CREATE  = int(C.XATTR_CREATE)
 	XATTR_REPLACE = int(C.XATTR_REPLACE)
@@ -476,9 +481,11 @@ type FileSystemInterface interface {
 	Access(path string, mask uint32) int
 
 	// Create creates and opens a file.
+	// The flags are a combination of the fuse.O_* constants.
 	Create(path string, flags int, mode uint32) (int, uint64)
 
 	// Open opens a file.
+	// The flags are a combination of the fuse.O_* constants.
 	Open(path string, flags int) (int, uint64)
 
 	// Getattr gets file attributes.
@@ -661,12 +668,14 @@ func (*FileSystemBase) Access(path string, mask uint32) int {
 }
 
 // Create creates and opens a file.
+// The flags are a combination of the fuse.O_* constants.
 // The FileSystemBase implementation returns -ENOSYS.
 func (*FileSystemBase) Create(path string, flags int, mode uint32) (int, uint64) {
 	return -ENOSYS, ^uint64(0)
 }
 
 // Open opens a file.
+// The flags are a combination of the fuse.O_* constants.
 // The FileSystemBase implementation returns -ENOSYS.
 func (*FileSystemBase) Open(path string, flags int) (int, uint64) {
 	return -ENOSYS, ^uint64(0)
