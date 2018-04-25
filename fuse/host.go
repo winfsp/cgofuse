@@ -1253,14 +1253,14 @@ func optNormInt(opt string, modf string) string {
 		case "d", "o", "x", "X":
 			return opt[:i+2] + modf + opt[i+2:]
 		case "v":
-			return opt[:i+2] + "i"
+			return opt[:i+2] + modf + "i"
 		default:
 			panic("unknown format " + opt[i+1:])
 		}
 	} else if strings.HasSuffix(opt, "=") {
-		return opt + "%i"
+		return opt + "%" + modf + "i"
 	} else {
-		return opt + "=%i"
+		return opt + "=%" + modf + "i"
 	}
 }
 
