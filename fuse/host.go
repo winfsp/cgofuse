@@ -1403,6 +1403,7 @@ func OptParse(args []string, format string, vals ...interface{}) (oargs []string
 
 	data := C.malloc(C.size_t(len(opts) * align))
 	defer C.free(data)
+	C.memset(data, 0, C.size_t(len(opts)*align))
 
 	if -1 == C.fuse_opt_parse(&fuse_args, data, &fuse_opts[0], nil) {
 		panic("failed")
