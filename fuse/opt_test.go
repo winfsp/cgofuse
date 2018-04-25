@@ -122,11 +122,11 @@ func TestOptParse(t *testing.T) {
 	outargs, err = OptParse(args, "-s --long= --long --X=%x --O=%o --S=%s --V",
 		&s, &longbool, &long, &X, &O, &S, &V)
 	if nil != err {
-		t.Error(err)
+		t.Error()
 	}
 
 	if !s || !longbool || "LONG" != long ||
 		0xabc != X || 0777 != O || "string" != S || "value" != V {
-		t.Error(err)
+		t.Error()
 	}
 }
