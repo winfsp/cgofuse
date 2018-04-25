@@ -1375,7 +1375,12 @@ func OptParse(args []string, format string, vals ...interface{}) (oargs []string
 			fuse_opts[i].templ = C.CString(optNormStr(opts[i]))
 		}
 		defer C.free(unsafe.Pointer(fuse_opts[i].templ))
-		fuse_opts[i].offset = C.fuse_opt_offset_t(i * align)
+
+		// Work around Go pre-1.10 limitation. See golang issue:
+		// https://github.com/golang/go/issues/21809
+		*(*C.fuse_opt_offset_t)(unsafe.Pointer(&fuse_opts[i].offset)) =
+			C.fuse_opt_offset_t(i * align)
+
 		fuse_opts[i].value = 1
 	}
 
