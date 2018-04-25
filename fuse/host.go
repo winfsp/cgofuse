@@ -534,6 +534,24 @@ static int hostUnmount(struct fuse *fuse, char *mountpoint)
 	return 1;
 #endif
 }
+
+static int hostOptParseOptProc(void *opt_data, const char *arg, int key,
+	struct fuse_args *outargs)
+{
+	switch (key)
+	{
+	default:
+		return 0;
+	case FUSE_OPT_KEY_NONOPT:
+		return 1;
+	}
+}
+
+static int hostOptParse(struct fuse_args *args, void *data, const struct fuse_opt opts[],
+	bool nonopts)
+{
+	return fuse_opt_parse(args, data, opts, nonopts ? hostOptParseOptProc : 0);
+}
 */
 import "C"
 import (
@@ -1283,11 +1301,14 @@ func optNormStr(opt string) string {
 // and stores the resulting values in vals, which must be pointers. It returns a
 // list of unparsed arguments or nil if an error happens.
 //
-// The format is a space separated list of acceptable FUSE options. Each option is
-// matched with a corresponding pointer value in vals. The combination of the option
-// and the type of the corresponding pointer value, determines how the option is used.
-// The allowed pointer types are pointer to bool, pointer to an integer type and
-// pointer to string.
+// The format may be empty or non-empty. An empty format is taken as a special
+// instruction to OptParse to only return all non-option arguments in outargs.
+//
+// A non-empty format is a space separated list of acceptable FUSE options. Each
+// option is matched with a corresponding pointer value in vals. The combination
+// of the option and the type of the corresponding pointer value, determines how
+// the option is used. The allowed pointer types are pointer to bool, pointer to
+// an integer type and pointer to string.
 //
 // For pointer to bool types:
 //
@@ -1297,8 +1318,8 @@ func optNormStr(opt string) string {
 //     -x= -foo= --foo= foo=    Match option with parameter.
 //     -x=%VERB ... foo=%VERB   Match option with parameter of syntax.
 //                              Allowed verbs: d,o,x,X,v
-//                              - d,o,x,X set to true if parameter non-0.
-//                              - v set to true if parameter present.
+//                              - d,o,x,X: set to true if parameter non-0.
+//                              - v: set to true if parameter present.
 //
 //     The formats -x=, and -x=%v are equivalent.
 //
@@ -1351,8 +1372,10 @@ func OptParse(args []string, format string, vals ...interface{}) (outargs []stri
 	}()
 
 	var opts []string
+	var nonopts bool
 	if "" == format {
 		opts = make([]string, 0)
+		nonopts = true
 	} else {
 		opts = strings.Split(format, " ")
 	}
@@ -1417,7 +1440,7 @@ func OptParse(args []string, format string, vals ...interface{}) (outargs []stri
 	data := C.calloc(C.size_t(len(opts)), C.size_t(align))
 	defer C.free(data)
 
-	if -1 == C.fuse_opt_parse(&fuse_args, data, &fuse_opts[0], nil) {
+	if -1 == C.hostOptParse(&fuse_args, data, &fuse_opts[0], C.bool(nonopts)) {
 		panic("failed")
 	}
 
@@ -1461,6 +1484,10 @@ func OptParse(args []string, format string, vals ...interface{}) (outargs []stri
 		for i := 1; int(fuse_args.argc) > i; i++ {
 			outargs[i-1] = C.GoString((*[1 << 16]*C.char)(unsafe.Pointer(fuse_args.argv))[i])
 		}
+	}
+
+	if nonopts && 1 <= len(outargs) && "--" == outargs[0] {
+		outargs = outargs[1:]
 	}
 
 	return

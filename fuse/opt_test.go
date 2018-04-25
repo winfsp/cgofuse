@@ -41,6 +41,9 @@ func TestOptParse(t *testing.T) {
 		"n1=v1",
 		"-o",
 		"n2=v2",
+		"--",
+		"-o",
+		"n3=v3",
 		"arg1",
 		"arg2",
 	}
@@ -66,16 +69,36 @@ func TestOptParse(t *testing.T) {
 		"--I=0xabc",
 		"--S=string",
 		"--V=value",
+		"--",
+		"-o",
+		"n3=v3",
 		"arg1",
 		"arg2",
 	}
 
-	outargs, err := OptParse(args, "")
+	expargs2 := []string{
+		"-o",
+		"n3=v3",
+		"arg1",
+		"arg2",
+	}
+
+	var dummy bool
+	outargs, err := OptParse(args, "DUMMY", &dummy)
 	if nil != err {
 		t.Error(err)
 	}
 
 	if !reflect.DeepEqual(expargs, outargs) {
+		t.Error()
+	}
+
+	outargs, err = OptParse(args, "")
+	if nil != err {
+		t.Error(err)
+	}
+
+	if !reflect.DeepEqual(expargs2, outargs) {
 		t.Error()
 	}
 
