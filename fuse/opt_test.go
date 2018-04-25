@@ -110,6 +110,37 @@ func TestOptParse(t *testing.T) {
 		t.Error()
 	}
 
+	d = 0
+	d8 = 0
+	d16 = 0
+	d32 = 0
+	d64 = 0
+	u = 0
+	u8 = 0
+	u16 = 0
+	u32 = 0
+	u64 = 0
+	uptr = 0
+	outargs, err = OptParse(args,
+		"--d --d8 --d16 --d32 --d64 --u --u8 --u16 --u32 --u64 "+
+			"--uptr",
+		&d, &d8, &d16, &d32, &d64, &u, &u8, &u16, &u32, &u64, &uptr)
+	if nil != err {
+		t.Error(err)
+	}
+
+	if -42 != d || -8 != d8 || -16 != d16 || -32 != d32 || -64 != d64 {
+		t.Error()
+	}
+	if uint(-42&0xffffffff) != u ||
+		uint8(-8&0xff) != u8 ||
+		uint16(-16&0xffff) != u16 ||
+		uint32(-32&0xffffffff) != u32 ||
+		uint64(-64&0xffffffffffffffff) != u64 ||
+		uintptr(42) != uptr {
+		t.Error()
+	}
+
 	var (
 		s        bool
 		longbool bool
