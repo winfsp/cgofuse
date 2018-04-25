@@ -34,6 +34,7 @@ func TestOptParse(t *testing.T) {
 		"--uptr=42",
 		"--X=abc",
 		"--O=0777",
+		"--I=0xabc",
 		"--S=string",
 		"--V=value",
 		"-o",
@@ -62,6 +63,7 @@ func TestOptParse(t *testing.T) {
 		"--uptr=42",
 		"--X=abc",
 		"--O=0777",
+		"--I=0xabc",
 		"--S=string",
 		"--V=value",
 		"arg1",
@@ -145,19 +147,23 @@ func TestOptParse(t *testing.T) {
 		s        bool
 		longbool bool
 		long     string
+		Xbool    bool
 		X        uint
 		O        uint
+		Ibool    bool
+		I        uint
 		S        string
 		V        string
 	)
-	outargs, err = OptParse(args, "-s --long= --long --X=%x --O=%o --S=%s --V",
-		&s, &longbool, &long, &X, &O, &S, &V)
+	outargs, err = OptParse(args, "-s --long= --long --X=%x --X=%x --O=%o --I=%v --I --S=%s --V",
+		&s, &longbool, &long, &Xbool, &X, &O, &Ibool, &I, &S, &V)
 	if nil != err {
 		t.Error()
 	}
 
 	if !s || !longbool || "LONG" != long ||
-		0xabc != X || 0777 != O || "string" != S || "value" != V {
+		!Xbool || 0xabc != X || 0777 != O || !Ibool || 0xabc != I ||
+		"string" != S || "value" != V {
 		t.Error()
 	}
 }

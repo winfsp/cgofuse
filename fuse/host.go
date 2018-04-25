@@ -1238,7 +1238,7 @@ func optNormBool(opt string) string {
 		case "d", "o", "x", "X":
 			return opt
 		case "v":
-			return opt[:i+2] + "u"
+			return opt[:i+1]
 		default:
 			panic("unknown format " + opt[i+1:])
 		}
