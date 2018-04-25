@@ -1286,18 +1286,33 @@ func optNormStr(opt string) string {
 // The format is a space separated list of acceptable FUSE options. Each option is
 // matched with a corresponding pointer value in vals. The combination of the option
 // and the type of the corresponding pointer value, determines how the option is used.
+// The allowed pointer types are pointer to bool, pointer to an integer type and
+// pointer to string.
 //
-//     -x                       Matches -x (bool) or -x=PARAM (non-bool).
+// For pointer to bool types:
+//
+//     -x                       Match -x without parameter.
 //     -foo --foo               As above for -foo or --foo.
-//     foo                      Matches "-o foo" (bool) or "-o foo=PARAM" (non-bool).
-//     -x= -foo= --foo= foo=    Matches option with PARAM (e.g. "-o foo=PARAM")
-//     -x=%VERB ... foo=%VERB   Matches option with PARAM (e.g. "-o foo=PARAM")
+//     foo                      Match "-o foo".
+//     -x= -foo= --foo= foo=    Match option with parameter.
+//     -x=%VERB ... foo=%VERB   Match option with parameter of syntax.
+//                              Allowed verbs: d,o,x,X,v
+//                              - d,o,x,X set to true if parameter non-0.
+//                              - v set to true if parameter present.
 //
-// The allowed verbs are a subset of the ones from package fmt:
+//     The formats -x=, and -x=%v are equivalent.
 //
-//     %d %o %x %X              integer types (as per fmt package)
-//     %s                       string type
-//     %v                       depends on type
+// For pointer to other types:
+//
+//     -x                       Match -x with parameter (-x=PARAM).
+//     -foo --foo               As above for -foo or --foo.
+//     foo                      Match "-o foo=PARAM".
+//     -x= -foo= --foo= foo=    Match option with parameter.
+//     -x=%VERB ... foo=%VERB   Match option with parameter of syntax.
+//                              Allowed verbs for pointer to int types: d,o,x,X,v
+//                              Allowed verbs for pointer to string types: s,v
+//
+//     The formats -x, -x=, and -x=%v are equivalent.
 //
 // For example:
 //
@@ -1319,7 +1334,7 @@ func optNormStr(opt string) string {
 //     attr_timeout == 42
 //     umask == 077
 //
-func OptParse(args []string, format string, vals ...interface{}) (oargs []string, err error) {
+func OptParse(args []string, format string, vals ...interface{}) (outargs []string, err error) {
 	if 0 == C.hostFuseInit() {
 		panic("cgofuse: cannot find winfsp")
 	}
@@ -1327,7 +1342,7 @@ func OptParse(args []string, format string, vals ...interface{}) (oargs []string
 	defer func() {
 		if r := recover(); nil != r {
 			if s, ok := r.(string); ok {
-				oargs = nil
+				outargs = nil
 				err = errors.New("OptParse: " + s)
 			} else {
 				panic(r)
@@ -1387,8 +1402,7 @@ func OptParse(args []string, format string, vals ...interface{}) (oargs []string
 	fuse_args := C.struct_fuse_args{}
 	defer C.fuse_opt_free_args(&fuse_args)
 	argc := 1 + len(args)
-	argl := int(unsafe.Sizeof((*C.char)(nil))) * (argc + 1)
-	argp := C.malloc(C.size_t(argl))
+	argp := C.calloc(C.size_t(argc+1), C.size_t(unsafe.Sizeof((*C.char)(nil))))
 	defer C.free(argp)
 	argv := (*[1 << 16]*C.char)(argp)
 	argv[0] = C.CString("<UNKNOWN>")
@@ -1397,13 +1411,11 @@ func OptParse(args []string, format string, vals ...interface{}) (oargs []string
 		argv[1+i] = C.CString(args[i])
 		defer C.free(unsafe.Pointer(argv[1+i]))
 	}
-	argv[argc] = nil
 	fuse_args.argc = C.int(argc)
 	fuse_args.argv = (**C.char)(&argv[0])
 
-	data := C.malloc(C.size_t(len(opts) * align))
+	data := C.calloc(C.size_t(len(opts)), C.size_t(align))
 	defer C.free(data)
-	C.memset(data, 0, C.size_t(len(opts)*align))
 
 	if -1 == C.fuse_opt_parse(&fuse_args, data, &fuse_opts[0], nil) {
 		panic("failed")
@@ -1443,11 +1455,11 @@ func OptParse(args []string, format string, vals ...interface{}) (oargs []string
 	}
 
 	if 1 >= fuse_args.argc {
-		oargs = make([]string, 0)
+		outargs = make([]string, 0)
 	} else {
-		oargs = make([]string, fuse_args.argc-1)
+		outargs = make([]string, fuse_args.argc-1)
 		for i := 1; int(fuse_args.argc) > i; i++ {
-			oargs[i-1] = C.GoString((*[1 << 16]*C.char)(unsafe.Pointer(fuse_args.argv))[i])
+			outargs[i-1] = C.GoString((*[1 << 16]*C.char)(unsafe.Pointer(fuse_args.argv))[i])
 		}
 	}
 
