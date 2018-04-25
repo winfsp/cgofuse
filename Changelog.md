@@ -1,7 +1,7 @@
 # Changelog
 
 
-**v1.0.5**
+**v1.1.0**
 
 - `OptParse` function parses FUSE options.
 - `fmt.Stringer` and `fmt.GoStringer` implementation for `fuse.Error`.
