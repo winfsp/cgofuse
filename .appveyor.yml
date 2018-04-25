@@ -17,7 +17,7 @@ build_script:
 - go install -v ./...
 
 test_script:
-- go test ./fuse
+- go test -v ./fuse
 
 # hard code fsreg parameters because appveyor does not like percents ("--VolumePrefix=%1 %2")
 - C:\projects\winfsp\tools\fsreg.bat gomemfs "C:\projects\go\bin\memfs.exe" "--VolumePrefix=\gomemfs\share M:" "D:P(A;;RPWPLC;;;WD)"
