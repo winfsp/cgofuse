@@ -1247,20 +1247,20 @@ func optNormBool(opt string) string {
 	}
 }
 
-func optNormInt(opt string, modf string, deflt string) string {
+func optNormInt(opt string, modf string) string {
 	if i := strings.Index(opt, "=%"); -1 != i {
 		switch opt[i+2:] {
 		case "d", "o", "x", "X":
 			return opt[:i+2] + modf + opt[i+2:]
 		case "v":
-			return opt[:i+2] + deflt
+			return opt[:i+2] + "i"
 		default:
 			panic("unknown format " + opt[i+1:])
 		}
 	} else if strings.HasSuffix(opt, "=") {
-		return opt + "%" + deflt
+		return opt + "%i"
 	} else {
-		return opt + "=%" + deflt
+		return opt + "=%i"
 	}
 }
 
@@ -1350,27 +1350,27 @@ func OptParse(args []string, format string, vals ...interface{}) (oargs []string
 		case *bool:
 			fuse_opts[i].templ = C.CString(optNormBool(opts[i]))
 		case *int:
-			fuse_opts[i].templ = C.CString(optNormInt(opts[i], "", "i"))
+			fuse_opts[i].templ = C.CString(optNormInt(opts[i], ""))
 		case *int8:
-			fuse_opts[i].templ = C.CString(optNormInt(opts[i], "hh", "i"))
+			fuse_opts[i].templ = C.CString(optNormInt(opts[i], "hh"))
 		case *int16:
-			fuse_opts[i].templ = C.CString(optNormInt(opts[i], "h", "i"))
+			fuse_opts[i].templ = C.CString(optNormInt(opts[i], "h"))
 		case *int32:
-			fuse_opts[i].templ = C.CString(optNormInt(opts[i], "", "i"))
+			fuse_opts[i].templ = C.CString(optNormInt(opts[i], ""))
 		case *int64:
-			fuse_opts[i].templ = C.CString(optNormInt(opts[i], "ll", "i"))
+			fuse_opts[i].templ = C.CString(optNormInt(opts[i], "ll"))
 		case *uint:
-			fuse_opts[i].templ = C.CString(optNormInt(opts[i], "", "u"))
+			fuse_opts[i].templ = C.CString(optNormInt(opts[i], ""))
 		case *uint8:
-			fuse_opts[i].templ = C.CString(optNormInt(opts[i], "hh", "u"))
+			fuse_opts[i].templ = C.CString(optNormInt(opts[i], "hh"))
 		case *uint16:
-			fuse_opts[i].templ = C.CString(optNormInt(opts[i], "h", "u"))
+			fuse_opts[i].templ = C.CString(optNormInt(opts[i], "h"))
 		case *uint32:
-			fuse_opts[i].templ = C.CString(optNormInt(opts[i], "", "u"))
+			fuse_opts[i].templ = C.CString(optNormInt(opts[i], ""))
 		case *uint64:
-			fuse_opts[i].templ = C.CString(optNormInt(opts[i], "ll", "u"))
+			fuse_opts[i].templ = C.CString(optNormInt(opts[i], "ll"))
 		case *uintptr:
-			fuse_opts[i].templ = C.CString(optNormInt(opts[i], "ll", "u"))
+			fuse_opts[i].templ = C.CString(optNormInt(opts[i], "ll"))
 		case *string:
 			fuse_opts[i].templ = C.CString(optNormStr(opts[i]))
 		}
