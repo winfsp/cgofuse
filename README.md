@@ -58,7 +58,7 @@ You can easily cross-compile your project using [xgo](https://github.com/karalab
         --targets=darwin/386,darwin/amd64,linux/386,linux/amd64,windows/386,windows/amd64 .
     ```
 
-Cross-compilation only works for OSX, Linux and Windows only.
+Cross-compilation only works for OSX, Linux and Windows.
 
 ## How to use
 
