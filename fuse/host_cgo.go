@@ -1,5 +1,7 @@
+// +build cgo
+
 /*
- * host.go
+ * host_cgo.go
  *
  * Copyright 2017-2018 Bill Zissimopoulos
  */
