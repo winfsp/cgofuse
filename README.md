@@ -25,6 +25,11 @@ Cgofuse currently runs on **OSX**, **FreeBSD**, **Linux** and **Windows** (using
     ```
     $ cd cgofuse
     $ go install -v ./fuse ./examples/memfs ./examples/passthrough
+
+    # you may also need the following in order to run FUSE file systems:
+    $ sudo vi /boot/loader.conf                 # add: fuse_load="YES"
+    $ sudo sysctl vfs.usermount=1               # allow user mounts
+    $ sudo pw usermod USERNAME -G operator      # allow user to open /dev/fuse
     ```
 
 **Linux**
