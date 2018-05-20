@@ -9,6 +9,8 @@ Cgofuse is a cross-platform FUSE library for Go. It is implemented using [cgo](h
 
 Cgofuse currently runs on **OSX**, **FreeBSD**, **Linux** and **Windows** (using [WinFsp](https://github.com/billziss-gh/winfsp)).
 
+**NOTE**: On FreeBSD signal handling is currently broken. Please see this [discussion](https://github.com/billziss-gh/cgofuse/issues/18#issuecomment-390446362) for details.
+
 ## How to build
 
 **OSX**
