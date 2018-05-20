@@ -1,20 +1,20 @@
 # Cross-platform FUSE library for Go
 
-[![Travis CI](https://img.shields.io/travis/billziss-gh/cgofuse.svg?label=osx/linux)](https://travis-ci.org/billziss-gh/cgofuse)
+[![Travis CI](https://img.shields.io/travis/billziss-gh/cgofuse.svg?label=macOS/linux)](https://travis-ci.org/billziss-gh/cgofuse)
 [![AppVeyor](https://img.shields.io/appveyor/ci/billziss-gh/cgofuse.svg?label=windows)](https://ci.appveyor.com/project/billziss-gh/cgofuse)
 [![CircleCI](https://img.shields.io/circleci/project/github/billziss-gh/cgofuse.svg?label=cross-build)](https://circleci.com/gh/billziss-gh/cgofuse)
 [![GoDoc](https://godoc.org/github.com/billziss-gh/cgofuse/fuse?status.svg)](https://godoc.org/github.com/billziss-gh/cgofuse/fuse)
 
 Cgofuse is a cross-platform FUSE library for Go. It is implemented using [cgo](https://golang.org/cmd/cgo/) and can be ported to any platform that has a FUSE implementation.
 
-Cgofuse currently runs on **OSX**, **FreeBSD**, **Linux** and **Windows** (using [WinFsp](https://github.com/billziss-gh/winfsp)).
+Cgofuse currently runs on **macOS**, **FreeBSD**, **Linux** and **Windows** (using [WinFsp](https://github.com/billziss-gh/winfsp)).
 
 **NOTE**: On FreeBSD signal handling is currently broken. Please see this [discussion](https://github.com/billziss-gh/cgofuse/issues/18#issuecomment-390446362) for details.
 
 ## How to build
 
-**OSX**
-- Prerequisites: [OSXFUSE](https://osxfuse.github.io), [command line tools](https://developer.apple.com/library/content/technotes/tn2339/_index.html)
+**macOS**
+- Prerequisites: [FUSE for macOS](https://osxfuse.github.io), [command line tools](https://developer.apple.com/library/content/technotes/tn2339/_index.html)
 - Build:
     ```
     $ cd cgofuse
@@ -65,7 +65,7 @@ You can easily cross-compile your project using [xgo](https://github.com/karalab
         --targets=darwin/386,darwin/amd64,linux/386,linux/amd64,windows/386,windows/amd64 .
     ```
 
-Cross-compilation only works for OSX, Linux and Windows.
+Cross-compilation only works for macOS, Linux and Windows.
 
 ## How to use
 
@@ -75,15 +75,15 @@ The full documentation is available at GoDoc.org: [package fuse](https://godoc.o
 
 There are currently three example file systems:
 
-- [Hellofs](examples/hellofs/hellofs.go) is an extremely simple file system. Runs on OSX, Linux and Windows.
-- [Memfs](examples/memfs/memfs.go) is an in memory file system. Runs on OSX, Linux and Windows.
-- [Passthrough](examples/passthrough/passthrough.go) is a file system that passes all operations to the underlying file system. Runs on OSX, Linux.
+- [Hellofs](examples/hellofs/hellofs.go) is an extremely simple file system. Runs on macOS, FreeBSD, Linux and Windows.
+- [Memfs](examples/memfs/memfs.go) is an in memory file system. Runs on macOS, FreeBSD, Linux and Windows.
+- [Passthrough](examples/passthrough/passthrough.go) is a file system that passes all operations to the underlying file system. Runs on macOS, FreeBSD, Linux.
 
 ## How it is tested
 
 Cgofuse is regularly built and tested on [Travis CI](https://travis-ci.org/billziss-gh/cgofuse) and [AppVeyor](https://ci.appveyor.com/project/billziss-gh/cgofuse). The following software is being used to test cgofuse.
 
-**OSX/Linux**
+**macOS/Linux**
 - [fstest](https://github.com/billziss-gh/secfs.test/tree/master/fstest/ntfs-3g-pjd-fstest-8af5670)
 - [fsx](https://github.com/billziss-gh/secfs.test/tree/master/fstools/src/fsx)
 
