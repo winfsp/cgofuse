@@ -1,7 +1,7 @@
 // +build linux
 
 /*
- * struct_linux.go
+ * port_linux.go
  *
  * Copyright 2017 Bill Zissimopoulos
  */

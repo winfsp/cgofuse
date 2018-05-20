@@ -1,7 +1,7 @@
-// +build darwin
+// +build freebsd
 
 /*
- * port_darwin.go
+ * port_freebsd.go
  *
  * Copyright 2017 Bill Zissimopoulos
  */

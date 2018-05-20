@@ -7,12 +7,20 @@
 
 Cgofuse is a cross-platform FUSE library for Go. It is implemented using [cgo](https://golang.org/cmd/cgo/) and can be ported to any platform that has a FUSE implementation.
 
-Cgofuse currently runs on **OSX**, **Linux** and **Windows** (using [WinFsp](https://github.com/billziss-gh/winfsp)).
+Cgofuse currently runs on **OSX**, **FreeBSD**, **Linux** and **Windows** (using [WinFsp](https://github.com/billziss-gh/winfsp)).
 
 ## How to build
 
 **OSX**
 - Prerequisites: [OSXFUSE](https://osxfuse.github.io), [command line tools](https://developer.apple.com/library/content/technotes/tn2339/_index.html)
+- Build:
+    ```
+    $ cd cgofuse
+    $ go install -v ./fuse ./examples/memfs ./examples/passthrough
+    ```
+
+**FreeBSD**
+- Prerequisites: fusefs-libs, clang
 - Build:
     ```
     $ cd cgofuse
@@ -26,6 +34,7 @@ Cgofuse currently runs on **OSX**, **Linux** and **Windows** (using [WinFsp](htt
     $ cd cgofuse
     $ go install -v ./fuse ./examples/memfs ./examples/passthrough
     ```
+
 **Windows**
 - Prerequisites: [WinFsp](https://github.com/billziss-gh/winfsp), gcc (e.g. from [Mingw-builds](http://mingw-w64.org/doku.php/download))
 - Build:
@@ -48,6 +57,8 @@ You can easily cross-compile your project using [xgo](https://github.com/karalab
     $ xgo --image=billziss/xgo-cgofuse \
         --targets=darwin/386,darwin/amd64,linux/386,linux/amd64,windows/386,windows/amd64 .
     ```
+
+Cross-compilation only works for OSX, Linux and Windows only.
 
 ## How to use
 

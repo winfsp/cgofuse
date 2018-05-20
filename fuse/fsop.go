@@ -24,11 +24,11 @@
 package fuse
 
 /*
-#if !(defined(__APPLE__) || defined(__linux__) || defined(_WIN32))
+#if !(defined(__APPLE__) || defined(__FreeBSD__) || defined(__linux__) || defined(_WIN32))
 #error platform not supported
 #endif
 
-#if defined(__APPLE__) || defined(__linux__)
+#if defined(__APPLE__) || defined(__FreeBSD__) || defined(__linux__)
 
 #include <errno.h>
 #include <fcntl.h>
@@ -131,14 +131,26 @@ package fuse
 
 #if defined(__linux__) || defined(_WIN32)
 // incantation needed for cgo to figure out "kind of name" for ENOATTR
-#define ENOATTR ((int)ENODATA)
+#define ENOATTR         ((int)ENODATA)
+
+#elif defined(__FreeBSD__)
+
+// ETIME: see https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=225324
+// ENODATA: the following is not strictly correct but a lot of project
+//     assume that ENODATA == ENOATTR, just because Linux does so.
+// ENOSTR, ENOSR: these are not defined anywhere; convert to EINVAL
+#define ETIME           ETIMEDOUT
+#define ENODATA         ENOATTR
+#define ENOSTR          EINVAL
+#define ENOSR           EINVAL
+
 #endif
 
 #if defined(__APPLE__) || defined(__linux__)
 #include <sys/xattr.h>
-#elif defined(_WIN32)
-#define XATTR_CREATE  1
-#define XATTR_REPLACE 2
+#elif defined(__FreeBSD__) || defined(_WIN32)
+#define XATTR_CREATE    1
+#define XATTR_REPLACE   2
 #endif
 */
 import "C"
