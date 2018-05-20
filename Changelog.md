@@ -1,6 +1,11 @@
 # Changelog
 
 
+**v1.2.0**
+
+- FreeBSD port.
+
+
 **v1.1.0**
 
 - `OptParse` function parses FUSE options.
