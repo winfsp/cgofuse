@@ -381,17 +381,17 @@ static int _hostSetxattr(char *path, char *name, char *value, size_t size, int f
 	uint32_t position)
 {
 	// OSX uses position only for the resource fork; we do not support it!
-	return hostSetxattr(path, name, value, size, flags);
+	return go_hostSetxattr(path, name, value, size, flags);
 }
 static int _hostGetxattr(char *path, char *name, char *value, size_t size,
 	uint32_t position)
 {
 	// OSX uses position only for the resource fork; we do not support it!
-	return hostGetxattr(path, name, value, size);
+	return go_hostGetxattr(path, name, value, size);
 }
 #else
-#define _hostSetxattr hostSetxattr
-#define _hostGetxattr hostGetxattr
+#define _hostSetxattr go_hostSetxattr
+#define _hostGetxattr go_hostGetxattr
 #endif
 
 // hostStaticInit, hostFuseInit and hostInit serve different purposes.
@@ -477,8 +477,8 @@ static int hostMount(int argc, char *argv[], void *data)
 		.flush = (int (*)())go_hostFlush,
 		.release = (int (*)())go_hostRelease,
 		.fsync = (int (*)())go_hostFsync,
-		.setxattr = (int (*)())go_hostSetxattr,
-		.getxattr = (int (*)())go_hostGetxattr,
+		.setxattr = (int (*)())_hostSetxattr,
+		.getxattr = (int (*)())_hostGetxattr,
 		.listxattr = (int (*)())go_hostListxattr,
 		.removexattr = (int (*)())go_hostRemovexattr,
 		.opendir = (int (*)())go_hostOpendir,
