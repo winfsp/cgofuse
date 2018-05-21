@@ -81,9 +81,6 @@ type fuse_operations struct {
 	fsetattr_x  uintptr
 }
 
-type fuse_fill_dir_t struct {
-}
-
 type fuse_stat_t struct {
 	st_dev      c_fuse_dev_t
 	st_ino      c_fuse_ino_t
@@ -177,7 +174,7 @@ type (
 	c_fuse_blkcnt_t         = int64
 	c_fuse_blksize_t        = int32
 	c_fuse_dev_t            = uint32
-	c_fuse_fill_dir_t       = fuse_fill_dir_t
+	c_fuse_fill_dir_t       = uintptr
 	c_fuse_fsblkcnt_t       = uintptr
 	c_fuse_fsfilcnt_t       = uintptr
 	c_fuse_gid_t            = uint32
@@ -285,6 +282,8 @@ var (
 		chflags:     syscall.NewCallbackCDecl(hostChflags),
 	}
 
+	hostOptParseOptProc = syscall.NewCallbackCDecl(c_hostOptParseOptProc)
+
 	cgofuse_stat_ex bool
 )
 
@@ -292,6 +291,8 @@ const (
 	FSP_FUSE_CAP_CASE_INSENSITIVE = 1 << 29
 	FSP_FUSE_CAP_READDIR_PLUS     = 1 << 21
 	FSP_FUSE_CAP_STAT_EX          = 1 << 23
+
+	FUSE_OPT_KEY_NONOPT = -2
 )
 
 func init() {
@@ -460,7 +461,14 @@ func c_hostCstatFromFusestat(stbuf *c_fuse_stat_t,
 }
 func c_hostFilldir(filler c_fuse_fill_dir_t,
 	buf unsafe.Pointer, name *c_char, stbuf *c_fuse_stat_t, off c_fuse_off_t) c_int {
-	return 0
+	r, _, _ := syscall.Syscall6(filler, 4,
+		uintptr(buf),
+		uintptr(unsafe.Pointer(name)),
+		uintptr(unsafe.Pointer(stbuf)),
+		uintptr(off), // chops off high bits on 32-bit!
+		0,
+		0)
+	return c_int(r)
 }
 func c_hostStaticInit() {
 }
@@ -499,14 +507,42 @@ func c_hostMountpoint(argc c_int, argv **c_char) *c_char {
 	return nil
 }
 func c_hostMount(argc c_int, argv **c_char, data unsafe.Pointer) c_int {
-	return 0
+	r, _, _ := fuse_main_real.Call(
+		uintptr(argc),
+		uintptr(unsafe.Pointer(argv)),
+		uintptr(unsafe.Pointer(&fsop)),
+		unsafe.Sizeof(fsop),
+		uintptr(data))
+	if 0 == r {
+		return 0
+	}
+	return 1
 }
 func c_hostUnmount(fuse *c_struct_fuse, mountpoint *c_char) c_int {
-	return 0
+	fuse_exit.Call(uintptr(unsafe.Pointer(fuse)))
+	return 1
+}
+func c_hostOptParseOptProc(opt_data unsafe.Pointer, arg *c_char, key c_int,
+	outargs *c_struct_fuse_args) c_int {
+	switch key {
+	default:
+		return 0
+	case FUSE_OPT_KEY_NONOPT:
+		return 1
+	}
 }
 func c_hostOptParse(args *c_struct_fuse_args, data unsafe.Pointer, opts *c_struct_fuse_opt,
 	nonopts c_bool) c_int {
-	return 0
+	var callback uintptr
+	if nonopts {
+		callback = hostOptParseOptProc
+	}
+	r, _, _ := fuse_opt_parse.Call(
+		uintptr(unsafe.Pointer(args)),
+		uintptr(data),
+		uintptr(unsafe.Pointer(opts)),
+		callback)
+	return c_int(r)
 }
 
 func fspload() (dll *syscall.DLL, err error) {
