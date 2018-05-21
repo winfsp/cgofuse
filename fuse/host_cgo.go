@@ -669,7 +669,7 @@ func C_hostCstatFromFusestat(stbuf *C_fuse_stat_t,
 	blocks C_int64_t,
 	birthtimSec C_int64_t, birthtimNsec C_int64_t,
 	flags C_uint32_t) {
-	C_hostCstatFromFusestat(stbuf,
+	C.hostCstatFromFusestat(stbuf,
 		dev,
 		ino,
 		mode,

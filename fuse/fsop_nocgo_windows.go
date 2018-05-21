@@ -1,4 +1,4 @@
-// +build !cgo
+// +build !cgo,windows
 
 /*
  * fsop_nocgo_windows.go
