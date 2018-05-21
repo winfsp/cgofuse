@@ -26,8 +26,8 @@ import (
 // FileSystemHost is used to host a file system.
 type FileSystemHost struct {
 	fsop FileSystemInterface
-	fuse *C_struct_fuse
-	mntp *C_char
+	fuse *c_struct_fuse
+	mntp *c_char
 	sigc chan os.Signal
 
 	capCaseInsensitive, capReaddirPlus bool
@@ -39,7 +39,7 @@ var (
 )
 
 func hostHandleNew(host *FileSystemHost) unsafe.Pointer {
-	p := C_malloc(1)
+	p := c_malloc(1)
 	hostGuard.Lock()
 	defer hostGuard.Unlock()
 	hostTable[p] = host
@@ -51,7 +51,7 @@ func hostHandleDel(p unsafe.Pointer) *FileSystemHost {
 	defer hostGuard.Unlock()
 	if host, ok := hostTable[p]; ok {
 		delete(hostTable, p)
-		C_free(p)
+		c_free(p)
 		return host
 	}
 	return nil
@@ -66,193 +66,193 @@ func hostHandleGet(p unsafe.Pointer) *FileSystemHost {
 	return nil
 }
 
-func copyCstatvfsFromFusestatfs(dst *C_fuse_statvfs_t, src *Statfs_t) {
-	C_hostCstatvfsFromFusestatfs(dst,
-		C_uint64_t(src.Bsize),
-		C_uint64_t(src.Frsize),
-		C_uint64_t(src.Blocks),
-		C_uint64_t(src.Bfree),
-		C_uint64_t(src.Bavail),
-		C_uint64_t(src.Files),
-		C_uint64_t(src.Ffree),
-		C_uint64_t(src.Favail),
-		C_uint64_t(src.Fsid),
-		C_uint64_t(src.Flag),
-		C_uint64_t(src.Namemax))
+func copyCstatvfsFromFusestatfs(dst *c_fuse_statvfs_t, src *Statfs_t) {
+	c_hostCstatvfsFromFusestatfs(dst,
+		c_uint64_t(src.Bsize),
+		c_uint64_t(src.Frsize),
+		c_uint64_t(src.Blocks),
+		c_uint64_t(src.Bfree),
+		c_uint64_t(src.Bavail),
+		c_uint64_t(src.Files),
+		c_uint64_t(src.Ffree),
+		c_uint64_t(src.Favail),
+		c_uint64_t(src.Fsid),
+		c_uint64_t(src.Flag),
+		c_uint64_t(src.Namemax))
 }
 
-func copyCstatFromFusestat(dst *C_fuse_stat_t, src *Stat_t) {
-	C_hostCstatFromFusestat(dst,
-		C_uint64_t(src.Dev),
-		C_uint64_t(src.Ino),
-		C_uint32_t(src.Mode),
-		C_uint32_t(src.Nlink),
-		C_uint32_t(src.Uid),
-		C_uint32_t(src.Gid),
-		C_uint64_t(src.Rdev),
-		C_int64_t(src.Size),
-		C_int64_t(src.Atim.Sec), C_int64_t(src.Atim.Nsec),
-		C_int64_t(src.Mtim.Sec), C_int64_t(src.Mtim.Nsec),
-		C_int64_t(src.Ctim.Sec), C_int64_t(src.Ctim.Nsec),
-		C_int64_t(src.Blksize),
-		C_int64_t(src.Blocks),
-		C_int64_t(src.Birthtim.Sec), C_int64_t(src.Birthtim.Nsec),
-		C_uint32_t(src.Flags))
+func copyCstatFromFusestat(dst *c_fuse_stat_t, src *Stat_t) {
+	c_hostCstatFromFusestat(dst,
+		c_uint64_t(src.Dev),
+		c_uint64_t(src.Ino),
+		c_uint32_t(src.Mode),
+		c_uint32_t(src.Nlink),
+		c_uint32_t(src.Uid),
+		c_uint32_t(src.Gid),
+		c_uint64_t(src.Rdev),
+		c_int64_t(src.Size),
+		c_int64_t(src.Atim.Sec), c_int64_t(src.Atim.Nsec),
+		c_int64_t(src.Mtim.Sec), c_int64_t(src.Mtim.Nsec),
+		c_int64_t(src.Ctim.Sec), c_int64_t(src.Ctim.Nsec),
+		c_int64_t(src.Blksize),
+		c_int64_t(src.Blocks),
+		c_int64_t(src.Birthtim.Sec), c_int64_t(src.Birthtim.Nsec),
+		c_uint32_t(src.Flags))
 }
 
-func copyFusetimespecFromCtimespec(dst *Timespec, src *C_fuse_timespec_t) {
+func copyFusetimespecFromCtimespec(dst *Timespec, src *c_fuse_timespec_t) {
 	dst.Sec = int64(src.tv_sec)
 	dst.Nsec = int64(src.tv_nsec)
 }
 
-func recoverAsErrno(errc0 *C_int) {
+func recoverAsErrno(errc0 *c_int) {
 	if r := recover(); nil != r {
 		switch e := r.(type) {
 		case Error:
-			*errc0 = C_int(e)
+			*errc0 = c_int(e)
 		default:
-			*errc0 = -C_int(EIO)
+			*errc0 = -c_int(EIO)
 		}
 	}
 }
 
-func hostGetattr(path0 *C_char, stat0 *C_fuse_stat_t) (errc0 C_int) {
+func hostGetattr(path0 *c_char, stat0 *c_fuse_stat_t) (errc0 c_int) {
 	defer recoverAsErrno(&errc0)
-	fsop := hostHandleGet(C_fuse_get_context().private_data).fsop
-	path := C_GoString(path0)
+	fsop := hostHandleGet(c_fuse_get_context().private_data).fsop
+	path := c_GoString(path0)
 	stat := &Stat_t{}
 	errc := fsop.Getattr(path, stat, ^uint64(0))
 	copyCstatFromFusestat(stat0, stat)
-	return C_int(errc)
+	return c_int(errc)
 }
 
-func hostReadlink(path0 *C_char, buff0 *C_char, size0 C_size_t) (errc0 C_int) {
+func hostReadlink(path0 *c_char, buff0 *c_char, size0 c_size_t) (errc0 c_int) {
 	defer recoverAsErrno(&errc0)
-	fsop := hostHandleGet(C_fuse_get_context().private_data).fsop
-	path := C_GoString(path0)
+	fsop := hostHandleGet(c_fuse_get_context().private_data).fsop
+	path := c_GoString(path0)
 	errc, rslt := fsop.Readlink(path)
 	buff := (*[1 << 30]byte)(unsafe.Pointer(buff0))
 	copy(buff[:size0-1], rslt)
 	rlen := len(rslt)
-	if C_size_t(rlen) < size0 {
+	if c_size_t(rlen) < size0 {
 		buff[rlen] = 0
 	}
-	return C_int(errc)
+	return c_int(errc)
 }
 
-func hostMknod(path0 *C_char, mode0 C_fuse_mode_t, dev0 C_fuse_dev_t) (errc0 C_int) {
+func hostMknod(path0 *c_char, mode0 c_fuse_mode_t, dev0 c_fuse_dev_t) (errc0 c_int) {
 	defer recoverAsErrno(&errc0)
-	fsop := hostHandleGet(C_fuse_get_context().private_data).fsop
-	path := C_GoString(path0)
+	fsop := hostHandleGet(c_fuse_get_context().private_data).fsop
+	path := c_GoString(path0)
 	errc := fsop.Mknod(path, uint32(mode0), uint64(dev0))
-	return C_int(errc)
+	return c_int(errc)
 }
 
-func hostMkdir(path0 *C_char, mode0 C_fuse_mode_t) (errc0 C_int) {
+func hostMkdir(path0 *c_char, mode0 c_fuse_mode_t) (errc0 c_int) {
 	defer recoverAsErrno(&errc0)
-	fsop := hostHandleGet(C_fuse_get_context().private_data).fsop
-	path := C_GoString(path0)
+	fsop := hostHandleGet(c_fuse_get_context().private_data).fsop
+	path := c_GoString(path0)
 	errc := fsop.Mkdir(path, uint32(mode0))
-	return C_int(errc)
+	return c_int(errc)
 }
 
-func hostUnlink(path0 *C_char) (errc0 C_int) {
+func hostUnlink(path0 *c_char) (errc0 c_int) {
 	defer recoverAsErrno(&errc0)
-	fsop := hostHandleGet(C_fuse_get_context().private_data).fsop
-	path := C_GoString(path0)
+	fsop := hostHandleGet(c_fuse_get_context().private_data).fsop
+	path := c_GoString(path0)
 	errc := fsop.Unlink(path)
-	return C_int(errc)
+	return c_int(errc)
 }
 
-func hostRmdir(path0 *C_char) (errc0 C_int) {
+func hostRmdir(path0 *c_char) (errc0 c_int) {
 	defer recoverAsErrno(&errc0)
-	fsop := hostHandleGet(C_fuse_get_context().private_data).fsop
-	path := C_GoString(path0)
+	fsop := hostHandleGet(c_fuse_get_context().private_data).fsop
+	path := c_GoString(path0)
 	errc := fsop.Rmdir(path)
-	return C_int(errc)
+	return c_int(errc)
 }
 
-func hostSymlink(target0 *C_char, newpath0 *C_char) (errc0 C_int) {
+func hostSymlink(target0 *c_char, newpath0 *c_char) (errc0 c_int) {
 	defer recoverAsErrno(&errc0)
-	fsop := hostHandleGet(C_fuse_get_context().private_data).fsop
-	target, newpath := C_GoString(target0), C_GoString(newpath0)
+	fsop := hostHandleGet(c_fuse_get_context().private_data).fsop
+	target, newpath := c_GoString(target0), c_GoString(newpath0)
 	errc := fsop.Symlink(target, newpath)
-	return C_int(errc)
+	return c_int(errc)
 }
 
-func hostRename(oldpath0 *C_char, newpath0 *C_char) (errc0 C_int) {
+func hostRename(oldpath0 *c_char, newpath0 *c_char) (errc0 c_int) {
 	defer recoverAsErrno(&errc0)
-	fsop := hostHandleGet(C_fuse_get_context().private_data).fsop
-	oldpath, newpath := C_GoString(oldpath0), C_GoString(newpath0)
+	fsop := hostHandleGet(c_fuse_get_context().private_data).fsop
+	oldpath, newpath := c_GoString(oldpath0), c_GoString(newpath0)
 	errc := fsop.Rename(oldpath, newpath)
-	return C_int(errc)
+	return c_int(errc)
 }
 
-func hostLink(oldpath0 *C_char, newpath0 *C_char) (errc0 C_int) {
+func hostLink(oldpath0 *c_char, newpath0 *c_char) (errc0 c_int) {
 	defer recoverAsErrno(&errc0)
-	fsop := hostHandleGet(C_fuse_get_context().private_data).fsop
-	oldpath, newpath := C_GoString(oldpath0), C_GoString(newpath0)
+	fsop := hostHandleGet(c_fuse_get_context().private_data).fsop
+	oldpath, newpath := c_GoString(oldpath0), c_GoString(newpath0)
 	errc := fsop.Link(oldpath, newpath)
-	return C_int(errc)
+	return c_int(errc)
 }
 
-func hostChmod(path0 *C_char, mode0 C_fuse_mode_t) (errc0 C_int) {
+func hostChmod(path0 *c_char, mode0 c_fuse_mode_t) (errc0 c_int) {
 	defer recoverAsErrno(&errc0)
-	fsop := hostHandleGet(C_fuse_get_context().private_data).fsop
-	path := C_GoString(path0)
+	fsop := hostHandleGet(c_fuse_get_context().private_data).fsop
+	path := c_GoString(path0)
 	errc := fsop.Chmod(path, uint32(mode0))
-	return C_int(errc)
+	return c_int(errc)
 }
 
-func hostChown(path0 *C_char, uid0 C_fuse_uid_t, gid0 C_fuse_gid_t) (errc0 C_int) {
+func hostChown(path0 *c_char, uid0 c_fuse_uid_t, gid0 c_fuse_gid_t) (errc0 c_int) {
 	defer recoverAsErrno(&errc0)
-	fsop := hostHandleGet(C_fuse_get_context().private_data).fsop
-	path := C_GoString(path0)
+	fsop := hostHandleGet(c_fuse_get_context().private_data).fsop
+	path := c_GoString(path0)
 	errc := fsop.Chown(path, uint32(uid0), uint32(gid0))
-	return C_int(errc)
+	return c_int(errc)
 }
 
-func hostTruncate(path0 *C_char, size0 C_fuse_off_t) (errc0 C_int) {
+func hostTruncate(path0 *c_char, size0 c_fuse_off_t) (errc0 c_int) {
 	defer recoverAsErrno(&errc0)
-	fsop := hostHandleGet(C_fuse_get_context().private_data).fsop
-	path := C_GoString(path0)
+	fsop := hostHandleGet(c_fuse_get_context().private_data).fsop
+	path := c_GoString(path0)
 	errc := fsop.Truncate(path, int64(size0), ^uint64(0))
-	return C_int(errc)
+	return c_int(errc)
 }
 
-func hostOpen(path0 *C_char, fi0 *C_struct_fuse_file_info) (errc0 C_int) {
+func hostOpen(path0 *c_char, fi0 *c_struct_fuse_file_info) (errc0 c_int) {
 	defer recoverAsErrno(&errc0)
-	fsop := hostHandleGet(C_fuse_get_context().private_data).fsop
-	path := C_GoString(path0)
+	fsop := hostHandleGet(c_fuse_get_context().private_data).fsop
+	path := c_GoString(path0)
 	errc, rslt := fsop.Open(path, int(fi0.flags))
-	fi0.fh = C_uint64_t(rslt)
-	return C_int(errc)
+	fi0.fh = c_uint64_t(rslt)
+	return c_int(errc)
 }
 
-func hostRead(path0 *C_char, buff0 *C_char, size0 C_size_t, ofst0 C_fuse_off_t,
-	fi0 *C_struct_fuse_file_info) (nbyt0 C_int) {
+func hostRead(path0 *c_char, buff0 *c_char, size0 c_size_t, ofst0 c_fuse_off_t,
+	fi0 *c_struct_fuse_file_info) (nbyt0 c_int) {
 	defer recoverAsErrno(&nbyt0)
-	fsop := hostHandleGet(C_fuse_get_context().private_data).fsop
-	path := C_GoString(path0)
+	fsop := hostHandleGet(c_fuse_get_context().private_data).fsop
+	path := c_GoString(path0)
 	buff := (*[1 << 30]byte)(unsafe.Pointer(buff0))
 	nbyt := fsop.Read(path, buff[:size0], int64(ofst0), uint64(fi0.fh))
-	return C_int(nbyt)
+	return c_int(nbyt)
 }
 
-func hostWrite(path0 *C_char, buff0 *C_char, size0 C_size_t, ofst0 C_fuse_off_t,
-	fi0 *C_struct_fuse_file_info) (nbyt0 C_int) {
+func hostWrite(path0 *c_char, buff0 *c_char, size0 c_size_t, ofst0 c_fuse_off_t,
+	fi0 *c_struct_fuse_file_info) (nbyt0 c_int) {
 	defer recoverAsErrno(&nbyt0)
-	fsop := hostHandleGet(C_fuse_get_context().private_data).fsop
-	path := C_GoString(path0)
+	fsop := hostHandleGet(c_fuse_get_context().private_data).fsop
+	path := c_GoString(path0)
 	buff := (*[1 << 30]byte)(unsafe.Pointer(buff0))
 	nbyt := fsop.Write(path, buff[:size0], int64(ofst0), uint64(fi0.fh))
-	return C_int(nbyt)
+	return c_int(nbyt)
 }
 
-func hostStatfs(path0 *C_char, stat0 *C_fuse_statvfs_t) (errc0 C_int) {
+func hostStatfs(path0 *c_char, stat0 *c_fuse_statvfs_t) (errc0 c_int) {
 	defer recoverAsErrno(&errc0)
-	fsop := hostHandleGet(C_fuse_get_context().private_data).fsop
-	path := C_GoString(path0)
+	fsop := hostHandleGet(c_fuse_get_context().private_data).fsop
+	path := c_GoString(path0)
 	stat := &Statfs_t{}
 	errc := fsop.Statfs(path, stat)
 	if -ENOSYS == errc {
@@ -260,70 +260,70 @@ func hostStatfs(path0 *C_char, stat0 *C_fuse_statvfs_t) (errc0 C_int) {
 		errc = 0
 	}
 	copyCstatvfsFromFusestatfs(stat0, stat)
-	return C_int(errc)
+	return c_int(errc)
 }
 
-func hostFlush(path0 *C_char, fi0 *C_struct_fuse_file_info) (errc0 C_int) {
+func hostFlush(path0 *c_char, fi0 *c_struct_fuse_file_info) (errc0 c_int) {
 	defer recoverAsErrno(&errc0)
-	fsop := hostHandleGet(C_fuse_get_context().private_data).fsop
-	path := C_GoString(path0)
+	fsop := hostHandleGet(c_fuse_get_context().private_data).fsop
+	path := c_GoString(path0)
 	errc := fsop.Flush(path, uint64(fi0.fh))
-	return C_int(errc)
+	return c_int(errc)
 }
 
-func hostRelease(path0 *C_char, fi0 *C_struct_fuse_file_info) (errc0 C_int) {
+func hostRelease(path0 *c_char, fi0 *c_struct_fuse_file_info) (errc0 c_int) {
 	defer recoverAsErrno(&errc0)
-	fsop := hostHandleGet(C_fuse_get_context().private_data).fsop
-	path := C_GoString(path0)
+	fsop := hostHandleGet(c_fuse_get_context().private_data).fsop
+	path := c_GoString(path0)
 	errc := fsop.Release(path, uint64(fi0.fh))
-	return C_int(errc)
+	return c_int(errc)
 }
 
-func hostFsync(path0 *C_char, datasync C_int, fi0 *C_struct_fuse_file_info) (errc0 C_int) {
+func hostFsync(path0 *c_char, datasync c_int, fi0 *c_struct_fuse_file_info) (errc0 c_int) {
 	defer recoverAsErrno(&errc0)
-	fsop := hostHandleGet(C_fuse_get_context().private_data).fsop
-	path := C_GoString(path0)
+	fsop := hostHandleGet(c_fuse_get_context().private_data).fsop
+	path := c_GoString(path0)
 	errc := fsop.Fsync(path, 0 != datasync, uint64(fi0.fh))
 	if -ENOSYS == errc {
 		errc = 0
 	}
-	return C_int(errc)
+	return c_int(errc)
 }
 
-func hostSetxattr(path0 *C_char, name0 *C_char, buff0 *C_char, size0 C_size_t,
-	flags C_int) (errc0 C_int) {
+func hostSetxattr(path0 *c_char, name0 *c_char, buff0 *c_char, size0 c_size_t,
+	flags c_int) (errc0 c_int) {
 	defer recoverAsErrno(&errc0)
-	fsop := hostHandleGet(C_fuse_get_context().private_data).fsop
-	path := C_GoString(path0)
-	name := C_GoString(name0)
+	fsop := hostHandleGet(c_fuse_get_context().private_data).fsop
+	path := c_GoString(path0)
+	name := c_GoString(name0)
 	buff := (*[1 << 30]byte)(unsafe.Pointer(buff0))
 	errc := fsop.Setxattr(path, name, buff[:size0], int(flags))
-	return C_int(errc)
+	return c_int(errc)
 }
 
-func hostGetxattr(path0 *C_char, name0 *C_char, buff0 *C_char, size0 C_size_t) (nbyt0 C_int) {
+func hostGetxattr(path0 *c_char, name0 *c_char, buff0 *c_char, size0 c_size_t) (nbyt0 c_int) {
 	defer recoverAsErrno(&nbyt0)
-	fsop := hostHandleGet(C_fuse_get_context().private_data).fsop
-	path := C_GoString(path0)
-	name := C_GoString(name0)
+	fsop := hostHandleGet(c_fuse_get_context().private_data).fsop
+	path := c_GoString(path0)
+	name := c_GoString(name0)
 	errc, rslt := fsop.Getxattr(path, name)
 	if 0 != errc {
-		return C_int(errc)
+		return c_int(errc)
 	}
 	if 0 != size0 {
 		if len(rslt) > int(size0) {
-			return -C_int(ERANGE)
+			return -c_int(ERANGE)
 		}
 		buff := (*[1 << 30]byte)(unsafe.Pointer(buff0))
 		copy(buff[:size0], rslt)
 	}
-	return C_int(len(rslt))
+	return c_int(len(rslt))
 }
 
-func hostListxattr(path0 *C_char, buff0 *C_char, size0 C_size_t) (nbyt0 C_int) {
+func hostListxattr(path0 *c_char, buff0 *c_char, size0 c_size_t) (nbyt0 c_int) {
 	defer recoverAsErrno(&nbyt0)
-	fsop := hostHandleGet(C_fuse_get_context().private_data).fsop
-	path := C_GoString(path0)
+	fsop := hostHandleGet(c_fuse_get_context().private_data).fsop
+	path := c_GoString(path0)
 	buff := (*[1 << 30]byte)(unsafe.Pointer(buff0))
 	size := int(size0)
 	nbyt := 0
@@ -341,80 +341,80 @@ func hostListxattr(path0 *C_char, buff0 *C_char, size0 C_size_t) (nbyt0 C_int) {
 	}
 	errc := fsop.Listxattr(path, fill)
 	if 0 != errc {
-		return C_int(errc)
+		return c_int(errc)
 	}
-	return C_int(nbyt)
+	return c_int(nbyt)
 }
 
-func hostRemovexattr(path0 *C_char, name0 *C_char) (errc0 C_int) {
+func hostRemovexattr(path0 *c_char, name0 *c_char) (errc0 c_int) {
 	defer recoverAsErrno(&errc0)
-	fsop := hostHandleGet(C_fuse_get_context().private_data).fsop
-	path := C_GoString(path0)
-	name := C_GoString(name0)
+	fsop := hostHandleGet(c_fuse_get_context().private_data).fsop
+	path := c_GoString(path0)
+	name := c_GoString(name0)
 	errc := fsop.Removexattr(path, name)
-	return C_int(errc)
+	return c_int(errc)
 }
 
-func hostOpendir(path0 *C_char, fi0 *C_struct_fuse_file_info) (errc0 C_int) {
+func hostOpendir(path0 *c_char, fi0 *c_struct_fuse_file_info) (errc0 c_int) {
 	defer recoverAsErrno(&errc0)
-	fsop := hostHandleGet(C_fuse_get_context().private_data).fsop
-	path := C_GoString(path0)
+	fsop := hostHandleGet(c_fuse_get_context().private_data).fsop
+	path := c_GoString(path0)
 	errc, rslt := fsop.Opendir(path)
 	if -ENOSYS == errc {
 		errc = 0
 	}
-	fi0.fh = C_uint64_t(rslt)
-	return C_int(errc)
+	fi0.fh = c_uint64_t(rslt)
+	return c_int(errc)
 }
 
-func hostReaddir(path0 *C_char, buff0 unsafe.Pointer, fill0 C_fuse_fill_dir_t, ofst0 C_fuse_off_t,
-	fi0 *C_struct_fuse_file_info) (errc0 C_int) {
+func hostReaddir(path0 *c_char, buff0 unsafe.Pointer, fill0 c_fuse_fill_dir_t, ofst0 c_fuse_off_t,
+	fi0 *c_struct_fuse_file_info) (errc0 c_int) {
 	defer recoverAsErrno(&errc0)
-	fsop := hostHandleGet(C_fuse_get_context().private_data).fsop
-	path := C_GoString(path0)
+	fsop := hostHandleGet(c_fuse_get_context().private_data).fsop
+	path := c_GoString(path0)
 	fill := func(name1 string, stat1 *Stat_t, off1 int64) bool {
-		name := C_CString(name1)
-		defer C_free(unsafe.Pointer(name))
+		name := c_CString(name1)
+		defer c_free(unsafe.Pointer(name))
 		if nil == stat1 {
-			return 0 == C_hostFilldir(fill0, buff0, name, nil, C_fuse_off_t(off1))
+			return 0 == c_hostFilldir(fill0, buff0, name, nil, c_fuse_off_t(off1))
 		} else {
-			stat := C_fuse_stat_t{}
+			stat := c_fuse_stat_t{}
 			copyCstatFromFusestat(&stat, stat1)
-			return 0 == C_hostFilldir(fill0, buff0, name, &stat, C_fuse_off_t(off1))
+			return 0 == c_hostFilldir(fill0, buff0, name, &stat, c_fuse_off_t(off1))
 		}
 	}
 	errc := fsop.Readdir(path, fill, int64(ofst0), uint64(fi0.fh))
-	return C_int(errc)
+	return c_int(errc)
 }
 
-func hostReleasedir(path0 *C_char, fi0 *C_struct_fuse_file_info) (errc0 C_int) {
+func hostReleasedir(path0 *c_char, fi0 *c_struct_fuse_file_info) (errc0 c_int) {
 	defer recoverAsErrno(&errc0)
-	fsop := hostHandleGet(C_fuse_get_context().private_data).fsop
-	path := C_GoString(path0)
+	fsop := hostHandleGet(c_fuse_get_context().private_data).fsop
+	path := c_GoString(path0)
 	errc := fsop.Releasedir(path, uint64(fi0.fh))
-	return C_int(errc)
+	return c_int(errc)
 }
 
-func hostFsyncdir(path0 *C_char, datasync C_int, fi0 *C_struct_fuse_file_info) (errc0 C_int) {
+func hostFsyncdir(path0 *c_char, datasync c_int, fi0 *c_struct_fuse_file_info) (errc0 c_int) {
 	defer recoverAsErrno(&errc0)
-	fsop := hostHandleGet(C_fuse_get_context().private_data).fsop
-	path := C_GoString(path0)
+	fsop := hostHandleGet(c_fuse_get_context().private_data).fsop
+	path := c_GoString(path0)
 	errc := fsop.Fsyncdir(path, 0 != datasync, uint64(fi0.fh))
 	if -ENOSYS == errc {
 		errc = 0
 	}
-	return C_int(errc)
+	return c_int(errc)
 }
 
-func hostInit(conn0 *C_struct_fuse_conn_info) (user_data unsafe.Pointer) {
+func hostInit(conn0 *c_struct_fuse_conn_info) (user_data unsafe.Pointer) {
 	defer recover()
-	fctx := C_fuse_get_context()
+	fctx := c_fuse_get_context()
 	user_data = fctx.private_data
 	host := hostHandleGet(user_data)
 	host.fuse = fctx.fuse
-	C_hostAsgnCconninfo(conn0,
-		C_bool(host.capCaseInsensitive),
-		C_bool(host.capReaddirPlus))
+	c_hostAsgnCconninfo(conn0,
+		c_bool(host.capCaseInsensitive),
+		c_bool(host.capReaddirPlus))
 	if nil != host.sigc {
 		signal.Notify(host.sigc, syscall.SIGINT, syscall.SIGTERM)
 	}
@@ -432,18 +432,18 @@ func hostDestroy(user_data unsafe.Pointer) {
 	host.fuse = nil
 }
 
-func hostAccess(path0 *C_char, mask0 C_int) (errc0 C_int) {
+func hostAccess(path0 *c_char, mask0 c_int) (errc0 c_int) {
 	defer recoverAsErrno(&errc0)
-	fsop := hostHandleGet(C_fuse_get_context().private_data).fsop
-	path := C_GoString(path0)
+	fsop := hostHandleGet(c_fuse_get_context().private_data).fsop
+	path := c_GoString(path0)
 	errc := fsop.Access(path, uint32(mask0))
-	return C_int(errc)
+	return c_int(errc)
 }
 
-func hostCreate(path0 *C_char, mode0 C_fuse_mode_t, fi0 *C_struct_fuse_file_info) (errc0 C_int) {
+func hostCreate(path0 *c_char, mode0 c_fuse_mode_t, fi0 *c_struct_fuse_file_info) (errc0 c_int) {
 	defer recoverAsErrno(&errc0)
-	fsop := hostHandleGet(C_fuse_get_context().private_data).fsop
-	path := C_GoString(path0)
+	fsop := hostHandleGet(c_fuse_get_context().private_data).fsop
+	path := c_GoString(path0)
 	errc, rslt := fsop.Create(path, int(fi0.flags), uint32(mode0))
 	if -ENOSYS == errc {
 		errc = fsop.Mknod(path, S_IFREG|uint32(mode0), 0)
@@ -451,87 +451,87 @@ func hostCreate(path0 *C_char, mode0 C_fuse_mode_t, fi0 *C_struct_fuse_file_info
 			errc, rslt = fsop.Open(path, int(fi0.flags))
 		}
 	}
-	fi0.fh = C_uint64_t(rslt)
-	return C_int(errc)
+	fi0.fh = c_uint64_t(rslt)
+	return c_int(errc)
 }
 
-func hostFtruncate(path0 *C_char, size0 C_fuse_off_t, fi0 *C_struct_fuse_file_info) (errc0 C_int) {
+func hostFtruncate(path0 *c_char, size0 c_fuse_off_t, fi0 *c_struct_fuse_file_info) (errc0 c_int) {
 	defer recoverAsErrno(&errc0)
-	fsop := hostHandleGet(C_fuse_get_context().private_data).fsop
-	path := C_GoString(path0)
+	fsop := hostHandleGet(c_fuse_get_context().private_data).fsop
+	path := c_GoString(path0)
 	errc := fsop.Truncate(path, int64(size0), uint64(fi0.fh))
-	return C_int(errc)
+	return c_int(errc)
 }
 
-func hostFgetattr(path0 *C_char, stat0 *C_fuse_stat_t,
-	fi0 *C_struct_fuse_file_info) (errc0 C_int) {
+func hostFgetattr(path0 *c_char, stat0 *c_fuse_stat_t,
+	fi0 *c_struct_fuse_file_info) (errc0 c_int) {
 	defer recoverAsErrno(&errc0)
-	fsop := hostHandleGet(C_fuse_get_context().private_data).fsop
-	path := C_GoString(path0)
+	fsop := hostHandleGet(c_fuse_get_context().private_data).fsop
+	path := c_GoString(path0)
 	stat := &Stat_t{}
 	errc := fsop.Getattr(path, stat, uint64(fi0.fh))
 	copyCstatFromFusestat(stat0, stat)
-	return C_int(errc)
+	return c_int(errc)
 }
 
-func hostUtimens(path0 *C_char, tmsp0 *C_fuse_timespec_t) (errc0 C_int) {
+func hostUtimens(path0 *c_char, tmsp0 *c_fuse_timespec_t) (errc0 c_int) {
 	defer recoverAsErrno(&errc0)
-	fsop := hostHandleGet(C_fuse_get_context().private_data).fsop
-	path := C_GoString(path0)
+	fsop := hostHandleGet(c_fuse_get_context().private_data).fsop
+	path := c_GoString(path0)
 	if nil == tmsp0 {
 		errc := fsop.Utimens(path, nil)
-		return C_int(errc)
+		return c_int(errc)
 	} else {
 		tmsp := [2]Timespec{}
-		tmsa := (*[2]C_fuse_timespec_t)(unsafe.Pointer(tmsp0))
+		tmsa := (*[2]c_fuse_timespec_t)(unsafe.Pointer(tmsp0))
 		copyFusetimespecFromCtimespec(&tmsp[0], &tmsa[0])
 		copyFusetimespecFromCtimespec(&tmsp[1], &tmsa[1])
 		errc := fsop.Utimens(path, tmsp[:])
-		return C_int(errc)
+		return c_int(errc)
 	}
 }
 
-func hostSetchgtime(path0 *C_char, tmsp0 *C_fuse_timespec_t) (errc0 C_int) {
+func hostSetchgtime(path0 *c_char, tmsp0 *c_fuse_timespec_t) (errc0 c_int) {
 	defer recoverAsErrno(&errc0)
-	fsop := hostHandleGet(C_fuse_get_context().private_data).fsop
+	fsop := hostHandleGet(c_fuse_get_context().private_data).fsop
 	intf, ok := fsop.(FileSystemSetchgtime)
 	if !ok {
 		// say we did it!
 		return 0
 	}
-	path := C_GoString(path0)
+	path := c_GoString(path0)
 	tmsp := Timespec{}
 	copyFusetimespecFromCtimespec(&tmsp, tmsp0)
 	errc := intf.Setchgtime(path, tmsp)
-	return C_int(errc)
+	return c_int(errc)
 }
 
-func hostSetcrtime(path0 *C_char, tmsp0 *C_fuse_timespec_t) (errc0 C_int) {
+func hostSetcrtime(path0 *c_char, tmsp0 *c_fuse_timespec_t) (errc0 c_int) {
 	defer recoverAsErrno(&errc0)
-	fsop := hostHandleGet(C_fuse_get_context().private_data).fsop
+	fsop := hostHandleGet(c_fuse_get_context().private_data).fsop
 	intf, ok := fsop.(FileSystemSetcrtime)
 	if !ok {
 		// say we did it!
 		return 0
 	}
-	path := C_GoString(path0)
+	path := c_GoString(path0)
 	tmsp := Timespec{}
 	copyFusetimespecFromCtimespec(&tmsp, tmsp0)
 	errc := intf.Setcrtime(path, tmsp)
-	return C_int(errc)
+	return c_int(errc)
 }
 
-func hostChflags(path0 *C_char, flags C_uint32_t) (errc0 C_int) {
+func hostChflags(path0 *c_char, flags c_uint32_t) (errc0 c_int) {
 	defer recoverAsErrno(&errc0)
-	fsop := hostHandleGet(C_fuse_get_context().private_data).fsop
+	fsop := hostHandleGet(c_fuse_get_context().private_data).fsop
 	intf, ok := fsop.(FileSystemChflags)
 	if !ok {
 		// say we did it!
 		return 0
 	}
-	path := C_GoString(path0)
+	path := c_GoString(path0)
 	errc := intf.Chflags(path, uint32(flags))
-	return C_int(errc)
+	return c_int(errc)
 }
 
 // NewFileSystemHost creates a file system host.
@@ -570,7 +570,7 @@ func (host *FileSystemHost) SetCapReaddirPlus(value bool) {
 // to contain the mountpoint. It is also allowed for opts to be nil, although in this case the
 // mountpoint must be non-empty.
 func (host *FileSystemHost) Mount(mountpoint string, opts []string) bool {
-	if 0 == C_hostFuseInit() {
+	if 0 == c_hostFuseInit() {
 		panic("cgofuse: cannot find winfsp")
 	}
 
@@ -591,21 +591,21 @@ func (host *FileSystemHost) Mount(mountpoint string, opts []string) bool {
 	if "" != mountpoint {
 		argc++
 	}
-	argv := make([]*C_char, argc+1)
-	argv[0] = C_CString(exec)
-	defer C_free(unsafe.Pointer(argv[0]))
+	argv := make([]*c_char, argc+1)
+	argv[0] = c_CString(exec)
+	defer c_free(unsafe.Pointer(argv[0]))
 	opti := 1
 	if "" != mountpoint {
-		argv[1] = C_CString(mountpoint)
-		defer C_free(unsafe.Pointer(argv[1]))
+		argv[1] = c_CString(mountpoint)
+		defer c_free(unsafe.Pointer(argv[1]))
 		opti++
 	}
-	argv[opti] = C_CString("-f")
-	defer C_free(unsafe.Pointer(argv[opti]))
+	argv[opti] = c_CString("-f")
+	defer c_free(unsafe.Pointer(argv[opti]))
 	opti++
 	for i := 0; len(opts) > i; i++ {
-		argv[i+opti] = C_CString(opts[i])
-		defer C_free(unsafe.Pointer(argv[i+opti]))
+		argv[i+opti] = c_CString(opts[i])
+		defer c_free(unsafe.Pointer(argv[i+opti]))
 	}
 
 	/*
@@ -614,9 +614,9 @@ func (host *FileSystemHost) Mount(mountpoint string, opts []string) bool {
 	 * We need to determine the mountpoint that FUSE is going (to try) to use, so that we
 	 * can unmount later.
 	 */
-	host.mntp = C_hostMountpoint(C_int(argc), &argv[0])
+	host.mntp = c_hostMountpoint(c_int(argc), &argv[0])
 	defer func() {
-		C_free(unsafe.Pointer(host.mntp))
+		c_free(unsafe.Pointer(host.mntp))
 		host.mntp = nil
 	}()
 
@@ -650,7 +650,7 @@ func (host *FileSystemHost) Mount(mountpoint string, opts []string) bool {
 	 */
 	hndl := hostHandleNew(host)
 	defer hostHandleDel(hndl)
-	return 0 != C_hostMount(C_int(argc), &argv[0], hndl)
+	return 0 != c_hostMount(c_int(argc), &argv[0], hndl)
 }
 
 // Unmount unmounts a mounted file system.
@@ -660,14 +660,14 @@ func (host *FileSystemHost) Unmount() bool {
 	if nil == host.fuse {
 		return false
 	}
-	return 0 != C_hostUnmount(host.fuse, host.mntp)
+	return 0 != c_hostUnmount(host.fuse, host.mntp)
 }
 
 // Getcontext gets information related to a file system operation.
 func Getcontext() (uid uint32, gid uint32, pid int) {
-	uid = uint32(C_fuse_get_context().uid)
-	gid = uint32(C_fuse_get_context().gid)
-	pid = int(C_fuse_get_context().pid)
+	uid = uint32(c_fuse_get_context().uid)
+	gid = uint32(c_fuse_get_context().gid)
+	pid = int(c_fuse_get_context().pid)
 	return
 }
 
@@ -777,7 +777,7 @@ func optNormStr(opt string) string {
 //     umask == 077
 //
 func OptParse(args []string, format string, vals ...interface{}) (outargs []string, err error) {
-	if 0 == C_hostFuseInit() {
+	if 0 == c_hostFuseInit() {
 		panic("cgofuse: cannot find winfsp")
 	}
 
@@ -801,100 +801,100 @@ func OptParse(args []string, format string, vals ...interface{}) (outargs []stri
 		opts = strings.Split(format, " ")
 	}
 
-	align := int(2 * unsafe.Sizeof(C_size_t(0))) // match malloc alignment (usually 8 or 16)
+	align := int(2 * unsafe.Sizeof(c_size_t(0))) // match malloc alignment (usually 8 or 16)
 
-	fuse_opts := make([]C_struct_fuse_opt, len(opts)+1)
+	fuse_opts := make([]c_struct_fuse_opt, len(opts)+1)
 	for i := 0; len(opts) > i; i++ {
 		switch vals[i].(type) {
 		case *bool:
-			fuse_opts[i].templ = C_CString(optNormBool(opts[i]))
+			fuse_opts[i].templ = c_CString(optNormBool(opts[i]))
 		case *int:
-			fuse_opts[i].templ = C_CString(optNormInt(opts[i], ""))
+			fuse_opts[i].templ = c_CString(optNormInt(opts[i], ""))
 		case *int8:
-			fuse_opts[i].templ = C_CString(optNormInt(opts[i], "hh"))
+			fuse_opts[i].templ = c_CString(optNormInt(opts[i], "hh"))
 		case *int16:
-			fuse_opts[i].templ = C_CString(optNormInt(opts[i], "h"))
+			fuse_opts[i].templ = c_CString(optNormInt(opts[i], "h"))
 		case *int32:
-			fuse_opts[i].templ = C_CString(optNormInt(opts[i], ""))
+			fuse_opts[i].templ = c_CString(optNormInt(opts[i], ""))
 		case *int64:
-			fuse_opts[i].templ = C_CString(optNormInt(opts[i], "ll"))
+			fuse_opts[i].templ = c_CString(optNormInt(opts[i], "ll"))
 		case *uint:
-			fuse_opts[i].templ = C_CString(optNormInt(opts[i], ""))
+			fuse_opts[i].templ = c_CString(optNormInt(opts[i], ""))
 		case *uint8:
-			fuse_opts[i].templ = C_CString(optNormInt(opts[i], "hh"))
+			fuse_opts[i].templ = c_CString(optNormInt(opts[i], "hh"))
 		case *uint16:
-			fuse_opts[i].templ = C_CString(optNormInt(opts[i], "h"))
+			fuse_opts[i].templ = c_CString(optNormInt(opts[i], "h"))
 		case *uint32:
-			fuse_opts[i].templ = C_CString(optNormInt(opts[i], ""))
+			fuse_opts[i].templ = c_CString(optNormInt(opts[i], ""))
 		case *uint64:
-			fuse_opts[i].templ = C_CString(optNormInt(opts[i], "ll"))
+			fuse_opts[i].templ = c_CString(optNormInt(opts[i], "ll"))
 		case *uintptr:
-			fuse_opts[i].templ = C_CString(optNormInt(opts[i], "ll"))
+			fuse_opts[i].templ = c_CString(optNormInt(opts[i], "ll"))
 		case *string:
-			fuse_opts[i].templ = C_CString(optNormStr(opts[i]))
+			fuse_opts[i].templ = c_CString(optNormStr(opts[i]))
 		}
-		defer C_free(unsafe.Pointer(fuse_opts[i].templ))
+		defer c_free(unsafe.Pointer(fuse_opts[i].templ))
 
 		// Work around Go pre-1.10 limitation. See golang issue:
 		// https://github.com/golang/go/issues/21809
-		*(*C_fuse_opt_offset_t)(unsafe.Pointer(&fuse_opts[i].offset)) =
-			C_fuse_opt_offset_t(i * align)
+		*(*c_fuse_opt_offset_t)(unsafe.Pointer(&fuse_opts[i].offset)) =
+			c_fuse_opt_offset_t(i * align)
 
 		fuse_opts[i].value = 1
 	}
 
-	fuse_args := C_struct_fuse_args{}
-	defer C_fuse_opt_free_args(&fuse_args)
+	fuse_args := c_struct_fuse_args{}
+	defer c_fuse_opt_free_args(&fuse_args)
 	argc := 1 + len(args)
-	argp := C_calloc(C_size_t(argc+1), C_size_t(unsafe.Sizeof((*C_char)(nil))))
-	defer C_free(argp)
-	argv := (*[1 << 16]*C_char)(argp)
-	argv[0] = C_CString("<UNKNOWN>")
-	defer C_free(unsafe.Pointer(argv[0]))
+	argp := c_calloc(c_size_t(argc+1), c_size_t(unsafe.Sizeof((*c_char)(nil))))
+	defer c_free(argp)
+	argv := (*[1 << 16]*c_char)(argp)
+	argv[0] = c_CString("<UNKNOWN>")
+	defer c_free(unsafe.Pointer(argv[0]))
 	for i := 0; len(args) > i; i++ {
-		argv[1+i] = C_CString(args[i])
-		defer C_free(unsafe.Pointer(argv[1+i]))
+		argv[1+i] = c_CString(args[i])
+		defer c_free(unsafe.Pointer(argv[1+i]))
 	}
-	fuse_args.argc = C_int(argc)
-	fuse_args.argv = (**C_char)(&argv[0])
+	fuse_args.argc = c_int(argc)
+	fuse_args.argv = (**c_char)(&argv[0])
 
-	data := C_calloc(C_size_t(len(opts)), C_size_t(align))
-	defer C_free(data)
+	data := c_calloc(c_size_t(len(opts)), c_size_t(align))
+	defer c_free(data)
 
-	if -1 == C_hostOptParse(&fuse_args, data, &fuse_opts[0], C_bool(nonopts)) {
+	if -1 == c_hostOptParse(&fuse_args, data, &fuse_opts[0], c_bool(nonopts)) {
 		panic("failed")
 	}
 
 	for i := 0; len(opts) > i; i++ {
 		switch v := vals[i].(type) {
 		case *bool:
-			*v = 0 != int(*(*C_int)(unsafe.Pointer(uintptr(data) + uintptr(i*align))))
+			*v = 0 != int(*(*c_int)(unsafe.Pointer(uintptr(data) + uintptr(i*align))))
 		case *int:
-			*v = int(*(*C_int)(unsafe.Pointer(uintptr(data) + uintptr(i*align))))
+			*v = int(*(*c_int)(unsafe.Pointer(uintptr(data) + uintptr(i*align))))
 		case *int8:
-			*v = int8(*(*C_int8_t)(unsafe.Pointer(uintptr(data) + uintptr(i*align))))
+			*v = int8(*(*c_int8_t)(unsafe.Pointer(uintptr(data) + uintptr(i*align))))
 		case *int16:
-			*v = int16(*(*C_int16_t)(unsafe.Pointer(uintptr(data) + uintptr(i*align))))
+			*v = int16(*(*c_int16_t)(unsafe.Pointer(uintptr(data) + uintptr(i*align))))
 		case *int32:
-			*v = int32(*(*C_int32_t)(unsafe.Pointer(uintptr(data) + uintptr(i*align))))
+			*v = int32(*(*c_int32_t)(unsafe.Pointer(uintptr(data) + uintptr(i*align))))
 		case *int64:
-			*v = int64(*(*C_int64_t)(unsafe.Pointer(uintptr(data) + uintptr(i*align))))
+			*v = int64(*(*c_int64_t)(unsafe.Pointer(uintptr(data) + uintptr(i*align))))
 		case *uint:
-			*v = uint(*(*C_unsigned)(unsafe.Pointer(uintptr(data) + uintptr(i*align))))
+			*v = uint(*(*c_unsigned)(unsafe.Pointer(uintptr(data) + uintptr(i*align))))
 		case *uint8:
-			*v = uint8(*(*C_uint8_t)(unsafe.Pointer(uintptr(data) + uintptr(i*align))))
+			*v = uint8(*(*c_uint8_t)(unsafe.Pointer(uintptr(data) + uintptr(i*align))))
 		case *uint16:
-			*v = uint16(*(*C_uint16_t)(unsafe.Pointer(uintptr(data) + uintptr(i*align))))
+			*v = uint16(*(*c_uint16_t)(unsafe.Pointer(uintptr(data) + uintptr(i*align))))
 		case *uint32:
-			*v = uint32(*(*C_uint32_t)(unsafe.Pointer(uintptr(data) + uintptr(i*align))))
+			*v = uint32(*(*c_uint32_t)(unsafe.Pointer(uintptr(data) + uintptr(i*align))))
 		case *uint64:
-			*v = uint64(*(*C_uint64_t)(unsafe.Pointer(uintptr(data) + uintptr(i*align))))
+			*v = uint64(*(*c_uint64_t)(unsafe.Pointer(uintptr(data) + uintptr(i*align))))
 		case *uintptr:
-			*v = uintptr(*(*C_uintptr_t)(unsafe.Pointer(uintptr(data) + uintptr(i*align))))
+			*v = uintptr(*(*c_uintptr_t)(unsafe.Pointer(uintptr(data) + uintptr(i*align))))
 		case *string:
-			s := *(**C_char)(unsafe.Pointer(uintptr(data) + uintptr(i*align)))
-			*v = C_GoString(s)
-			C_free(unsafe.Pointer(s))
+			s := *(**c_char)(unsafe.Pointer(uintptr(data) + uintptr(i*align)))
+			*v = c_GoString(s)
+			c_free(unsafe.Pointer(s))
 		}
 	}
 
@@ -903,7 +903,7 @@ func OptParse(args []string, format string, vals ...interface{}) (outargs []stri
 	} else {
 		outargs = make([]string, fuse_args.argc-1)
 		for i := 1; int(fuse_args.argc) > i; i++ {
-			outargs[i-1] = C_GoString((*[1 << 16]*C_char)(unsafe.Pointer(fuse_args.argv))[i])
+			outargs[i-1] = c_GoString((*[1 << 16]*c_char)(unsafe.Pointer(fuse_args.argv))[i])
 		}
 	}
 
@@ -915,5 +915,5 @@ func OptParse(args []string, format string, vals ...interface{}) (outargs []stri
 }
 
 func init() {
-	C_hostStaticInit()
+	c_hostStaticInit()
 }

@@ -562,84 +562,79 @@ import "C"
 import "unsafe"
 
 type (
-	C_bool                  = C.bool
-	C_char                  = C.char
-	C_fuse_dev_t            = C.fuse_dev_t
-	C_fuse_fill_dir_t       = C.fuse_fill_dir_t
-	C_fuse_gid_t            = C.fuse_gid_t
-	C_fuse_mode_t           = C.fuse_mode_t
-	C_fuse_off_t            = C.fuse_off_t
-	C_fuse_opt_offset_t     = C.fuse_opt_offset_t
-	C_fuse_stat_t           = C.fuse_stat_t
-	C_fuse_statvfs_t        = C.fuse_statvfs_t
-	C_fuse_timespec_t       = C.fuse_timespec_t
-	C_fuse_uid_t            = C.fuse_uid_t
-	C_int                   = C.int
-	C_int16_t               = C.int16_t
-	C_int32_t               = C.int32_t
-	C_int64_t               = C.int64_t
-	C_int8_t                = C.int8_t
-	C_size_t                = C.size_t
-	C_struct_fuse           = C.struct_fuse
-	C_struct_fuse_args      = C.struct_fuse_args
-	C_struct_fuse_conn_info = C.struct_fuse_conn_info
-	C_struct_fuse_context   = C.struct_fuse_context
-	C_struct_fuse_file_info = C.struct_fuse_file_info
-	C_struct_fuse_opt       = C.struct_fuse_opt
-	C_uint16_t              = C.uint16_t
-	C_uint32_t              = C.uint32_t
-	C_uint64_t              = C.uint64_t
-	C_uint8_t               = C.uint8_t
-	C_uintptr_t             = C.uintptr_t
-	C_unsigned              = C.unsigned
+	c_bool                  = C.bool
+	c_char                  = C.char
+	c_fuse_dev_t            = C.fuse_dev_t
+	c_fuse_fill_dir_t       = C.fuse_fill_dir_t
+	c_fuse_gid_t            = C.fuse_gid_t
+	c_fuse_mode_t           = C.fuse_mode_t
+	c_fuse_off_t            = C.fuse_off_t
+	c_fuse_opt_offset_t     = C.fuse_opt_offset_t
+	c_fuse_stat_t           = C.fuse_stat_t
+	c_fuse_statvfs_t        = C.fuse_statvfs_t
+	c_fuse_timespec_t       = C.fuse_timespec_t
+	c_fuse_uid_t            = C.fuse_uid_t
+	c_int                   = C.int
+	c_int16_t               = C.int16_t
+	c_int32_t               = C.int32_t
+	c_int64_t               = C.int64_t
+	c_int8_t                = C.int8_t
+	c_size_t                = C.size_t
+	c_struct_fuse           = C.struct_fuse
+	c_struct_fuse_args      = C.struct_fuse_args
+	c_struct_fuse_conn_info = C.struct_fuse_conn_info
+	c_struct_fuse_context   = C.struct_fuse_context
+	c_struct_fuse_file_info = C.struct_fuse_file_info
+	c_struct_fuse_opt       = C.struct_fuse_opt
+	c_uint16_t              = C.uint16_t
+	c_uint32_t              = C.uint32_t
+	c_uint64_t              = C.uint64_t
+	c_uint8_t               = C.uint8_t
+	c_uintptr_t             = C.uintptr_t
+	c_unsigned              = C.unsigned
 )
 
-// I would like to do the following, but it is not allowed (Go 1.10):
-//     var C_GoString = C.GoString
-//
-// See https://go-review.googlesource.com/c/gofrontend/+/12543
-
-func C_GoString(s *C_char) string {
+func c_GoString(s *c_char) string {
 	return C.GoString(s)
 }
-func C_CString(s string) *C_char {
+func c_CString(s string) *c_char {
 	return C.CString(s)
 }
 
-func C_malloc(size C_size_t) unsafe.Pointer {
+func c_malloc(size c_size_t) unsafe.Pointer {
 	return C.malloc(size)
 }
-func C_calloc(count C_size_t, size C_size_t) unsafe.Pointer {
+func c_calloc(count c_size_t, size c_size_t) unsafe.Pointer {
 	return C.calloc(count, size)
 }
-func C_free(p unsafe.Pointer) {
+func c_free(p unsafe.Pointer) {
 	C.free(p)
 }
 
-func C_fuse_get_context() *C_struct_fuse_context {
+func c_fuse_get_context() *c_struct_fuse_context {
 	return C.fuse_get_context()
 }
-func C_fuse_opt_free_args(args *C_struct_fuse_args) {
+func c_fuse_opt_free_args(args *c_struct_fuse_args) {
 	C.fuse_opt_free_args(args)
 }
 
-func C_hostAsgnCconninfo(conn *C_struct_fuse_conn_info,
-	capCaseInsensitive C_bool,
-	capReaddirPlus C_bool) {
+func c_hostAsgnCconninfo(conn *c_struct_fuse_conn_info,
+	capCaseInsensitive c_bool,
+	capReaddirPlus c_bool) {
 	C.hostAsgnCconninfo(conn, capCaseInsensitive, capReaddirPlus)
 }
-func C_hostCstatvfsFromFusestatfs(stbuf *C_fuse_statvfs_t,
-	bsize C_uint64_t,
-	frsize C_uint64_t,
-	blocks C_uint64_t,
-	bfree C_uint64_t,
-	bavail C_uint64_t,
-	files C_uint64_t,
-	ffree C_uint64_t,
-	favail C_uint64_t,
-	fsid C_uint64_t,
-	flag C_uint64_t,
-	namemax C_uint64_t) {
+func c_hostCstatvfsFromFusestatfs(stbuf *c_fuse_statvfs_t,
+	bsize c_uint64_t,
+	frsize c_uint64_t,
+	blocks c_uint64_t,
+	bfree c_uint64_t,
+	bavail c_uint64_t,
+	files c_uint64_t,
+	ffree c_uint64_t,
+	favail c_uint64_t,
+	fsid c_uint64_t,
+	flag c_uint64_t,
+	namemax c_uint64_t) {
 	C.hostCstatvfsFromFusestatfs(stbuf,
 		bsize,
 		frsize,
@@ -653,22 +648,22 @@ func C_hostCstatvfsFromFusestatfs(stbuf *C_fuse_statvfs_t,
 		flag,
 		namemax)
 }
-func C_hostCstatFromFusestat(stbuf *C_fuse_stat_t,
-	dev C_uint64_t,
-	ino C_uint64_t,
-	mode C_uint32_t,
-	nlink C_uint32_t,
-	uid C_uint32_t,
-	gid C_uint32_t,
-	rdev C_uint64_t,
-	size C_int64_t,
-	atimSec C_int64_t, atimNsec C_int64_t,
-	mtimSec C_int64_t, mtimNsec C_int64_t,
-	ctimSec C_int64_t, ctimNsec C_int64_t,
-	blksize C_int64_t,
-	blocks C_int64_t,
-	birthtimSec C_int64_t, birthtimNsec C_int64_t,
-	flags C_uint32_t) {
+func c_hostCstatFromFusestat(stbuf *c_fuse_stat_t,
+	dev c_uint64_t,
+	ino c_uint64_t,
+	mode c_uint32_t,
+	nlink c_uint32_t,
+	uid c_uint32_t,
+	gid c_uint32_t,
+	rdev c_uint64_t,
+	size c_int64_t,
+	atimSec c_int64_t, atimNsec c_int64_t,
+	mtimSec c_int64_t, mtimNsec c_int64_t,
+	ctimSec c_int64_t, ctimNsec c_int64_t,
+	blksize c_int64_t,
+	blocks c_int64_t,
+	birthtimSec c_int64_t, birthtimNsec c_int64_t,
+	flags c_uint32_t) {
 	C.hostCstatFromFusestat(stbuf,
 		dev,
 		ino,
@@ -690,172 +685,172 @@ func C_hostCstatFromFusestat(stbuf *C_fuse_stat_t,
 		birthtimNsec,
 		flags)
 }
-func C_hostFilldir(filler C_fuse_fill_dir_t,
-	buf unsafe.Pointer, name *C_char, stbuf *C_fuse_stat_t, off C_fuse_off_t) C_int {
+func c_hostFilldir(filler c_fuse_fill_dir_t,
+	buf unsafe.Pointer, name *c_char, stbuf *c_fuse_stat_t, off c_fuse_off_t) c_int {
 	return C.hostFilldir(filler, buf, name, stbuf, off)
 }
-func C_hostStaticInit() {
+func c_hostStaticInit() {
 	C.hostStaticInit()
 }
-func C_hostFuseInit() C_int {
+func c_hostFuseInit() c_int {
 	return C.hostFuseInit()
 }
-func C_hostMountpoint(argc C_int, argv **C_char) *C_char {
+func c_hostMountpoint(argc c_int, argv **c_char) *c_char {
 	return C.hostMountpoint(argc, argv)
 }
-func C_hostMount(argc C_int, argv **C_char, data unsafe.Pointer) C_int {
+func c_hostMount(argc c_int, argv **c_char, data unsafe.Pointer) c_int {
 	return C.hostMount(argc, argv, data)
 }
-func C_hostUnmount(fuse *C_struct_fuse, mountpoint *C_char) C_int {
+func c_hostUnmount(fuse *c_struct_fuse, mountpoint *c_char) c_int {
 	return C.hostUnmount(fuse, mountpoint)
 }
-func C_hostOptParse(args *C_struct_fuse_args, data unsafe.Pointer, opts *C_struct_fuse_opt,
-	nonopts C_bool) C_int {
+func c_hostOptParse(args *c_struct_fuse_args, data unsafe.Pointer, opts *c_struct_fuse_opt,
+	nonopts c_bool) c_int {
 	return C.hostOptParse(args, data, opts, nonopts)
 }
 
 //export go_hostGetattr
-func go_hostGetattr(path0 *C_char, stat0 *C_fuse_stat_t) (errc0 C_int) {
+func go_hostGetattr(path0 *c_char, stat0 *c_fuse_stat_t) (errc0 c_int) {
 	return hostGetattr(path0, stat0)
 }
 
 //export go_hostReadlink
-func go_hostReadlink(path0 *C_char, buff0 *C_char, size0 C_size_t) (errc0 C_int) {
+func go_hostReadlink(path0 *c_char, buff0 *c_char, size0 c_size_t) (errc0 c_int) {
 	return hostReadlink(path0, buff0, size0)
 }
 
 //export go_hostMknod
-func go_hostMknod(path0 *C_char, mode0 C_fuse_mode_t, dev0 C_fuse_dev_t) (errc0 C_int) {
+func go_hostMknod(path0 *c_char, mode0 c_fuse_mode_t, dev0 c_fuse_dev_t) (errc0 c_int) {
 	return hostMknod(path0, mode0, dev0)
 }
 
 //export go_hostMkdir
-func go_hostMkdir(path0 *C_char, mode0 C_fuse_mode_t) (errc0 C_int) {
+func go_hostMkdir(path0 *c_char, mode0 c_fuse_mode_t) (errc0 c_int) {
 	return hostMkdir(path0, mode0)
 }
 
 //export go_hostUnlink
-func go_hostUnlink(path0 *C_char) (errc0 C_int) {
+func go_hostUnlink(path0 *c_char) (errc0 c_int) {
 	return hostUnlink(path0)
 }
 
 //export go_hostRmdir
-func go_hostRmdir(path0 *C_char) (errc0 C_int) {
+func go_hostRmdir(path0 *c_char) (errc0 c_int) {
 	return hostRmdir(path0)
 }
 
 //export go_hostSymlink
-func go_hostSymlink(target0 *C_char, newpath0 *C_char) (errc0 C_int) {
+func go_hostSymlink(target0 *c_char, newpath0 *c_char) (errc0 c_int) {
 	return hostSymlink(target0, newpath0)
 }
 
 //export go_hostRename
-func go_hostRename(oldpath0 *C_char, newpath0 *C_char) (errc0 C_int) {
+func go_hostRename(oldpath0 *c_char, newpath0 *c_char) (errc0 c_int) {
 	return hostRename(oldpath0, newpath0)
 }
 
 //export go_hostLink
-func go_hostLink(oldpath0 *C_char, newpath0 *C_char) (errc0 C_int) {
+func go_hostLink(oldpath0 *c_char, newpath0 *c_char) (errc0 c_int) {
 	return hostLink(oldpath0, newpath0)
 }
 
 //export go_hostChmod
-func go_hostChmod(path0 *C_char, mode0 C_fuse_mode_t) (errc0 C_int) {
+func go_hostChmod(path0 *c_char, mode0 c_fuse_mode_t) (errc0 c_int) {
 	return hostChmod(path0, mode0)
 }
 
 //export go_hostChown
-func go_hostChown(path0 *C_char, uid0 C_fuse_uid_t, gid0 C_fuse_gid_t) (errc0 C_int) {
+func go_hostChown(path0 *c_char, uid0 c_fuse_uid_t, gid0 c_fuse_gid_t) (errc0 c_int) {
 	return hostChown(path0, uid0, gid0)
 }
 
 //export go_hostTruncate
-func go_hostTruncate(path0 *C_char, size0 C_fuse_off_t) (errc0 C_int) {
+func go_hostTruncate(path0 *c_char, size0 c_fuse_off_t) (errc0 c_int) {
 	return hostTruncate(path0, size0)
 }
 
 //export go_hostOpen
-func go_hostOpen(path0 *C_char, fi0 *C_struct_fuse_file_info) (errc0 C_int) {
+func go_hostOpen(path0 *c_char, fi0 *c_struct_fuse_file_info) (errc0 c_int) {
 	return hostOpen(path0, fi0)
 }
 
 //export go_hostRead
-func go_hostRead(path0 *C_char, buff0 *C_char, size0 C_size_t, ofst0 C_fuse_off_t,
-	fi0 *C_struct_fuse_file_info) (nbyt0 C_int) {
+func go_hostRead(path0 *c_char, buff0 *c_char, size0 c_size_t, ofst0 c_fuse_off_t,
+	fi0 *c_struct_fuse_file_info) (nbyt0 c_int) {
 	return hostRead(path0, buff0, size0, ofst0, fi0)
 }
 
 //export go_hostWrite
-func go_hostWrite(path0 *C_char, buff0 *C_char, size0 C_size_t, ofst0 C_fuse_off_t,
-	fi0 *C_struct_fuse_file_info) (nbyt0 C_int) {
+func go_hostWrite(path0 *c_char, buff0 *c_char, size0 c_size_t, ofst0 c_fuse_off_t,
+	fi0 *c_struct_fuse_file_info) (nbyt0 c_int) {
 	return hostWrite(path0, buff0, size0, ofst0, fi0)
 }
 
 //export go_hostStatfs
-func go_hostStatfs(path0 *C_char, stat0 *C_fuse_statvfs_t) (errc0 C_int) {
+func go_hostStatfs(path0 *c_char, stat0 *c_fuse_statvfs_t) (errc0 c_int) {
 	return hostStatfs(path0, stat0)
 }
 
 //export go_hostFlush
-func go_hostFlush(path0 *C_char, fi0 *C_struct_fuse_file_info) (errc0 C_int) {
+func go_hostFlush(path0 *c_char, fi0 *c_struct_fuse_file_info) (errc0 c_int) {
 	return hostFlush(path0, fi0)
 }
 
 //export go_hostRelease
-func go_hostRelease(path0 *C_char, fi0 *C_struct_fuse_file_info) (errc0 C_int) {
+func go_hostRelease(path0 *c_char, fi0 *c_struct_fuse_file_info) (errc0 c_int) {
 	return hostRelease(path0, fi0)
 }
 
 //export go_hostFsync
-func go_hostFsync(path0 *C_char, datasync C_int, fi0 *C_struct_fuse_file_info) (errc0 C_int) {
+func go_hostFsync(path0 *c_char, datasync c_int, fi0 *c_struct_fuse_file_info) (errc0 c_int) {
 	return hostFsync(path0, datasync, fi0)
 }
 
 //export go_hostSetxattr
-func go_hostSetxattr(path0 *C_char, name0 *C_char, buff0 *C_char, size0 C_size_t,
-	flags C_int) (errc0 C_int) {
+func go_hostSetxattr(path0 *c_char, name0 *c_char, buff0 *c_char, size0 c_size_t,
+	flags c_int) (errc0 c_int) {
 	return hostSetxattr(path0, name0, buff0, size0, flags)
 }
 
 //export go_hostGetxattr
-func go_hostGetxattr(path0 *C_char, name0 *C_char, buff0 *C_char, size0 C_size_t) (nbyt0 C_int) {
+func go_hostGetxattr(path0 *c_char, name0 *c_char, buff0 *c_char, size0 c_size_t) (nbyt0 c_int) {
 	return hostGetxattr(path0, name0, buff0, size0)
 }
 
 //export go_hostListxattr
-func go_hostListxattr(path0 *C_char, buff0 *C_char, size0 C_size_t) (nbyt0 C_int) {
+func go_hostListxattr(path0 *c_char, buff0 *c_char, size0 c_size_t) (nbyt0 c_int) {
 	return hostListxattr(path0, buff0, size0)
 }
 
 //export go_hostRemovexattr
-func go_hostRemovexattr(path0 *C_char, name0 *C_char) (errc0 C_int) {
+func go_hostRemovexattr(path0 *c_char, name0 *c_char) (errc0 c_int) {
 	return hostRemovexattr(path0, name0)
 }
 
 //export go_hostOpendir
-func go_hostOpendir(path0 *C_char, fi0 *C_struct_fuse_file_info) (errc0 C_int) {
+func go_hostOpendir(path0 *c_char, fi0 *c_struct_fuse_file_info) (errc0 c_int) {
 	return hostOpendir(path0, fi0)
 }
 
 //export go_hostReaddir
-func go_hostReaddir(path0 *C_char,
-	buff0 unsafe.Pointer, fill0 C_fuse_fill_dir_t, ofst0 C_fuse_off_t,
-	fi0 *C_struct_fuse_file_info) (errc0 C_int) {
+func go_hostReaddir(path0 *c_char,
+	buff0 unsafe.Pointer, fill0 c_fuse_fill_dir_t, ofst0 c_fuse_off_t,
+	fi0 *c_struct_fuse_file_info) (errc0 c_int) {
 	return hostReaddir(path0, buff0, fill0, ofst0, fi0)
 }
 
 //export go_hostReleasedir
-func go_hostReleasedir(path0 *C_char, fi0 *C_struct_fuse_file_info) (errc0 C_int) {
+func go_hostReleasedir(path0 *c_char, fi0 *c_struct_fuse_file_info) (errc0 c_int) {
 	return hostReleasedir(path0, fi0)
 }
 
 //export go_hostFsyncdir
-func go_hostFsyncdir(path0 *C_char, datasync C_int, fi0 *C_struct_fuse_file_info) (errc0 C_int) {
+func go_hostFsyncdir(path0 *c_char, datasync c_int, fi0 *c_struct_fuse_file_info) (errc0 c_int) {
 	return hostFsyncdir(path0, datasync, fi0)
 }
 
 //export go_hostInit
-func go_hostInit(conn0 *C_struct_fuse_conn_info) (user_data unsafe.Pointer) {
+func go_hostInit(conn0 *c_struct_fuse_conn_info) (user_data unsafe.Pointer) {
 	return hostInit(conn0)
 }
 
@@ -865,43 +860,43 @@ func go_hostDestroy(user_data unsafe.Pointer) {
 }
 
 //export go_hostAccess
-func go_hostAccess(path0 *C_char, mask0 C_int) (errc0 C_int) {
+func go_hostAccess(path0 *c_char, mask0 c_int) (errc0 c_int) {
 	return hostAccess(path0, mask0)
 }
 
 //export go_hostCreate
-func go_hostCreate(path0 *C_char, mode0 C_fuse_mode_t, fi0 *C_struct_fuse_file_info) (errc0 C_int) {
+func go_hostCreate(path0 *c_char, mode0 c_fuse_mode_t, fi0 *c_struct_fuse_file_info) (errc0 c_int) {
 	return hostCreate(path0, mode0, fi0)
 }
 
 //export go_hostFtruncate
-func go_hostFtruncate(path0 *C_char, size0 C_fuse_off_t,
-	fi0 *C_struct_fuse_file_info) (errc0 C_int) {
+func go_hostFtruncate(path0 *c_char, size0 c_fuse_off_t,
+	fi0 *c_struct_fuse_file_info) (errc0 c_int) {
 	return hostFtruncate(path0, size0, fi0)
 }
 
 //export go_hostFgetattr
-func go_hostFgetattr(path0 *C_char, stat0 *C_fuse_stat_t,
-	fi0 *C_struct_fuse_file_info) (errc0 C_int) {
+func go_hostFgetattr(path0 *c_char, stat0 *c_fuse_stat_t,
+	fi0 *c_struct_fuse_file_info) (errc0 c_int) {
 	return hostFgetattr(path0, stat0, fi0)
 }
 
 //export go_hostUtimens
-func go_hostUtimens(path0 *C_char, tmsp0 *C_fuse_timespec_t) (errc0 C_int) {
+func go_hostUtimens(path0 *c_char, tmsp0 *c_fuse_timespec_t) (errc0 c_int) {
 	return hostUtimens(path0, tmsp0)
 }
 
 //export go_hostSetchgtime
-func go_hostSetchgtime(path0 *C_char, tmsp0 *C_fuse_timespec_t) (errc0 C_int) {
+func go_hostSetchgtime(path0 *c_char, tmsp0 *c_fuse_timespec_t) (errc0 c_int) {
 	return hostSetchgtime(path0, tmsp0)
 }
 
 //export go_hostSetcrtime
-func go_hostSetcrtime(path0 *C_char, tmsp0 *C_fuse_timespec_t) (errc0 C_int) {
+func go_hostSetcrtime(path0 *c_char, tmsp0 *c_fuse_timespec_t) (errc0 c_int) {
 	return hostSetcrtime(path0, tmsp0)
 }
 
 //export go_hostChflags
-func go_hostChflags(path0 *C_char, flags C_uint32_t) (errc0 C_int) {
+func go_hostChflags(path0 *c_char, flags c_uint32_t) (errc0 c_int) {
 	return hostChflags(path0, flags)
 }
