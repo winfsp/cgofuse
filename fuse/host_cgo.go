@@ -418,38 +418,6 @@ static int hostFuseInit(void)
 #endif
 }
 
-static int hostMountpointOptProc(void *opt_data, const char *arg, int key,
-	struct fuse_args *outargs)
-{
-	char **pmountpoint = opt_data;
-	switch (key)
-	{
-	default:
-		return 1;
-	case FUSE_OPT_KEY_NONOPT:
-		if (0 == *pmountpoint)
-		{
-			size_t size = strlen(arg) + 1;
-			*pmountpoint = malloc(size);
-			if (0 == *pmountpoint)
-				return -1;
-			memcpy(*pmountpoint, arg, size);
-		}
-		return 1;
-	}
-}
-
-static const char *hostMountpoint(int argc, char *argv[])
-{
-	static struct fuse_opt opts[] = { FUSE_OPT_END };
-	struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
-	char *mountpoint = 0;
-	if (-1 == fuse_opt_parse(&args, &mountpoint, opts, hostMountpointOptProc))
-		return 0;
-	fuse_opt_free_args(&args);
-	return mountpoint;
-}
-
 static int hostMount(int argc, char *argv[], void *data)
 {
 #if defined(__GNUC__)
@@ -694,9 +662,6 @@ func c_hostStaticInit() {
 }
 func c_hostFuseInit() c_int {
 	return C.hostFuseInit()
-}
-func c_hostMountpoint(argc c_int, argv **c_char) *c_char {
-	return C.hostMountpoint(argc, argv)
 }
 func c_hostMount(argc c_int, argv **c_char, data unsafe.Pointer) c_int {
 	return C.hostMount(argc, argv, data)

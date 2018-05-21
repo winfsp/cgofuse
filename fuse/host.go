@@ -16,6 +16,7 @@ import (
 	"errors"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"sync"
@@ -27,7 +28,7 @@ import (
 type FileSystemHost struct {
 	fsop FileSystemInterface
 	fuse *c_struct_fuse
-	mntp *c_char
+	mntp string
 	sigc chan os.Signal
 
 	capCaseInsensitive, capReaddirPlus bool
@@ -614,10 +615,22 @@ func (host *FileSystemHost) Mount(mountpoint string, opts []string) bool {
 	 * We need to determine the mountpoint that FUSE is going (to try) to use, so that we
 	 * can unmount later.
 	 */
-	host.mntp = c_hostMountpoint(c_int(argc), &argv[0])
+	if "" != mountpoint {
+		host.mntp = mountpoint
+	} else {
+		outargs, _ := OptParse(opts, "")
+		if 1 <= len(outargs) {
+			host.mntp = outargs[0]
+		}
+	}
+	if "" != host.mntp {
+		abs, err := filepath.Abs(host.mntp)
+		if nil == err {
+			host.mntp = abs
+		}
+	}
 	defer func() {
-		c_free(unsafe.Pointer(host.mntp))
-		host.mntp = nil
+		host.mntp = ""
 	}()
 
 	/*
@@ -660,14 +673,19 @@ func (host *FileSystemHost) Unmount() bool {
 	if nil == host.fuse {
 		return false
 	}
-	return 0 != c_hostUnmount(host.fuse, host.mntp)
+	var mntp *c_char
+	if "" != host.mntp {
+		mntp = c_CString(host.mntp)
+	}
+	return 0 != c_hostUnmount(host.fuse, mntp)
 }
 
 // Getcontext gets information related to a file system operation.
 func Getcontext() (uid uint32, gid uint32, pid int) {
-	uid = uint32(c_fuse_get_context().uid)
-	gid = uint32(c_fuse_get_context().gid)
-	pid = int(c_fuse_get_context().pid)
+	context := c_fuse_get_context()
+	uid = uint32(context.uid)
+	gid = uint32(context.gid)
+	pid = int(context.pid)
 	return
 }
 

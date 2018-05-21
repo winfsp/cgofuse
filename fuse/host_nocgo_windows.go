@@ -503,9 +503,6 @@ func c_hostFuseInit() c_int {
 	}
 	return 1
 }
-func c_hostMountpoint(argc c_int, argv **c_char) *c_char {
-	return nil
-}
 func c_hostMount(argc c_int, argv **c_char, data unsafe.Pointer) c_int {
 	r, _, _ := fuse_main_real.Call(
 		uintptr(argc),
