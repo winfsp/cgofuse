@@ -158,14 +158,29 @@ func init() {
 }
 
 func c_GoString(s *c_char) string {
-	return ""
+	if nil == s {
+		return ""
+	}
+	q := (*[1 << 30]c_char)(unsafe.Pointer(s))
+	l := 0
+	for 0 != q[l] {
+		l++
+	}
+	return string(q[:l])
 }
 func c_CString(s string) *c_char {
-	return nil
+	p := c_malloc(c_size_t(len(s) + 1))
+	q := (*[1 << 30]c_char)(p)
+	copy(q[:], s)
+	q[len(s)] = 0
+	return (*c_char)(p)
 }
 
 func c_malloc(size c_size_t) unsafe.Pointer {
 	p, _, _ := heapAlloc.Call(processHeap, 0, size)
+	if 0 == p {
+		panic("runtime: C malloc failed")
+	}
 	return unsafe.Pointer(p)
 }
 func c_calloc(count c_size_t, size c_size_t) unsafe.Pointer {
