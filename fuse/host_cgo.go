@@ -564,19 +564,12 @@ import "unsafe"
 type (
 	c_bool                  = C.bool
 	c_char                  = C.char
-	c_fuse_blkcnt_t         = C.fuse_blkcnt_t
-	c_fuse_blksize_t        = C.fuse_blksize_t
 	c_fuse_dev_t            = C.fuse_dev_t
 	c_fuse_fill_dir_t       = C.fuse_fill_dir_t
-	c_fuse_fsblkcnt_t       = C.fuse_fsblkcnt_t
-	c_fuse_fsfilcnt_t       = C.fuse_fsfilcnt_t
 	c_fuse_gid_t            = C.fuse_gid_t
-	c_fuse_ino_t            = C.fuse_ino_t
 	c_fuse_mode_t           = C.fuse_mode_t
-	c_fuse_nlink_t          = C.fuse_nlink_t
 	c_fuse_off_t            = C.fuse_off_t
 	c_fuse_opt_offset_t     = C.fuse_opt_offset_t
-	c_fuse_pid_t            = C.fuse_pid_t
 	c_fuse_stat_t           = C.fuse_stat_t
 	c_fuse_statvfs_t        = C.fuse_statvfs_t
 	c_fuse_timespec_t       = C.fuse_timespec_t

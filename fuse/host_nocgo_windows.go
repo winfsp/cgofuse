@@ -15,6 +15,7 @@
 package fuse
 
 import (
+	"syscall"
 	"unsafe"
 )
 
@@ -144,6 +145,18 @@ type (
 	c_unsigned              = uint32
 )
 
+var (
+	kernel32       = syscall.MustLoadDLL("kernel32.dll")
+	getProcessHeap = kernel32.MustFindProc("GetProcessHeap")
+	heapAlloc      = kernel32.MustFindProc("HeapAlloc")
+	heapFree       = kernel32.MustFindProc("HeapFree")
+	processHeap    uintptr
+)
+
+func init() {
+	processHeap, _, _ = getProcessHeap.Call()
+}
+
 func c_GoString(s *c_char) string {
 	return ""
 }
@@ -152,12 +165,17 @@ func c_CString(s string) *c_char {
 }
 
 func c_malloc(size c_size_t) unsafe.Pointer {
-	return nil
+	p, _, _ := heapAlloc.Call(processHeap, 0, size)
+	return unsafe.Pointer(p)
 }
 func c_calloc(count c_size_t, size c_size_t) unsafe.Pointer {
-	return nil
+	p, _, _ := heapAlloc.Call(processHeap, 8 /*HEAP_ZERO_MEMORY*/, count*size)
+	return unsafe.Pointer(p)
 }
 func c_free(p unsafe.Pointer) {
+	if nil != p {
+		heapFree.Call(processHeap, 0, uintptr(p))
+	}
 }
 
 func c_fuse_get_context() *c_struct_fuse_context {
