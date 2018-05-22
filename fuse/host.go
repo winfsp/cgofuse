@@ -624,9 +624,11 @@ func (host *FileSystemHost) Mount(mountpoint string, opts []string) bool {
 		}
 	}
 	if "" != host.mntp {
-		abs, err := filepath.Abs(host.mntp)
-		if nil == err {
-			host.mntp = abs
+		if "windows" != runtime.GOOS || 2 != len(host.mntp) || ':' != host.mntp[1] {
+			abs, err := filepath.Abs(host.mntp)
+			if nil == err {
+				host.mntp = abs
+			}
 		}
 	}
 	defer func() {

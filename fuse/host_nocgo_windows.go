@@ -60,6 +60,7 @@ type fuse_operations struct {
 	lock        uintptr
 	utimens     uintptr
 	bmap        uintptr
+	flags       uint32
 	ioctl       uintptr
 	poll        uintptr
 	write_buf   uintptr
@@ -225,7 +226,6 @@ var (
 	fuse_mount               *syscall.Proc
 	fuse_unmount             *syscall.Proc
 	fuse_parse_cmdline       *syscall.Proc
-	fuse_ntstatus_from_errno *syscall.Proc
 	fuse_main_real           *syscall.Proc
 	fuse_is_lib_option       *syscall.Proc
 	fuse_new                 *syscall.Proc
@@ -241,46 +241,6 @@ var (
 	fuse_opt_add_opt         *syscall.Proc
 	fuse_opt_add_opt_escaped *syscall.Proc
 	fuse_opt_match           *syscall.Proc
-
-	fsop = fuse_operations{
-		getattr:     syscall.NewCallbackCDecl(hostGetattr),
-		readlink:    syscall.NewCallbackCDecl(hostReadlink),
-		mknod:       syscall.NewCallbackCDecl(hostMknod),
-		mkdir:       syscall.NewCallbackCDecl(hostMkdir),
-		unlink:      syscall.NewCallbackCDecl(hostUnlink),
-		rmdir:       syscall.NewCallbackCDecl(hostRmdir),
-		symlink:     syscall.NewCallbackCDecl(hostSymlink),
-		rename:      syscall.NewCallbackCDecl(hostRename),
-		link:        syscall.NewCallbackCDecl(hostLink),
-		chmod:       syscall.NewCallbackCDecl(hostChmod),
-		chown:       syscall.NewCallbackCDecl(hostChown),
-		truncate:    syscall.NewCallbackCDecl(hostTruncate),
-		open:        syscall.NewCallbackCDecl(hostOpen),
-		read:        syscall.NewCallbackCDecl(hostRead),
-		write:       syscall.NewCallbackCDecl(hostWrite),
-		statfs:      syscall.NewCallbackCDecl(hostStatfs),
-		flush:       syscall.NewCallbackCDecl(hostFlush),
-		release:     syscall.NewCallbackCDecl(hostRelease),
-		fsync:       syscall.NewCallbackCDecl(hostFsync),
-		setxattr:    syscall.NewCallbackCDecl(hostSetxattr),
-		getxattr:    syscall.NewCallbackCDecl(hostGetxattr),
-		listxattr:   syscall.NewCallbackCDecl(hostListxattr),
-		removexattr: syscall.NewCallbackCDecl(hostRemovexattr),
-		opendir:     syscall.NewCallbackCDecl(hostOpendir),
-		readdir:     syscall.NewCallbackCDecl(hostReaddir),
-		releasedir:  syscall.NewCallbackCDecl(hostReleasedir),
-		fsyncdir:    syscall.NewCallbackCDecl(hostFsyncdir),
-		init:        syscall.NewCallbackCDecl(hostInit),
-		destroy:     syscall.NewCallbackCDecl(hostDestroy),
-		access:      syscall.NewCallbackCDecl(hostAccess),
-		create:      syscall.NewCallbackCDecl(hostCreate),
-		ftruncate:   syscall.NewCallbackCDecl(hostFtruncate),
-		fgetattr:    syscall.NewCallbackCDecl(hostFgetattr),
-		utimens:     syscall.NewCallbackCDecl(hostUtimens),
-		setchgtime:  syscall.NewCallbackCDecl(hostSetchgtime),
-		setcrtime:   syscall.NewCallbackCDecl(hostSetcrtime),
-		chflags:     syscall.NewCallbackCDecl(hostChflags),
-	}
 
 	hostOptParseOptProc = syscall.NewCallbackCDecl(c_hostOptParseOptProc)
 
@@ -480,7 +440,6 @@ func c_hostFuseInit() c_int {
 			fuse_mount = fuseDll.MustFindProc("fuse_mount")
 			fuse_unmount = fuseDll.MustFindProc("fuse_unmount")
 			fuse_parse_cmdline = fuseDll.MustFindProc("fuse_parse_cmdline")
-			fuse_ntstatus_from_errno = fuseDll.MustFindProc("fuse_ntstatus_from_errno")
 			fuse_main_real = fuseDll.MustFindProc("fuse_main_real")
 			fuse_is_lib_option = fuseDll.MustFindProc("fuse_is_lib_option")
 			fuse_new = fuseDll.MustFindProc("fuse_new")
@@ -519,9 +478,8 @@ func c_hostUnmount(fuse *c_struct_fuse, mountpoint *c_char) c_int {
 	fuse_exit.Call(uintptr(unsafe.Pointer(fuse)))
 	return 1
 }
-func c_hostOptParseOptProc(opt_data unsafe.Pointer, arg *c_char, key c_int,
-	outargs *c_struct_fuse_args) c_int {
-	switch key {
+func c_hostOptParseOptProc(opt_data uintptr, arg uintptr, key uintptr, outargs uintptr) uintptr {
+	switch c_int(key) {
 	default:
 		return 0
 	case FUSE_OPT_KEY_NONOPT:
@@ -589,4 +547,201 @@ func fspload() (dll *syscall.DLL, err error) {
 	}
 
 	return
+}
+
+var fsop = fuse_operations{
+	getattr:     syscall.NewCallbackCDecl(go_hostGetattr),
+	readlink:    syscall.NewCallbackCDecl(go_hostReadlink),
+	mknod:       syscall.NewCallbackCDecl(go_hostMknod),
+	mkdir:       syscall.NewCallbackCDecl(go_hostMkdir),
+	unlink:      syscall.NewCallbackCDecl(go_hostUnlink),
+	rmdir:       syscall.NewCallbackCDecl(go_hostRmdir),
+	symlink:     syscall.NewCallbackCDecl(go_hostSymlink),
+	rename:      syscall.NewCallbackCDecl(go_hostRename),
+	link:        syscall.NewCallbackCDecl(go_hostLink),
+	chmod:       syscall.NewCallbackCDecl(go_hostChmod),
+	chown:       syscall.NewCallbackCDecl(go_hostChown),
+	truncate:    syscall.NewCallbackCDecl(go_hostTruncate),
+	open:        syscall.NewCallbackCDecl(go_hostOpen),
+	read:        syscall.NewCallbackCDecl(go_hostRead),
+	write:       syscall.NewCallbackCDecl(go_hostWrite),
+	statfs:      syscall.NewCallbackCDecl(go_hostStatfs),
+	flush:       syscall.NewCallbackCDecl(go_hostFlush),
+	release:     syscall.NewCallbackCDecl(go_hostRelease),
+	fsync:       syscall.NewCallbackCDecl(go_hostFsync),
+	setxattr:    syscall.NewCallbackCDecl(go_hostSetxattr),
+	getxattr:    syscall.NewCallbackCDecl(go_hostGetxattr),
+	listxattr:   syscall.NewCallbackCDecl(go_hostListxattr),
+	removexattr: syscall.NewCallbackCDecl(go_hostRemovexattr),
+	opendir:     syscall.NewCallbackCDecl(go_hostOpendir),
+	readdir:     syscall.NewCallbackCDecl(go_hostReaddir),
+	releasedir:  syscall.NewCallbackCDecl(go_hostReleasedir),
+	fsyncdir:    syscall.NewCallbackCDecl(go_hostFsyncdir),
+	init:        syscall.NewCallbackCDecl(go_hostInit),
+	destroy:     syscall.NewCallbackCDecl(go_hostDestroy),
+	access:      syscall.NewCallbackCDecl(go_hostAccess),
+	create:      syscall.NewCallbackCDecl(go_hostCreate),
+	ftruncate:   syscall.NewCallbackCDecl(go_hostFtruncate),
+	fgetattr:    syscall.NewCallbackCDecl(go_hostFgetattr),
+	utimens:     syscall.NewCallbackCDecl(go_hostUtimens),
+	setchgtime:  syscall.NewCallbackCDecl(go_hostSetchgtime),
+	setcrtime:   syscall.NewCallbackCDecl(go_hostSetcrtime),
+	chflags:     syscall.NewCallbackCDecl(go_hostChflags),
+}
+
+func go_hostGetattr(path0 *c_char, stat0 *c_fuse_stat_t) (errc0 uintptr) {
+	return uintptr(int(hostGetattr(path0, stat0)))
+}
+
+func go_hostReadlink(path0 *c_char, buff0 *c_char, size0 uintptr) (errc0 uintptr) {
+	return uintptr(int(hostReadlink(path0, buff0, c_size_t(size0))))
+}
+
+func go_hostMknod(path0 *c_char, mode0 uintptr, dev0 uintptr) (errc0 uintptr) {
+	return uintptr(int(hostMknod(path0, c_fuse_mode_t(mode0), c_fuse_dev_t(dev0))))
+}
+
+func go_hostMkdir(path0 *c_char, mode0 uintptr) (errc0 uintptr) {
+	return uintptr(int(hostMkdir(path0, c_fuse_mode_t(mode0))))
+}
+
+func go_hostUnlink(path0 *c_char) (errc0 uintptr) {
+	return uintptr(int(hostUnlink(path0)))
+}
+
+func go_hostRmdir(path0 *c_char) (errc0 uintptr) {
+	return uintptr(int(hostRmdir(path0)))
+}
+
+func go_hostSymlink(target0 *c_char, newpath0 *c_char) (errc0 uintptr) {
+	return uintptr(int(hostSymlink(target0, newpath0)))
+}
+
+func go_hostRename(oldpath0 *c_char, newpath0 *c_char) (errc0 uintptr) {
+	return uintptr(int(hostRename(oldpath0, newpath0)))
+}
+
+func go_hostLink(oldpath0 *c_char, newpath0 *c_char) (errc0 uintptr) {
+	return uintptr(int(hostLink(oldpath0, newpath0)))
+}
+
+func go_hostChmod(path0 *c_char, mode0 uintptr) (errc0 uintptr) {
+	return uintptr(int(hostChmod(path0, c_fuse_mode_t(mode0))))
+}
+
+func go_hostChown(path0 *c_char, uid0 uintptr, gid0 uintptr) (errc0 uintptr) {
+	return uintptr(int(hostChown(path0, c_fuse_uid_t(uid0), c_fuse_gid_t(gid0))))
+}
+
+func go_hostTruncate(path0 *c_char, size0 uintptr) (errc0 uintptr) {
+	return uintptr(int(hostTruncate(path0, c_fuse_off_t(size0))))
+}
+
+func go_hostOpen(path0 *c_char, fi0 *c_struct_fuse_file_info) (errc0 uintptr) {
+	return uintptr(int(hostOpen(path0, fi0)))
+}
+
+func go_hostRead(path0 *c_char, buff0 *c_char, size0 uintptr, ofst0 uintptr,
+	fi0 *c_struct_fuse_file_info) (nbyt0 uintptr) {
+	return uintptr(int(hostRead(path0, buff0, c_size_t(size0), c_fuse_off_t(ofst0), fi0)))
+}
+
+func go_hostWrite(path0 *c_char, buff0 *c_char, size0 c_size_t, ofst0 c_fuse_off_t,
+	fi0 *c_struct_fuse_file_info) (nbyt0 uintptr) {
+	return uintptr(int(hostWrite(path0, buff0, c_size_t(size0), c_fuse_off_t(ofst0), fi0)))
+}
+
+func go_hostStatfs(path0 *c_char, stat0 *c_fuse_statvfs_t) (errc0 uintptr) {
+	return uintptr(int(hostStatfs(path0, stat0)))
+}
+
+func go_hostFlush(path0 *c_char, fi0 *c_struct_fuse_file_info) (errc0 uintptr) {
+	return uintptr(int(hostFlush(path0, fi0)))
+}
+
+func go_hostRelease(path0 *c_char, fi0 *c_struct_fuse_file_info) (errc0 uintptr) {
+	return uintptr(int(hostRelease(path0, fi0)))
+}
+
+func go_hostFsync(path0 *c_char, datasync c_int, fi0 *c_struct_fuse_file_info) (errc0 uintptr) {
+	return uintptr(int(hostFsync(path0, c_int(datasync), fi0)))
+}
+
+func go_hostSetxattr(path0 *c_char, name0 *c_char, buff0 *c_char, size0 uintptr,
+	flags uintptr) (errc0 uintptr) {
+	return uintptr(int(hostSetxattr(path0, name0, buff0, c_size_t(size0), c_int(flags))))
+}
+
+func go_hostGetxattr(path0 *c_char, name0 *c_char, buff0 *c_char, size0 uintptr) (nbyt0 uintptr) {
+	return uintptr(int(hostGetxattr(path0, name0, buff0, c_size_t(size0))))
+}
+
+func go_hostListxattr(path0 *c_char, buff0 *c_char, size0 uintptr) (nbyt0 uintptr) {
+	return uintptr(int(hostListxattr(path0, buff0, c_size_t(size0))))
+}
+
+func go_hostRemovexattr(path0 *c_char, name0 *c_char) (errc0 uintptr) {
+	return uintptr(int(hostRemovexattr(path0, name0)))
+}
+
+func go_hostOpendir(path0 *c_char, fi0 *c_struct_fuse_file_info) (errc0 uintptr) {
+	return uintptr(int(hostOpendir(path0, fi0)))
+}
+
+func go_hostReaddir(path0 *c_char,
+	buff0 unsafe.Pointer, fill0 c_fuse_fill_dir_t, ofst0 uintptr,
+	fi0 *c_struct_fuse_file_info) (errc0 uintptr) {
+	return uintptr(int(hostReaddir(path0, buff0, fill0, c_fuse_off_t(ofst0), fi0)))
+}
+
+func go_hostReleasedir(path0 *c_char, fi0 *c_struct_fuse_file_info) (errc0 uintptr) {
+	return uintptr(int(hostReleasedir(path0, fi0)))
+}
+
+func go_hostFsyncdir(path0 *c_char, datasync uintptr,
+	fi0 *c_struct_fuse_file_info) (errc0 uintptr) {
+	return uintptr(int(hostFsyncdir(path0, c_int(datasync), fi0)))
+}
+
+func go_hostInit(conn0 *c_struct_fuse_conn_info) (user_data unsafe.Pointer) {
+	return hostInit(conn0)
+}
+
+func go_hostDestroy(user_data unsafe.Pointer) uintptr {
+	hostDestroy(user_data)
+	return 0
+}
+
+func go_hostAccess(path0 *c_char, mask0 uintptr) (errc0 uintptr) {
+	return uintptr(int(hostAccess(path0, c_int(mask0))))
+}
+
+func go_hostCreate(path0 *c_char, mode0 uintptr, fi0 *c_struct_fuse_file_info) (errc0 uintptr) {
+	return uintptr(int(hostCreate(path0, c_fuse_mode_t(mode0), fi0)))
+}
+
+func go_hostFtruncate(path0 *c_char, size0 uintptr,
+	fi0 *c_struct_fuse_file_info) (errc0 uintptr) {
+	return uintptr(int(hostFtruncate(path0, c_fuse_off_t(size0), fi0)))
+}
+
+func go_hostFgetattr(path0 *c_char, stat0 *c_fuse_stat_t,
+	fi0 *c_struct_fuse_file_info) (errc0 uintptr) {
+	return uintptr(int(hostFgetattr(path0, stat0, fi0)))
+}
+
+func go_hostUtimens(path0 *c_char, tmsp0 *c_fuse_timespec_t) (errc0 uintptr) {
+	return uintptr(int(hostUtimens(path0, tmsp0)))
+}
+
+func go_hostSetchgtime(path0 *c_char, tmsp0 *c_fuse_timespec_t) (errc0 uintptr) {
+	return uintptr(int(hostSetchgtime(path0, tmsp0)))
+}
+
+func go_hostSetcrtime(path0 *c_char, tmsp0 *c_fuse_timespec_t) (errc0 uintptr) {
+	return uintptr(int(hostSetcrtime(path0, tmsp0)))
+}
+
+func go_hostChflags(path0 *c_char, flags c_uint32_t) (errc0 uintptr) {
+	return uintptr(int(hostChflags(path0, flags)))
 }
