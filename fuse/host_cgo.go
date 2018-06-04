@@ -198,6 +198,7 @@ static PVOID cgofuse_init_winfsp(VOID)
 
 #if defined(__APPLE__) || defined(__FreeBSD__) || defined(__linux__)
 typedef struct stat fuse_stat_t;
+typedef struct stat fuse_stat_ex_t;
 typedef struct statvfs fuse_statvfs_t;
 typedef struct timespec fuse_timespec_t;
 typedef mode_t fuse_mode_t;
@@ -208,6 +209,7 @@ typedef off_t fuse_off_t;
 typedef unsigned long fuse_opt_offset_t;
 #elif defined(_WIN32)
 typedef struct fuse_stat fuse_stat_t;
+typedef struct fuse_stat_ex fuse_stat_ex_t;
 typedef struct fuse_statvfs fuse_statvfs_t;
 typedef struct fuse_timespec fuse_timespec_t;
 typedef unsigned int fuse_opt_offset_t;
@@ -539,6 +541,7 @@ type (
 	c_fuse_off_t            = C.fuse_off_t
 	c_fuse_opt_offset_t     = C.fuse_opt_offset_t
 	c_fuse_stat_t           = C.fuse_stat_t
+	c_fuse_stat_ex_t        = C.fuse_stat_ex_t
 	c_fuse_statvfs_t        = C.fuse_statvfs_t
 	c_fuse_timespec_t       = C.fuse_timespec_t
 	c_fuse_uid_t            = C.fuse_uid_t

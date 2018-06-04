@@ -379,9 +379,10 @@ func hostReaddir(path0 *c_char, buff0 unsafe.Pointer, fill0 c_fuse_fill_dir_t, o
 		if nil == stat1 {
 			return 0 == c_hostFilldir(fill0, buff0, name, nil, c_fuse_off_t(off1))
 		} else {
-			stat := c_fuse_stat_t{}
-			copyCstatFromFusestat(&stat, stat1)
-			return 0 == c_hostFilldir(fill0, buff0, name, &stat, c_fuse_off_t(off1))
+			stat_ex := c_fuse_stat_ex_t{} // support WinFsp fuse_stat_ex
+			stat := (*c_fuse_stat_t)(unsafe.Pointer(&stat_ex))
+			copyCstatFromFusestat(stat, stat1)
+			return 0 == c_hostFilldir(fill0, buff0, name, stat, c_fuse_off_t(off1))
 		}
 	}
 	errc := fsop.Readdir(path, fill, int64(ofst0), uint64(fi0.fh))

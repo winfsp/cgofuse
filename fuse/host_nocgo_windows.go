@@ -186,6 +186,7 @@ type (
 	c_fuse_opt_offset_t     = uint32
 	c_fuse_pid_t            = int32
 	c_fuse_stat_t           = fuse_stat_t
+	c_fuse_stat_ex_t        = fuse_stat_ex_t
 	c_fuse_statvfs_t        = fuse_statvfs_t
 	c_fuse_timespec_t       = fuse_timespec_t
 	c_fuse_uid_t            = uint32
