@@ -5,11 +5,16 @@
 [![CircleCI](https://img.shields.io/circleci/project/github/billziss-gh/cgofuse.svg?label=cross-build)](https://circleci.com/gh/billziss-gh/cgofuse)
 [![GoDoc](https://godoc.org/github.com/billziss-gh/cgofuse/fuse?status.svg)](https://godoc.org/github.com/billziss-gh/cgofuse/fuse)
 
-Cgofuse is a cross-platform FUSE library for Go. It is implemented using [cgo](https://golang.org/cmd/cgo/) and can be ported to any platform that has a FUSE implementation.
+Cgofuse is a cross-platform FUSE library for Go. It is supported on multiple platforms and and can be ported to any platform that has a FUSE implementation. It has [cgo](https://golang.org/cmd/cgo/) and [!cgo](https://github.com/golang/go/wiki/WindowsDLLs) ("nocgo") variants depending on the platform.
 
-Cgofuse currently runs on **macOS**, **FreeBSD**, **Linux** and **Windows** (using [WinFsp](https://github.com/billziss-gh/winfsp)).
 
-**NOTE**: On FreeBSD signal handling is currently broken. Please see this [discussion](https://github.com/billziss-gh/cgofuse/issues/18#issuecomment-390446362) for details.
+|       |macOS             |FreeBSD<sup>2</sup>|Linux            |Windows<sup>1</sup>|
+|:-----:|:----------------:|:----------------:|:----------------:|:----------------:|
+|  cgo  |:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|
+| !cgo  |                  |                  |                  |:heavy_check_mark:|
+
+- **1**: Windows requires [WinFsp](https://github.com/billziss-gh/winfsp).
+- **2**: FreeBSD signal handling is currently broken. Please see this [discussion](https://github.com/billziss-gh/cgofuse/issues/18#issuecomment-390446362) for details.
 
 ## How to build
 
@@ -42,12 +47,21 @@ Cgofuse currently runs on **macOS**, **FreeBSD**, **Linux** and **Windows** (usi
     $ go install -v ./fuse ./examples/memfs ./examples/passthrough
     ```
 
-**Windows**
+**Windows cgo**
 - Prerequisites: [WinFsp](https://github.com/billziss-gh/winfsp), gcc (e.g. from [Mingw-builds](http://mingw-w64.org/doku.php/download))
 - Build:
     ```
     > cd cgofuse
     > set CPATH=C:\Program Files (x86)\WinFsp\inc\fuse
+    > go install -v ./fuse ./examples/memfs
+    ```
+
+**Windows !cgo**
+- Prerequisites: [WinFsp](https://github.com/billziss-gh/winfsp)
+- Build:
+    ```
+    > cd cgofuse
+    > set CGO_ENABLED=0
     > go install -v ./fuse ./examples/memfs
     ```
 
