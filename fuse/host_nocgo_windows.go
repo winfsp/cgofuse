@@ -442,8 +442,8 @@ func c_hostFilldir(filler c_fuse_fill_dir_t,
 			uintptr(buf),
 			uintptr(unsafe.Pointer(name)),
 			uintptr(unsafe.Pointer(stbuf)),
-			uintptr(off>>32),
 			uintptr(off),
+			uintptr(off>>32),
 			0)
 	}
 	return c_int(r)
