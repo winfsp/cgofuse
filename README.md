@@ -8,14 +8,13 @@
 Cgofuse is a cross-platform FUSE library for Go. It is supported on multiple platforms and can be ported to any platform that has a FUSE implementation. It has [cgo](https://golang.org/cmd/cgo/) and [!cgo](https://github.com/golang/go/wiki/WindowsDLLs) ("nocgo") variants depending on the platform.
 
 
-|       |macOS             |FreeBSD<sup>3</sup>|Linux            |Windows<sup>1</sup>|
+|       |macOS             |FreeBSD           |Linux             |Windows           |
 |:-----:|:----------------:|:----------------:|:----------------:|:----------------:|
-|  cgo  |:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|
+|  cgo  |:heavy_check_mark:|:heavy_check_mark:<sup>1</sup>|:heavy_check_mark:|:heavy_check_mark:|
 | !cgo  |                  |                  |                  |:heavy_check_mark:<sup>2</sup>|
 
-- **1**: Windows requires [WinFsp](https://github.com/billziss-gh/winfsp).
-- **2**: This requires a custom build of Go using the patch in [golang/go#25575](https://github.com/golang/go/pull/25575), which fixes issue [golang/go#6751](https://github.com/golang/go/issues/6751).
-- **3**: FreeBSD signal handling is currently broken. Please see this [discussion](https://github.com/billziss-gh/cgofuse/issues/18#issuecomment-390446362) for details.
+- **1**: FreeBSD signal handling is currently broken. Please see this [discussion](https://github.com/billziss-gh/cgofuse/issues/18#issuecomment-390446362) for details.
+- **2**: This requires a custom build of Go using the patch in [golang/go#25575](https://github.com/golang/go/pull/25575), which fixes issue [golang/go#6751](https://github.com/golang/go/issues/6751). This patch has now been included in Go and should become available in its next release.
 
 ## How to build
 
