@@ -488,9 +488,9 @@ func c_hostMount(argc c_int, argv **c_char, data unsafe.Pointer) c_int {
 		unsafe.Sizeof(fsop),
 		uintptr(data))
 	if 0 == r {
-		return 0
+		return 1
 	}
-	return 1
+	return 0
 }
 func c_hostUnmount(fuse *c_struct_fuse, mountpoint *c_char) c_int {
 	fuse_exit.Call(uintptr(unsafe.Pointer(fuse)))
@@ -859,24 +859,24 @@ func go_hostChown32(path0 *c_char, uid0 uintptr, gid0 uintptr) (errc0 uintptr) {
 	return uintptr(int(hostChown(path0, c_fuse_uid_t(uid0), c_fuse_gid_t(gid0))))
 }
 
-func go_hostTruncate32(path0 *c_char, hsize0, lsize0 uintptr) (errc0 uintptr) {
-	return uintptr(int(hostTruncate(path0, (c_fuse_off_t(hsize0)<<32)+c_fuse_off_t(lsize0))))
+func go_hostTruncate32(path0 *c_char, lsize0, hsize0 uintptr) (errc0 uintptr) {
+	return uintptr(int(hostTruncate(path0, (c_fuse_off_t(hsize0)<<32)|c_fuse_off_t(lsize0))))
 }
 
 func go_hostOpen32(path0 *c_char, fi0 *c_struct_fuse_file_info) (errc0 uintptr) {
 	return uintptr(int(hostOpen(path0, fi0)))
 }
 
-func go_hostRead32(path0 *c_char, buff0 *c_char, size0 uintptr, hofst0, lofst0 uintptr,
+func go_hostRead32(path0 *c_char, buff0 *c_char, size0 uintptr, lofst0, hofst0 uintptr,
 	fi0 *c_struct_fuse_file_info) (nbyt0 uintptr) {
 	return uintptr(int(hostRead(path0,
-		buff0, c_size_t(size0), (c_fuse_off_t(hofst0)<<32)+c_fuse_off_t(lofst0), fi0)))
+		buff0, c_size_t(size0), (c_fuse_off_t(hofst0)<<32)|c_fuse_off_t(lofst0), fi0)))
 }
 
-func go_hostWrite32(path0 *c_char, buff0 *c_char, size0 c_size_t, hofst0, lofst0 uintptr,
+func go_hostWrite32(path0 *c_char, buff0 *c_char, size0 c_size_t, lofst0, hofst0 uintptr,
 	fi0 *c_struct_fuse_file_info) (nbyt0 uintptr) {
 	return uintptr(int(hostWrite(path0,
-		buff0, c_size_t(size0), (c_fuse_off_t(hofst0)<<32)+c_fuse_off_t(lofst0), fi0)))
+		buff0, c_size_t(size0), (c_fuse_off_t(hofst0)<<32)|c_fuse_off_t(lofst0), fi0)))
 }
 
 func go_hostStatfs32(path0 *c_char, stat0 *c_fuse_statvfs_t) (errc0 uintptr) {
@@ -917,10 +917,10 @@ func go_hostOpendir32(path0 *c_char, fi0 *c_struct_fuse_file_info) (errc0 uintpt
 }
 
 func go_hostReaddir32(path0 *c_char,
-	buff0 unsafe.Pointer, fill0 c_fuse_fill_dir_t, hofst0, lofst0 uintptr,
+	buff0 unsafe.Pointer, fill0 c_fuse_fill_dir_t, lofst0, hofst0 uintptr,
 	fi0 *c_struct_fuse_file_info) (errc0 uintptr) {
 	return uintptr(int(hostReaddir(path0,
-		buff0, fill0, (c_fuse_off_t(hofst0)<<32)+c_fuse_off_t(lofst0), fi0)))
+		buff0, fill0, (c_fuse_off_t(hofst0)<<32)|c_fuse_off_t(lofst0), fi0)))
 }
 
 func go_hostReleasedir32(path0 *c_char, fi0 *c_struct_fuse_file_info) (errc0 uintptr) {
@@ -949,9 +949,9 @@ func go_hostCreate32(path0 *c_char, mode0 uintptr, fi0 *c_struct_fuse_file_info)
 	return uintptr(int(hostCreate(path0, c_fuse_mode_t(mode0), fi0)))
 }
 
-func go_hostFtruncate32(path0 *c_char, hsize0, lsize0 uintptr,
+func go_hostFtruncate32(path0 *c_char, lsize0, hsize0 uintptr,
 	fi0 *c_struct_fuse_file_info) (errc0 uintptr) {
-	return uintptr(int(hostFtruncate(path0, (c_fuse_off_t(hsize0)<<32)+c_fuse_off_t(lsize0), fi0)))
+	return uintptr(int(hostFtruncate(path0, (c_fuse_off_t(hsize0)<<32)|c_fuse_off_t(lsize0), fi0)))
 }
 
 func go_hostFgetattr32(path0 *c_char, stat0 *c_fuse_stat_t,
