@@ -13,8 +13,8 @@ Cgofuse is a cross-platform FUSE library for Go. It is supported on multiple pla
 |  cgo  |:heavy_check_mark:|:heavy_check_mark:<sup>1</sup>|:heavy_check_mark:|:heavy_check_mark:|
 | !cgo  |                  |                  |                  |:heavy_check_mark:<sup>2</sup>|
 
-- **1**: FreeBSD signal handling is currently broken. Please see this [discussion](https://github.com/billziss-gh/cgofuse/issues/18#issuecomment-390446362) for details.
-- **2**: This requires a custom build of Go using the patch in [golang/go#25575](https://github.com/golang/go/pull/25575), which fixes issue [golang/go#6751](https://github.com/golang/go/issues/6751). This patch has now been included in Go and should become available in its next release.
+- **1**: FreeBSD signal handling is currently broken due to a problem in Go 1.10 and earlier. A fix will be included in Go 1.11. Please see this [discussion](https://github.com/billziss-gh/cgofuse/issues/18#issuecomment-390446362) for details.
+- **2**: The !cgo variant does not work with Go 1.10 and earlier. A fix will be included in Go 1.11. Please see the patch in [golang/go#25575](https://github.com/golang/go/pull/25575), which fixes issue [golang/go#6751](https://github.com/golang/go/issues/6751).
 
 ## How to build
 
