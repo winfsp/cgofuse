@@ -4,6 +4,7 @@
 **v1.2.0**
 
 - FreeBSD port.
+- OpenBSD port.
 - Cgo and !cgo variants for Windows port.
 
 

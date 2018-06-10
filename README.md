@@ -8,13 +8,15 @@
 Cgofuse is a cross-platform FUSE library for Go. It is supported on multiple platforms and can be ported to any platform that has a FUSE implementation. It has [cgo](https://golang.org/cmd/cgo/) and [!cgo](https://github.com/golang/go/wiki/WindowsDLLs) ("nocgo") variants depending on the platform.
 
 
-|       |macOS             |FreeBSD           |Linux             |Windows           |
-|:-----:|:----------------:|:----------------:|:----------------:|:----------------:|
-|  cgo  |:heavy_check_mark:|:heavy_check_mark:<sup>1</sup>|:heavy_check_mark:|:heavy_check_mark:|
-| !cgo  |                  |                  |                  |:heavy_check_mark:<sup>2</sup>|
+|       |macOS             |FreeBSD           |OpenBSD           |Linux             |Windows           |
+|:-----:|:----------------:|:----------------:|:----------------:|:----------------:|:----------------:|
+|  cgo  |:heavy_check_mark:|:heavy_check_mark:<sup>1</sup>|:heavy_check_mark:<sup>2</sup>|:heavy_check_mark:|:heavy_check_mark:|
+| !cgo  |                  |                  |                  |                  |:heavy_check_mark:<sup>1</sup>|
 
-- **1**: FreeBSD signal handling is currently broken due to a problem in Go 1.10 and earlier. A fix will be included in Go 1.11. Please see this [discussion](https://github.com/billziss-gh/cgofuse/issues/18#issuecomment-390446362) for details.
-- **2**: The !cgo variant does not work with Go 1.10 and earlier. A fix will be included in Go 1.11. Please see the patch in [golang/go#25575](https://github.com/golang/go/pull/25575), which fixes issue [golang/go#6751](https://github.com/golang/go/issues/6751).
+- **1**: Requires Go 1.11.
+- **2**: OpenBSD support is experimental. It has known issues that stem from the differences in the OpenBSD [libfuse](https://github.com/openbsd/src/tree/dae5ffec5618b0b660e9064e3b0991bb4ab1b1e8/lib/libfuse) implementation from the reference [libfuse](https://github.com/libfuse/libfuse) implementation.
+    - Signal handling is broken due to a bug in the OpenBSD implementation of [`fuse_set_signal_handlers`](https://github.com/openbsd/src/blob/dae5ffec5618b0b660e9064e3b0991bb4ab1b1e8/lib/libfuse/fuse.c#L485-L493).
+    - Option parsing may fail because the [`fuse_opt_parse`](https://github.com/openbsd/src/blob/dae5ffec5618b0b660e9064e3b0991bb4ab1b1e8/lib/libfuse/fuse_opt.c#L266) function is not fully compatible with the one in libfuse.
 
 ## How to build
 
@@ -27,17 +29,27 @@ Cgofuse is a cross-platform FUSE library for Go. It is supported on multiple pla
     ```
 
 **FreeBSD**
-- Prerequisites: fusefs-libs, clang
+- Prerequisites: fusefs-libs
 - Build:
     ```
     $ cd cgofuse
     $ go install -v ./fuse ./examples/memfs ./examples/passthrough
 
-    # you may also need the following in order to run FUSE file systems:
-    $ sudo vi /boot/loader.conf                 # add: fuse_load="YES"
-    $ sudo sysctl vfs.usermount=1               # allow user mounts
-    $ sudo pw usermod USERNAME -G operator      # allow user to open /dev/fuse
+    # You may also need the following in order to run FUSE file systems.
+    # Commands must be run as root.
+    $ vi /boot/loader.conf                      # add: fuse_load="YES"
+    $ sysctl vfs.usermount=1                    # allow user mounts
+    $ pw usermod USERNAME -G operator           # allow user to open /dev/fuse
     ```
+
+**OpenBSD**
+- Prerequisites: NONE
+- Build:
+    ```
+    $ cd cgofuse
+    $ go install -v ./fuse ./examples/memfs ./examples/passthrough
+    ```
+- **NOTE**: OpenBSD 6 removed the `kern.usermount` option, which allowed non-root users to mount file systems [[link](https://undeadly.org/cgi?action=article&sid=20160715125022&mode=expanded&count=0)]. Therefore you must be root in order to use FUSE and cgofuse.
 
 **Linux**
 - Prerequisites: libfuse-dev, gcc
@@ -89,9 +101,9 @@ The full documentation is available at GoDoc.org: [package fuse](https://godoc.o
 
 There are currently three example file systems:
 
-- [Hellofs](examples/hellofs/hellofs.go) is an extremely simple file system. Runs on macOS, FreeBSD, Linux and Windows.
-- [Memfs](examples/memfs/memfs.go) is an in memory file system. Runs on macOS, FreeBSD, Linux and Windows.
-- [Passthrough](examples/passthrough/passthrough.go) is a file system that passes all operations to the underlying file system. Runs on macOS, FreeBSD, Linux.
+- [Hellofs](examples/hellofs/hellofs.go) is an extremely simple file system. Runs on macOS, FreeBSD, OpenBSD, Linux and Windows.
+- [Memfs](examples/memfs/memfs.go) is an in memory file system. Runs on macOS, FreeBSD, OpenBSD, Linux and Windows.
+- [Passthrough](examples/passthrough/passthrough.go) is a file system that passes all operations to the underlying file system. Runs on macOS, FreeBSD, OpenBSD, Linux.
 
 ## How it is tested
 

@@ -496,6 +496,14 @@ func c_hostUnmount(fuse *c_struct_fuse, mountpoint *c_char) c_int {
 	fuse_exit.Call(uintptr(unsafe.Pointer(fuse)))
 	return 1
 }
+func c_hostOptSet(opt *c_struct_fuse_opt,
+	templ *c_char, offset c_fuse_opt_offset_t, value c_int) {
+	*opt = c_struct_fuse_opt{
+		templ:  templ,
+		offset: offset,
+		value:  value,
+	}
+}
 func c_hostOptParseOptProc(opt_data uintptr, arg uintptr, key uintptr, outargs uintptr) uintptr {
 	switch c_int(key) {
 	default:

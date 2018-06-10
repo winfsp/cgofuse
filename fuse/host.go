@@ -826,42 +826,38 @@ func OptParse(args []string, format string, vals ...interface{}) (outargs []stri
 
 	fuse_opts := make([]c_struct_fuse_opt, len(opts)+1)
 	for i := 0; len(opts) > i; i++ {
+		var templ *c_char
 		switch vals[i].(type) {
 		case *bool:
-			fuse_opts[i].templ = c_CString(optNormBool(opts[i]))
+			templ = c_CString(optNormBool(opts[i]))
 		case *int:
-			fuse_opts[i].templ = c_CString(optNormInt(opts[i], ""))
+			templ = c_CString(optNormInt(opts[i], ""))
 		case *int8:
-			fuse_opts[i].templ = c_CString(optNormInt(opts[i], "hh"))
+			templ = c_CString(optNormInt(opts[i], "hh"))
 		case *int16:
-			fuse_opts[i].templ = c_CString(optNormInt(opts[i], "h"))
+			templ = c_CString(optNormInt(opts[i], "h"))
 		case *int32:
-			fuse_opts[i].templ = c_CString(optNormInt(opts[i], ""))
+			templ = c_CString(optNormInt(opts[i], ""))
 		case *int64:
-			fuse_opts[i].templ = c_CString(optNormInt(opts[i], "ll"))
+			templ = c_CString(optNormInt(opts[i], "ll"))
 		case *uint:
-			fuse_opts[i].templ = c_CString(optNormInt(opts[i], ""))
+			templ = c_CString(optNormInt(opts[i], ""))
 		case *uint8:
-			fuse_opts[i].templ = c_CString(optNormInt(opts[i], "hh"))
+			templ = c_CString(optNormInt(opts[i], "hh"))
 		case *uint16:
-			fuse_opts[i].templ = c_CString(optNormInt(opts[i], "h"))
+			templ = c_CString(optNormInt(opts[i], "h"))
 		case *uint32:
-			fuse_opts[i].templ = c_CString(optNormInt(opts[i], ""))
+			templ = c_CString(optNormInt(opts[i], ""))
 		case *uint64:
-			fuse_opts[i].templ = c_CString(optNormInt(opts[i], "ll"))
+			templ = c_CString(optNormInt(opts[i], "ll"))
 		case *uintptr:
-			fuse_opts[i].templ = c_CString(optNormInt(opts[i], "ll"))
+			templ = c_CString(optNormInt(opts[i], "ll"))
 		case *string:
-			fuse_opts[i].templ = c_CString(optNormStr(opts[i]))
+			templ = c_CString(optNormStr(opts[i]))
 		}
-		defer c_free(unsafe.Pointer(fuse_opts[i].templ))
+		defer c_free(unsafe.Pointer(templ))
 
-		// Work around Go pre-1.10 limitation. See golang issue:
-		// https://github.com/golang/go/issues/21809
-		*(*c_fuse_opt_offset_t)(unsafe.Pointer(&fuse_opts[i].offset)) =
-			c_fuse_opt_offset_t(i * align)
-
-		fuse_opts[i].value = 1
+		c_hostOptSet(&fuse_opts[i], templ, c_fuse_opt_offset_t(i*align), 1)
 	}
 
 	fuse_args := c_struct_fuse_args{}

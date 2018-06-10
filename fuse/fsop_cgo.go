@@ -15,11 +15,11 @@
 package fuse
 
 /*
-#if !(defined(__APPLE__) || defined(__FreeBSD__) || defined(__linux__) || defined(_WIN32))
+#if !(defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__linux__) || defined(_WIN32))
 #error platform not supported
 #endif
 
-#if defined(__APPLE__) || defined(__FreeBSD__) || defined(__linux__)
+#if defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__linux__)
 
 #include <errno.h>
 #include <fcntl.h>
@@ -124,7 +124,7 @@ package fuse
 // incantation needed for cgo to figure out "kind of name" for ENOATTR
 #define ENOATTR         ((int)ENODATA)
 
-#elif defined(__FreeBSD__)
+#elif defined(__FreeBSD__) || defined(__OpenBSD__)
 
 // ETIME: see https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=225324
 // ENODATA: the following is not strictly correct but a lot of project
@@ -135,11 +135,15 @@ package fuse
 #define ENOSTR          EINVAL
 #define ENOSR           EINVAL
 
+#if !defined(ENOLINK)
+#define ENOLINK         ENOENT
+#endif
+
 #endif
 
 #if defined(__APPLE__) || defined(__linux__)
 #include <sys/xattr.h>
-#elif defined(__FreeBSD__) || defined(_WIN32)
+#elif defined(__FreeBSD__) || defined(__OpenBSD__) || defined(_WIN32)
 #define XATTR_CREATE    1
 #define XATTR_REPLACE   2
 #endif
