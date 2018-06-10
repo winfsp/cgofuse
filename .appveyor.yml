@@ -15,20 +15,18 @@ environment:
   - GOARCH: 386
     CGO_ENABLED: 0
 
-stack: go 1.10
-
 install:
 - choco install winfsp --version=1.0.17072 -y
 - git clone -q --recurse-submodules https://github.com/billziss-gh/winfsp.git C:\projects\winfsp
 - git -C C:\projects\winfsp checkout -q release/1.2
 
 # build a custom Go!
-- if %CGO_ENABLED%==0 cd C:\go110
-- if %CGO_ENABLED%==0 appveyor DownloadFile https://patch-diff.githubusercontent.com/raw/golang/go/pull/25575.patch
-- if %CGO_ENABLED%==0 "C:\Program Files\Git\usr\bin\patch.exe" -p1 <25575.patch & exit 0
-- if %CGO_ENABLED%==0 cd src
 - if %CGO_ENABLED%==0 set GOROOT_BOOTSTRAP=C:\go14
+- if %CGO_ENABLED%==0 git clone -q https://github.com/golang/go C:\projects\golang
+- if %CGO_ENABLED%==0 cd C:\projects\golang\src
 - if %CGO_ENABLED%==0 make.bat
+- if %CGO_ENABLED%==0 set GOROOT=C:\projects\golang
+- if %CGO_ENABLED%==0 set PATH=C:\projects\golang\bin;%PATH%
 - if %CGO_ENABLED%==0 cd C:\projects\go\src\github.com\billziss-gh\cgofuse
 
 build_script:
