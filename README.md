@@ -5,7 +5,7 @@
 
 Cgofuse is a cross-platform FUSE library for Go. It is supported on multiple platforms and can be ported to any platform that has a FUSE implementation. It has [cgo](https://golang.org/cmd/cgo/) and [!cgo](https://github.com/golang/go/wiki/WindowsDLLs) ("nocgo") variants depending on the platform.
 
-|       |macOS<br/>[![Travis CI](https://img.shields.io/travis/billziss-gh/cgofuse.svg)](https://travis-ci.org/billziss-gh/cgofuse)|FreeBSD<br/>[![PMCI](http://storage.googleapis.com/pmci-logs/github.com/billziss-gh/cgofuse/badge.svg)](http://storage.googleapis.com/pmci-logs/github.com/billziss-gh/cgofuse/build.html)|OpenBSD<br/>no builds|Linux<br/>[![Travis CI](https://img.shields.io/travis/billziss-gh/cgofuse.svg)](https://travis-ci.org/billziss-gh/cgofuse)|Windows<br/>[![AppVeyor](https://img.shields.io/appveyor/ci/billziss-gh/cgofuse.svg)](https://ci.appveyor.com/project/billziss-gh/cgofuse)|
+|       |macOS<br/>[![Travis CI](https://img.shields.io/travis/billziss-gh/cgofuse.svg)](https://travis-ci.org/billziss-gh/cgofuse)|FreeBSD<br/>[![PMCI](http://storage.googleapis.com/pmci-logs/github.com/billziss-gh/cgofuse/badge.svg)](http://storage.googleapis.com/pmci-logs/github.com/billziss-gh/cgofuse/build.html)|OpenBSD<br/>![no CI](https://img.shields.io/badge/build-none-lightgrey.svg)|Linux<br/>[![Travis CI](https://img.shields.io/travis/billziss-gh/cgofuse.svg)](https://travis-ci.org/billziss-gh/cgofuse)|Windows<br/>[![AppVeyor](https://img.shields.io/appveyor/ci/billziss-gh/cgofuse.svg)](https://ci.appveyor.com/project/billziss-gh/cgofuse)|
 |:-----:|:----------------:|:----------------:|:----------------:|:----------------:|:----------------:|
 |  cgo  |:heavy_check_mark:|:heavy_check_mark:<sup>1</sup>|:heavy_check_mark:<sup>2</sup>|:heavy_check_mark:|:heavy_check_mark:|
 | !cgo  |                  |                  |                  |                  |:heavy_check_mark:<sup>1</sup>|
@@ -104,9 +104,16 @@ There are currently three example file systems:
 
 ## How it is tested
 
-Cgofuse is regularly built and tested on [Travis CI](https://travis-ci.org/billziss-gh/cgofuse) and [AppVeyor](https://ci.appveyor.com/project/billziss-gh/cgofuse). The following software is being used to test cgofuse.
+Cgofuse is regularly built and tested on [Travis CI](https://travis-ci.org/billziss-gh/cgofuse), [Poor Man's CI](https://github.com/billziss-gh/pmci) and [AppVeyor](https://ci.appveyor.com/project/billziss-gh/cgofuse). The following software is being used to test cgofuse.
 
-**macOS/Linux**
+**macOS**
+- [fstest](https://github.com/billziss-gh/secfs.test/tree/master/fstest/ntfs-3g-pjd-fstest-8af5670)
+- [fsx](https://github.com/billziss-gh/secfs.test/tree/master/fstools/src/fsx)
+
+**FreeBSD**
+- [fsx](https://github.com/billziss-gh/secfs.test/tree/master/fstools/src/fsx)
+
+**Linux**
 - [fstest](https://github.com/billziss-gh/secfs.test/tree/master/fstest/ntfs-3g-pjd-fstest-8af5670)
 - [fsx](https://github.com/billziss-gh/secfs.test/tree/master/fstools/src/fsx)
 
