@@ -1,14 +1,11 @@
 # Cross-platform FUSE library for Go
 
-[![Travis CI](https://img.shields.io/travis/billziss-gh/cgofuse.svg?label=macOS/linux)](https://travis-ci.org/billziss-gh/cgofuse)
-[![AppVeyor](https://img.shields.io/appveyor/ci/billziss-gh/cgofuse.svg?label=windows)](https://ci.appveyor.com/project/billziss-gh/cgofuse)
 [![CircleCI](https://img.shields.io/circleci/project/github/billziss-gh/cgofuse.svg?label=cross-build)](https://circleci.com/gh/billziss-gh/cgofuse)
 [![GoDoc](https://godoc.org/github.com/billziss-gh/cgofuse/fuse?status.svg)](https://godoc.org/github.com/billziss-gh/cgofuse/fuse)
 
 Cgofuse is a cross-platform FUSE library for Go. It is supported on multiple platforms and can be ported to any platform that has a FUSE implementation. It has [cgo](https://golang.org/cmd/cgo/) and [!cgo](https://github.com/golang/go/wiki/WindowsDLLs) ("nocgo") variants depending on the platform.
 
-
-|       |macOS             |FreeBSD           |OpenBSD           |Linux             |Windows           |
+|       |macOS<br/>[![Travis CI](https://img.shields.io/travis/billziss-gh/cgofuse.svg)](https://travis-ci.org/billziss-gh/cgofuse)|FreeBSD<br/>[![PMCI](http://storage.googleapis.com/pmci-logs/github.com/billziss-gh/cgofuse/badge.svg)](http://storage.googleapis.com/pmci-logs/github.com/billziss-gh/cgofuse/build.html)|OpenBSD<br/>no builds|Linux<br/>[![Travis CI](https://img.shields.io/travis/billziss-gh/cgofuse.svg)](https://travis-ci.org/billziss-gh/cgofuse)|Windows<br/>[![AppVeyor](https://img.shields.io/appveyor/ci/billziss-gh/cgofuse.svg)](https://ci.appveyor.com/project/billziss-gh/cgofuse)|
 |:-----:|:----------------:|:----------------:|:----------------:|:----------------:|:----------------:|
 |  cgo  |:heavy_check_mark:|:heavy_check_mark:<sup>1</sup>|:heavy_check_mark:<sup>2</sup>|:heavy_check_mark:|:heavy_check_mark:|
 | !cgo  |                  |                  |                  |                  |:heavy_check_mark:<sup>1</sup>|
