@@ -5,15 +5,15 @@
 
 Cgofuse is a cross-platform FUSE library for Go. It is supported on multiple platforms and can be ported to any platform that has a FUSE implementation. It has [cgo](https://golang.org/cmd/cgo/) and [!cgo](https://github.com/golang/go/wiki/WindowsDLLs) ("nocgo") variants depending on the platform.
 
-|       |macOS<br/>[![Travis CI](https://img.shields.io/travis/billziss-gh/cgofuse.svg)](https://travis-ci.org/billziss-gh/cgofuse)|FreeBSD<br/>[![PMCI](https://storage.googleapis.com/pmci-logs/github.com/billziss-gh/cgofuse/badge.svg)](https://storage.googleapis.com/pmci-logs/github.com/billziss-gh/cgofuse/build.html)|OpenBSD<br/>![no CI](https://img.shields.io/badge/build-none-lightgrey.svg)|Linux<br/>[![Travis CI](https://img.shields.io/travis/billziss-gh/cgofuse.svg)](https://travis-ci.org/billziss-gh/cgofuse)|Windows<br/>[![AppVeyor](https://img.shields.io/appveyor/ci/billziss-gh/cgofuse.svg)](https://ci.appveyor.com/project/billziss-gh/cgofuse)|
-|:-----:|:----------------:|:----------------:|:----------------:|:----------------:|:----------------:|
-|  cgo  |:heavy_check_mark:|:heavy_check_mark:<sup>1</sup>|:heavy_check_mark:<sup>2</sup>|:heavy_check_mark:|:heavy_check_mark:|
-| !cgo  |                  |                  |                  |                  |:heavy_check_mark:<sup>1</sup>|
+|       |macOS<br/>[![Travis CI](https://img.shields.io/travis/billziss-gh/cgofuse.svg)](https://travis-ci.org/billziss-gh/cgofuse)|FreeBSD<br/>[![PMCI](https://storage.googleapis.com/pmci-logs/github.com/billziss-gh/cgofuse/badge.svg)](https://storage.googleapis.com/pmci-logs/github.com/billziss-gh/cgofuse/build.html)|NetBSD<br/>![no CI](https://img.shields.io/badge/build-none-lightgrey.svg)|OpenBSD<br/>![no CI](https://img.shields.io/badge/build-none-lightgrey.svg)|Linux<br/>[![Travis CI](https://img.shields.io/travis/billziss-gh/cgofuse.svg)](https://travis-ci.org/billziss-gh/cgofuse)|Windows<br/>[![AppVeyor](https://img.shields.io/appveyor/ci/billziss-gh/cgofuse.svg)](https://ci.appveyor.com/project/billziss-gh/cgofuse)|
+|:-----:|:----------------:|:----------------:|:----------------:|:----------------:|:----------------:|:----------------:|
+|  cgo  |:heavy_check_mark:|:heavy_check_mark:<sup>1</sup>|:heavy_check_mark:<sup>2</sup>|:heavy_check_mark:<sup>2</sup>|:heavy_check_mark:|:heavy_check_mark:|
+| !cgo  |                  |                  |                  |                  |                  |:heavy_check_mark:<sup>1</sup>|
 
 - **1**: Requires Go 1.11.
-- **2**: OpenBSD support is experimental. It has known issues that stem from the differences in the OpenBSD [libfuse](https://github.com/openbsd/src/tree/dae5ffec5618b0b660e9064e3b0991bb4ab1b1e8/lib/libfuse) implementation from the reference [libfuse](https://github.com/libfuse/libfuse) implementation.
-    - Signal handling is broken due to a bug in the OpenBSD implementation of [`fuse_set_signal_handlers`](https://github.com/openbsd/src/blob/dae5ffec5618b0b660e9064e3b0991bb4ab1b1e8/lib/libfuse/fuse.c#L485-L493).
-    - Option parsing may fail because the [`fuse_opt_parse`](https://github.com/openbsd/src/blob/dae5ffec5618b0b660e9064e3b0991bb4ab1b1e8/lib/libfuse/fuse_opt.c#L266) function is not fully compatible with the one in libfuse.
+- **2**: NetBSD and OpenBSD support is experimental. There are known issues that stem from the differences in the NetBSD [librefuse](https://github.com/NetBSD/src/tree/3fc0b3bf70254f9b4509e0ba5b1105834eb71d1c/lib/librefuse) and OpenBSD [libfuse](https://github.com/openbsd/src/tree/dae5ffec5618b0b660e9064e3b0991bb4ab1b1e8/lib/libfuse) implementations from the reference [libfuse](https://github.com/libfuse/libfuse) implementation.
+    - NetBSD and OpenBSD: Option parsing may fail because the [`fuse_opt_parse`](https://github.com/openbsd/src/blob/dae5ffec5618b0b660e9064e3b0991bb4ab1b1e8/lib/libfuse/fuse_opt.c#L266) function is not fully compatible with the one in libfuse.
+    - OpenBSD only: Signal handling is broken due to a bug in the OpenBSD implementation of [`fuse_set_signal_handlers`](https://github.com/openbsd/src/blob/dae5ffec5618b0b660e9064e3b0991bb4ab1b1e8/lib/libfuse/fuse.c#L485-L493).
 
 ## How to build
 
@@ -37,6 +37,19 @@ Cgofuse is a cross-platform FUSE library for Go. It is supported on multiple pla
     $ vi /boot/loader.conf                      # add: fuse_load="YES"
     $ sysctl vfs.usermount=1                    # allow user mounts
     $ pw usermod USERNAME -G operator           # allow user to open /dev/fuse
+    ```
+
+**NetBSD**
+- Prerequisites: NONE
+- Build:
+    ```
+    $ cd cgofuse
+    $ go install -v ./fuse ./examples/memfs ./examples/passthrough
+
+    # You may also need the following in order to run FUSE file systems.
+    # Commands must be run as root.
+    $ chmod go+rw /dev/puffs
+    $ sysctl -w vfs.generic.usermount=1
     ```
 
 **OpenBSD**
@@ -98,9 +111,9 @@ The full documentation is available at GoDoc.org: [package fuse](https://godoc.o
 
 There are currently three example file systems:
 
-- [Hellofs](examples/hellofs/hellofs.go) is an extremely simple file system. Runs on macOS, FreeBSD, OpenBSD, Linux and Windows.
-- [Memfs](examples/memfs/memfs.go) is an in memory file system. Runs on macOS, FreeBSD, OpenBSD, Linux and Windows.
-- [Passthrough](examples/passthrough/passthrough.go) is a file system that passes all operations to the underlying file system. Runs on macOS, FreeBSD, OpenBSD, Linux.
+- [Hellofs](examples/hellofs/hellofs.go) is an extremely simple file system. Runs on all OS'es.
+- [Memfs](examples/memfs/memfs.go) is an in memory file system. Runs on all OS'es.
+- [Passthrough](examples/passthrough/passthrough.go) is a file system that passes all operations to the underlying file system. Runs on all OS'es except Windows.
 
 ## How it is tested
 
