@@ -9,8 +9,9 @@ export GOPATH=/tmp/go
 mkdir -p /tmp/go/src/github.com/billziss-gh
 cp -R /tmp/repo/cgofuse /tmp/go/src/github.com/billziss-gh
 cd /tmp/go/src/github.com/billziss-gh/cgofuse
-go build ./examples/memfs
-go build ./examples/passthrough
+go build -v ./...
+go build -v ./examples/memfs
+go build -v ./examples/passthrough
 go test -v ./fuse
 
 # secfs.test
