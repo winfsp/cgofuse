@@ -429,56 +429,60 @@ static int hostFuseInit(void)
 
 static int hostMount(int argc, char *argv[], void *data)
 {
-#if defined(__GNUC__)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wincompatible-pointer-types"
-#endif
 	static struct fuse_operations fsop =
 	{
-		.getattr = (int (*)())go_hostGetattr,
-		.readlink = (int (*)())go_hostReadlink,
-		.mknod = (int (*)())go_hostMknod,
-		.mkdir = (int (*)())go_hostMkdir,
-		.unlink = (int (*)())go_hostUnlink,
-		.rmdir = (int (*)())go_hostRmdir,
-		.symlink = (int (*)())go_hostSymlink,
-		.rename = (int (*)())go_hostRename,
-		.link = (int (*)())go_hostLink,
-		.chmod = (int (*)())go_hostChmod,
-		.chown = (int (*)())go_hostChown,
-		.truncate = (int (*)())go_hostTruncate,
-		.open = (int (*)())go_hostOpen,
-		.read = (int (*)())go_hostRead,
-		.write = (int (*)())go_hostWrite,
-		.statfs = (int (*)())go_hostStatfs,
-		.flush = (int (*)())go_hostFlush,
-		.release = (int (*)())go_hostRelease,
-		.fsync = (int (*)())go_hostFsync,
-		.setxattr = (int (*)())_hostSetxattr,
-		.getxattr = (int (*)())_hostGetxattr,
-		.listxattr = (int (*)())go_hostListxattr,
-		.removexattr = (int (*)())go_hostRemovexattr,
-		.opendir = (int (*)())go_hostOpendir,
-		.readdir = (int (*)())go_hostReaddir,
-		.releasedir = (int (*)())go_hostReleasedir,
-		.fsyncdir = (int (*)())go_hostFsyncdir,
-		.init = (void *(*)())go_hostInit,
-		.destroy = (void (*)())go_hostDestroy,
-		.access = (int (*)())go_hostAccess,
-		.create = (int (*)())go_hostCreate,
-		.ftruncate = (int (*)())go_hostFtruncate,
-		.fgetattr = (int (*)())go_hostFgetattr,
-		//.lock = (int (*)())go_hostFlock,
-		.utimens = (int (*)())go_hostUtimens,
+		.getattr = (int (*)(const char *, fuse_stat_t *))go_hostGetattr,
+		.readlink = (int (*)(const char *, char *, size_t))go_hostReadlink,
+		.mknod = (int (*)(const char *, fuse_mode_t, fuse_dev_t))go_hostMknod,
+		.mkdir = (int (*)(const char *, fuse_mode_t))go_hostMkdir,
+		.unlink = (int (*)(const char *))go_hostUnlink,
+		.rmdir = (int (*)(const char *))go_hostRmdir,
+		.symlink = (int (*)(const char *, const char *))go_hostSymlink,
+		.rename = (int (*)(const char *, const char *))go_hostRename,
+		.link = (int (*)(const char *, const char *))go_hostLink,
+		.chmod = (int (*)(const char *, fuse_mode_t))go_hostChmod,
+		.chown = (int (*)(const char *, fuse_uid_t, fuse_gid_t))go_hostChown,
+		.truncate = (int (*)(const char *, fuse_off_t))go_hostTruncate,
+		.open = (int (*)(const char *, struct fuse_file_info *))go_hostOpen,
+		.read = (int (*)(const char *, char *, size_t, fuse_off_t, struct fuse_file_info *))
+			go_hostRead,
+		.write = (int (*)(const char *, const char *, size_t, fuse_off_t, struct fuse_file_info *))
+			go_hostWrite,
+		.statfs = (int (*)(const char *, fuse_statvfs_t *))go_hostStatfs,
+		.flush = (int (*)(const char *, struct fuse_file_info *))go_hostFlush,
+		.release = (int (*)(const char *, struct fuse_file_info *))go_hostRelease,
+		.fsync = (int (*)(const char *, int, struct fuse_file_info *))go_hostFsync,
+#if defined(__APPLE__)
+		.setxattr = (int (*)(const char *, const char *, const char *, size_t, int, uint32_t))
+			_hostSetxattr,
+		.getxattr = (int (*)(const char *, const char *, char *, size_t, uint32_t))
+			_hostGetxattr,
+#else
+		.setxattr = (int (*)(const char *, const char *, const char *, size_t, int))_hostSetxattr,
+		.getxattr = (int (*)(const char *, const char *, char *, size_t))_hostGetxattr,
+#endif
+		.listxattr = (int (*)(const char *, char *, size_t))go_hostListxattr,
+		.removexattr = (int (*)(const char *, const char *))go_hostRemovexattr,
+		.opendir = (int (*)(const char *, struct fuse_file_info *))go_hostOpendir,
+		.readdir = (int (*)(const char *, void *, fuse_fill_dir_t, fuse_off_t,
+			struct fuse_file_info *))go_hostReaddir,
+		.releasedir = (int (*)(const char *, struct fuse_file_info *))go_hostReleasedir,
+		.fsyncdir = (int (*)(const char *, int, struct fuse_file_info *))go_hostFsyncdir,
+		.init = (void *(*)(struct fuse_conn_info *))go_hostInit,
+		.destroy = (void (*)(void *))go_hostDestroy,
+		.access = (int (*)(const char *, int))go_hostAccess,
+		.create = (int (*)(const char *, fuse_mode_t, struct fuse_file_info *))go_hostCreate,
+		.ftruncate = (int (*)(const char *, fuse_off_t, struct fuse_file_info *))go_hostFtruncate,
+		.fgetattr = (int (*)(const char *, fuse_stat_t *, struct fuse_file_info *))go_hostFgetattr,
+		//.lock = (int (*)(const char *, struct fuse_file_info *, int, struct fuse_flock *))
+		//	go_hostFlock,
+		.utimens = (int (*)(const char *, const fuse_timespec_t [2]))go_hostUtimens,
 #if defined(__APPLE__) || (defined(_WIN32) && defined(FSP_FUSE_CAP_STAT_EX))
-		.setchgtime = (int (*)())go_hostSetchgtime,
-		.setcrtime = (int (*)())go_hostSetcrtime,
-		.chflags = (int (*)())go_hostChflags,
+		.setchgtime = (int (*)(const char *, const fuse_timespec_t *))go_hostSetchgtime,
+		.setcrtime = (int (*)(const char *, const fuse_timespec_t *))go_hostSetcrtime,
+		.chflags = (int (*)(const char *, uint32_t))go_hostChflags,
 #endif
 	};
-#if defined(__GNUC__)
-#pragma GCC diagnostic pop
-#endif
 #if defined(__OpenBSD__)
 	return 0 == fuse_main(argc, argv, &fsop, data);
 #else
