@@ -65,3 +65,7 @@ func copyFusestatFromGostat(dst *fuse.Stat_t, src *syscall.Stat_t) {
 	dst.Blksize = int64(src.Blksize)
 	dst.Blocks = int64(src.Blocks)
 }
+
+func syscall_Statfs(path string, stat *syscall.Statfs_t) error {
+	return syscall.Statfs(path, stat)
+}

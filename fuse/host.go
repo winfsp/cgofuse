@@ -426,6 +426,9 @@ func hostInit(conn0 *c_struct_fuse_conn_info) (user_data unsafe.Pointer) {
 
 func hostDestroy(user_data unsafe.Pointer) {
 	defer recover()
+	if "netbsd" == runtime.GOOS {
+		user_data = c_fuse_get_context().private_data
+	}
 	host := hostHandleGet(user_data)
 	host.fsop.Destroy()
 	if nil != host.sigc {
@@ -864,14 +867,12 @@ func OptParse(args []string, format string, vals ...interface{}) (outargs []stri
 	defer c_fuse_opt_free_args(&fuse_args)
 	argc := 1 + len(args)
 	argp := c_calloc(c_size_t(argc+1), c_size_t(unsafe.Sizeof((*c_char)(nil))))
-	defer c_free(argp)
 	argv := (*[1 << 16]*c_char)(argp)
 	argv[0] = c_CString("<UNKNOWN>")
-	defer c_free(unsafe.Pointer(argv[0]))
 	for i := 0; len(args) > i; i++ {
 		argv[1+i] = c_CString(args[i])
-		defer c_free(unsafe.Pointer(argv[1+i]))
 	}
+	fuse_args.allocated = 1
 	fuse_args.argc = c_int(argc)
 	fuse_args.argv = (**c_char)(&argv[0])
 

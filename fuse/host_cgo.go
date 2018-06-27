@@ -21,6 +21,9 @@ package fuse
 #cgo freebsd CFLAGS: -DFUSE_USE_VERSION=28 -D_FILE_OFFSET_BITS=64 -I/usr/local/include/fuse
 #cgo freebsd LDFLAGS: -L/usr/local/lib -lfuse
 
+#cgo netbsd CFLAGS: -DFUSE_USE_VERSION=28 -D_FILE_OFFSET_BITS=64
+#cgo netbsd LDFLAGS: -lrefuse
+
 #cgo openbsd CFLAGS: -DFUSE_USE_VERSION=28 -D_FILE_OFFSET_BITS=64
 #cgo openbsd LDFLAGS: -lfuse
 
@@ -31,7 +34,7 @@ package fuse
 // The flag `I/usr/local/include/winfsp` only works on xgo and docker.
 #cgo windows CFLAGS: -DFUSE_USE_VERSION=28 -I/usr/local/include/winfsp
 
-#if !(defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__linux__) || defined(_WIN32))
+#if !(defined(__APPLE__) || defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__) || defined(__linux__) || defined(_WIN32))
 #error platform not supported
 #endif
 
@@ -40,7 +43,7 @@ package fuse
 #include <stdlib.h>
 #include <string.h>
 
-#if defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__linux__)
+#if defined(__APPLE__) || defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__) || defined(__linux__)
 
 #include <spawn.h>
 #include <sys/mount.h>
@@ -200,7 +203,7 @@ static PVOID cgofuse_init_winfsp(VOID)
 
 #endif
 
-#if defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__linux__)
+#if defined(__APPLE__) || defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__) || defined(__linux__)
 typedef struct stat fuse_stat_t;
 typedef struct stat fuse_stat_ex_t;
 typedef struct statvfs fuse_statvfs_t;
@@ -268,7 +271,7 @@ static inline void hostAsgnCconninfo(struct fuse_conn_info *conn,
 #if defined(__APPLE__)
 	if (capCaseInsensitive)
 		FUSE_ENABLE_CASE_INSENSITIVE(conn);
-#elif defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__linux__)
+#elif defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__) || defined(__linux__)
 #elif defined(_WIN32)
 #if defined(FSP_FUSE_CAP_STAT_EX)
 	conn->want |= conn->capable & FSP_FUSE_CAP_STAT_EX;
@@ -409,7 +412,7 @@ static int _hostGetxattr(char *path, char *name, char *value, size_t size,
 
 static void hostStaticInit(void)
 {
-#if defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__linux__)
+#if defined(__APPLE__) || defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__) || defined(__linux__)
 #elif defined(_WIN32)
 	InitializeCriticalSection(&cgofuse_lock);
 #endif
@@ -417,7 +420,7 @@ static void hostStaticInit(void)
 
 static int hostFuseInit(void)
 {
-#if defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__linux__)
+#if defined(__APPLE__) || defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__) || defined(__linux__)
 	return 1;
 #elif defined(_WIN32)
 	return 0 != cgofuse_init_fast(0);
@@ -485,10 +488,10 @@ static int hostMount(int argc, char *argv[], void *data)
 
 static int hostUnmount(struct fuse *fuse, char *mountpoint)
 {
-#if defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__)
+#if defined(__APPLE__) || defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
 	if (0 == mountpoint)
 		return 0;
-	// darwin,freebsd: unmount is available to non-root
+	// darwin,freebsd,netbsd: unmount is available to non-root
 	// openbsd: kern.usermount has been removed and mount/unmount is available to root only
 	return 0 == unmount(mountpoint, MNT_FORCE);
 #elif defined(__linux__)

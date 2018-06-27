@@ -1,7 +1,7 @@
-// +build darwin
+// +build netbsd
 
 /*
- * port_darwin.go
+ * port_netbsd.go
  *
  * Copyright 2017-2018 Bill Zissimopoulos
  */
@@ -38,15 +38,7 @@ func setuidgid() func() {
 
 func copyFusestatfsFromGostatfs(dst *fuse.Statfs_t, src *syscall.Statfs_t) {
 	*dst = fuse.Statfs_t{}
-	dst.Bsize = uint64(src.Bsize)
-	dst.Frsize = 1
-	dst.Blocks = uint64(src.Blocks)
-	dst.Bfree = uint64(src.Bfree)
-	dst.Bavail = uint64(src.Bavail)
-	dst.Files = uint64(src.Files)
-	dst.Ffree = uint64(src.Ffree)
-	dst.Favail = uint64(src.Ffree)
-	dst.Namemax = 255 //uint64(src.Namelen)
+	dst.Namemax = 255
 }
 
 func copyFusestatFromGostat(dst *fuse.Stat_t, src *syscall.Stat_t) {
@@ -68,5 +60,6 @@ func copyFusestatFromGostat(dst *fuse.Stat_t, src *syscall.Stat_t) {
 }
 
 func syscall_Statfs(path string, stat *syscall.Statfs_t) error {
-	return syscall.Statfs(path, stat)
+	*stat = syscall.Statfs_t{}
+	return nil
 }

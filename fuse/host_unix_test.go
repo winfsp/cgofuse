@@ -1,4 +1,4 @@
-// +build darwin freebsd openbsd linux
+// +build darwin freebsd netbsd openbsd linux
 
 /*
  * host_unix_test.go

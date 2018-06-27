@@ -66,3 +66,7 @@ func copyFusestatFromGostat(dst *fuse.Stat_t, src *syscall.Stat_t) {
 	dst.Blocks = int64(src.Blocks)
 	dst.Birthtim.Sec, dst.Birthtim.Nsec = src.Birthtimespec.Sec, src.Birthtimespec.Nsec
 }
+
+func syscall_Statfs(path string, stat *syscall.Statfs_t) error {
+	return syscall.Statfs(path, stat)
+}

@@ -15,11 +15,11 @@
 package fuse
 
 /*
-#if !(defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__linux__) || defined(_WIN32))
+#if !(defined(__APPLE__) || defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__) || defined(__linux__) || defined(_WIN32))
 #error platform not supported
 #endif
 
-#if defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__linux__)
+#if defined(__APPLE__) || defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__) || defined(__linux__)
 
 #include <errno.h>
 #include <fcntl.h>
@@ -139,11 +139,17 @@ package fuse
 #define ENOLINK         ENOENT
 #endif
 
+#elif defined(__NetBSD__)
+
+// these are not defined anywhere; convert to EINVAL
+#define ENOTRECOVERABLE	EINVAL
+#define EOWNERDEAD		EINVAL
+
 #endif
 
 #if defined(__APPLE__) || defined(__linux__)
 #include <sys/xattr.h>
-#elif defined(__FreeBSD__) || defined(__OpenBSD__) || defined(_WIN32)
+#elif defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__) || defined(_WIN32)
 #define XATTR_CREATE    1
 #define XATTR_REPLACE   2
 #endif

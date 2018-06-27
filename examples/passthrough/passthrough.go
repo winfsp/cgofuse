@@ -1,4 +1,4 @@
-// +build darwin freebsd openbsd linux
+// +build darwin freebsd netbsd openbsd linux
 
 /*
  * passthrough.go
@@ -58,7 +58,7 @@ func (self *Ptfs) Statfs(path string, stat *fuse.Statfs_t) (errc int) {
 	defer trace(path)(&errc, stat)
 	path = filepath.Join(self.root, path)
 	stgo := syscall.Statfs_t{}
-	errc = errno(syscall.Statfs(path, &stgo))
+	errc = errno(syscall_Statfs(path, &stgo))
 	copyFusestatfsFromGostatfs(stat, &stgo)
 	return
 }
