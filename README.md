@@ -11,8 +11,8 @@ Cgofuse is a cross-platform FUSE library for Go. It is supported on multiple pla
 | !cgo  |                  |                  |                  |                  |                  |:heavy_check_mark:<sup>1</sup>|
 
 - **1**: Requires Go 1.11.
-- **2**: NetBSD and OpenBSD support is experimental. There are known issues that stem from the differences in the NetBSD [librefuse](https://github.com/NetBSD/src/tree/3fc0b3bf70254f9b4509e0ba5b1105834eb71d1c/lib/librefuse) and OpenBSD [libfuse](https://github.com/openbsd/src/tree/dae5ffec5618b0b660e9064e3b0991bb4ab1b1e8/lib/libfuse) implementations from the reference [libfuse](https://github.com/libfuse/libfuse) implementation.
-    - NetBSD and OpenBSD: Option parsing may fail because the [`fuse_opt_parse`](https://github.com/openbsd/src/blob/dae5ffec5618b0b660e9064e3b0991bb4ab1b1e8/lib/libfuse/fuse_opt.c#L266) function is not fully compatible with the one in libfuse.
+- **2**: NetBSD and OpenBSD support is experimental. There are known issues that stem from the differences in the NetBSD [librefuse](https://github.com/NetBSD/src/tree/bbc46b99bff565d75f55fb23b51eff511068b183/lib/librefuse) and OpenBSD [libfuse](https://github.com/openbsd/src/tree/dae5ffec5618b0b660e9064e3b0991bb4ab1b1e8/lib/libfuse) implementations from the reference [libfuse](https://github.com/libfuse/libfuse) implementation.
+    - NetBSD and OpenBSD: Option parsing may fail because the `fuse_opt_parse` function is not fully compatible with the one in libfuse.
     - OpenBSD only: Signal handling is broken due to a bug in the OpenBSD implementation of [`fuse_set_signal_handlers`](https://github.com/openbsd/src/blob/dae5ffec5618b0b660e9064e3b0991bb4ab1b1e8/lib/libfuse/fuse.c#L485-L493).
 
 ## How to build
