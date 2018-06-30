@@ -42,29 +42,23 @@ var (
 func hostHandleNew(host *FileSystemHost) unsafe.Pointer {
 	p := c_malloc(1)
 	hostGuard.Lock()
-	defer hostGuard.Unlock()
 	hostTable[p] = host
+	hostGuard.Unlock()
 	return p
 }
 
-func hostHandleDel(p unsafe.Pointer) *FileSystemHost {
+func hostHandleDel(p unsafe.Pointer) {
 	hostGuard.Lock()
-	defer hostGuard.Unlock()
-	if host, ok := hostTable[p]; ok {
-		delete(hostTable, p)
-		c_free(p)
-		return host
-	}
-	return nil
+	delete(hostTable, p)
+	hostGuard.Unlock()
+	c_free(p)
 }
 
 func hostHandleGet(p unsafe.Pointer) *FileSystemHost {
 	hostGuard.Lock()
-	defer hostGuard.Unlock()
-	if host, ok := hostTable[p]; ok {
-		return host
-	}
-	return nil
+	host, _ := hostTable[p]
+	hostGuard.Unlock()
+	return host
 }
 
 func copyCstatvfsFromFusestatfs(dst *c_fuse_statvfs_t, src *Statfs_t) {
