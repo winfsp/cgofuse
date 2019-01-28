@@ -62,7 +62,9 @@ Cgofuse is a cross-platform FUSE library for Go. It is supported on multiple pla
 - **NOTE**: OpenBSD 6 removed the `kern.usermount` option, which allowed non-root users to mount file systems [[link](https://undeadly.org/cgi?action=article&sid=20160715125022&mode=expanded&count=0)]. Therefore you must be root in order to use FUSE and cgofuse.
 
 **Linux**
-- Prerequisites: libfuse-dev, gcc
+- Prerequisites: 
+    - (Debian) libfuse-dev, gcc
+    - (Alpine) fuse-dev gcc libc-dev
 - Build:
     ```
     $ cd cgofuse
@@ -86,6 +88,37 @@ Cgofuse is a cross-platform FUSE library for Go. It is supported on multiple pla
     > set CGO_ENABLED=0
     > go install -v ./fuse ./examples/memfs
     ```
+## How to package your FUSE driver in a container with Alpine Linux
+A common use case is to use a FUSE driver as a FLexVolume in Kubernetes. To do that you need to deploy it in a container. Here's an outline of a Dockerfile for Alpine Linux. This multi-stage build will only deploy the final artifacts in a container, so the image
+will be slimmer than a single stage build.
+
+Note that you need to change **YOUR_PROJECT_ROOT/YOUR_PROJECT_NAME**, **EXECUTABLE_NAME** and **SOURCE_LOCATION** to values that match your project.
+
+```
+FROM golang:1.10.4-alpine3.8 as builder
+ENV GOBIN $GOPATH/bin
+RUN apk update
+RUN apk add git curl mercurial fuse-dev gcc libc-dev
+RUN curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+RUN export PATH=$PATH:$GOBIN
+RUN mkdir -p /go/src/YOUR_PROJECT_ROOT/YOUR_PROJECT_NAME
+WORKDIR /go/src/YOUR_PROJECT_ROOT/YOUR_PROJECT_NAME
+COPY . .
+RUN dep ensure
+RUN go test $(go list ./...)
+RUN go build -a -o /EXECUTABLE_NAME ./SOURCE_LOCATION
+
+FROM alpine:latest
+RUN apk update
+# fuse is needed to run a fuse driver
+RUN apk add fuse
+RUN rm -rf /var/cache/apk/*
+COPY --from=builder /EXECUTABLE_NAME /
+# Add COPY lines for any other items the driver will need (config files, libraries etc.)
+# If you are making a FlexVolume driver you will not need to start the FUSE driver here.
+# Consider taking a look at https://github.com/nickschuch/flexvolume for an example of how
+# to package a FlexVolume driver
+```
 
 ## How to cross-compile your project using xgo
 
