@@ -468,7 +468,6 @@ func (self *Memfs) lookupNode(path string, ancestor *node_t) (prnt *node_t, name
 			}
 			prnt, name = node, c
 			if node == nil {
-				// The caller should report -fuse.ENOENT.
 				return
 			}
 			node = node.chld[c]
