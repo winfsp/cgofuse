@@ -39,16 +39,16 @@ Cgofuse is a cross-platform FUSE library for Go. It is supported on multiple pla
     > go install -v ./fuse ./examples/memfs
     ```
 
-**Linux**
-- Prerequisites: libfuse-dev, gcc
+**macOS**
+- Prerequisites: [FUSE for macOS](https://osxfuse.github.io), [command line tools](https://developer.apple.com/library/content/technotes/tn2339/_index.html)
 - Build:
     ```
     $ cd cgofuse
     $ go install -v ./fuse ./examples/memfs ./examples/passthrough
     ```
 
-**macOS**
-- Prerequisites: [FUSE for macOS](https://osxfuse.github.io), [command line tools](https://developer.apple.com/library/content/technotes/tn2339/_index.html)
+**Linux**
+- Prerequisites: libfuse-dev, gcc
 - Build:
     ```
     $ cd cgofuse
