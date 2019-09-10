@@ -1,21 +1,51 @@
-# Cross-platform FUSE library for Go
+<h1 align="center">
+    Cross-platform FUSE library for Go
+</h1>
 
-[![CircleCI](https://img.shields.io/circleci/project/github/billziss-gh/cgofuse.svg?label=cross-build)](https://circleci.com/gh/billziss-gh/cgofuse)
-[![GoDoc](https://godoc.org/github.com/billziss-gh/cgofuse/fuse?status.svg)](https://godoc.org/github.com/billziss-gh/cgofuse/fuse)
+<p align="center">
+    <a href="https://godoc.org/github.com/billziss-gh/cgofuse/fuse">
+        <img src="https://godoc.org/github.com/billziss-gh/cgofuse/fuse?status.svg"/>
+    </a>
+</p>
 
 Cgofuse is a cross-platform FUSE library for Go. It is supported on multiple platforms and can be ported to any platform that has a FUSE implementation. It has [cgo](https://golang.org/cmd/cgo/) and [!cgo](https://github.com/golang/go/wiki/WindowsDLLs) ("nocgo") variants depending on the platform.
 
-|       |macOS<br/>[![Travis CI](https://img.shields.io/travis/billziss-gh/cgofuse.svg)](https://travis-ci.org/billziss-gh/cgofuse)|FreeBSD<br/>[![PMCI](https://storage.googleapis.com/pmci-logs/github.com/billziss-gh/cgofuse/freebsd/badge.svg)](https://storage.googleapis.com/pmci-logs/github.com/billziss-gh/cgofuse/freebsd/build.html)|NetBSD<br/>[![PMCI](https://storage.googleapis.com/pmci-logs/github.com/billziss-gh/cgofuse/netbsd/badge.svg)](https://storage.googleapis.com/pmci-logs/github.com/billziss-gh/cgofuse/netbsd/build.html)|OpenBSD<br/>![no CI](https://img.shields.io/badge/build-none-lightgrey.svg)|Linux<br/>[![Travis CI](https://img.shields.io/travis/billziss-gh/cgofuse.svg)](https://travis-ci.org/billziss-gh/cgofuse)|Windows<br/>[![AppVeyor](https://img.shields.io/appveyor/ci/billziss-gh/cgofuse.svg)](https://ci.appveyor.com/project/billziss-gh/cgofuse)|
-|:-----:|:----------------:|:----------------:|:----------------:|:----------------:|:----------------:|:----------------:|
-|  cgo  |:heavy_check_mark:|:heavy_check_mark:<sup>1</sup>|:heavy_check_mark:<sup>2</sup>|:heavy_check_mark:<sup>2</sup>|:heavy_check_mark:|:heavy_check_mark:|
-| !cgo  |                  |                  |                  |                  |                  |:heavy_check_mark:<sup>1</sup>|
+|       |Windows<br/>[![AppVeyor](https://img.shields.io/appveyor/ci/billziss-gh/cgofuse.svg)](https://ci.appveyor.com/project/billziss-gh/cgofuse)|macOS<br/>[![Travis CI](https://img.shields.io/travis/billziss-gh/cgofuse.svg)](https://travis-ci.org/billziss-gh/cgofuse)|Linux<br/>[![Travis CI](https://img.shields.io/travis/billziss-gh/cgofuse.svg)](https://travis-ci.org/billziss-gh/cgofuse)|FreeBSD<br/>![no CI](https://img.shields.io/badge/build-none-lightgrey.svg)|NetBSD<sup>1</sup><br/>![no CI](https://img.shields.io/badge/build-none-lightgrey.svg)|OpenBSD<sup>1</sup><br/>![no CI](https://img.shields.io/badge/build-none-lightgrey.svg)|
+|:-----:|:------:|:------:|:------:|:------:|:------:|:------:|
+|  cgo  |&#x2713;|&#x2713;|&#x2713;|&#x2713;|&#x2713;|&#x2713;|
+| !cgo  |&#x2713;|        |        |        |        |        |
 
-- **1**: Requires Go 1.11.
-- **2**: NetBSD and OpenBSD support is experimental. There are known issues that stem from the differences in the NetBSD [librefuse](https://github.com/NetBSD/src/tree/bbc46b99bff565d75f55fb23b51eff511068b183/lib/librefuse) and OpenBSD [libfuse](https://github.com/openbsd/src/tree/dae5ffec5618b0b660e9064e3b0991bb4ab1b1e8/lib/libfuse) implementations from the reference [libfuse](https://github.com/libfuse/libfuse) implementation.
+- **1**: NetBSD and OpenBSD support is experimental. There are known issues that stem from the differences in the NetBSD [librefuse](https://github.com/NetBSD/src/tree/bbc46b99bff565d75f55fb23b51eff511068b183/lib/librefuse) and OpenBSD [libfuse](https://github.com/openbsd/src/tree/dae5ffec5618b0b660e9064e3b0991bb4ab1b1e8/lib/libfuse) implementations from the reference [libfuse](https://github.com/libfuse/libfuse) implementation:
     - NetBSD and OpenBSD: Option parsing may fail because the `fuse_opt_parse` function is not fully compatible with the one in libfuse.
     - OpenBSD only: Signal handling is broken due to a bug in the OpenBSD implementation of [`fuse_set_signal_handlers`](https://github.com/openbsd/src/blob/dae5ffec5618b0b660e9064e3b0991bb4ab1b1e8/lib/libfuse/fuse.c#L485-L493).
 
 ## How to build
+
+**Windows cgo**
+- Prerequisites: [WinFsp](https://github.com/billziss-gh/winfsp), gcc (e.g. from [Mingw-builds](http://mingw-w64.org/doku.php/download))
+- Build:
+    ```
+    > cd cgofuse
+    > set CPATH=C:\Program Files (x86)\WinFsp\inc\fuse
+    > go install -v ./fuse ./examples/memfs
+    ```
+
+**Windows !cgo**
+- Prerequisites: [WinFsp](https://github.com/billziss-gh/winfsp)
+- Build:
+    ```
+    > cd cgofuse
+    > set CGO_ENABLED=0
+    > go install -v ./fuse ./examples/memfs
+    ```
+
+**Linux**
+- Prerequisites: libfuse-dev, gcc
+- Build:
+    ```
+    $ cd cgofuse
+    $ go install -v ./fuse ./examples/memfs ./examples/passthrough
+    ```
 
 **macOS**
 - Prerequisites: [FUSE for macOS](https://osxfuse.github.io), [command line tools](https://developer.apple.com/library/content/technotes/tn2339/_index.html)
@@ -61,32 +91,6 @@ Cgofuse is a cross-platform FUSE library for Go. It is supported on multiple pla
     ```
 - **NOTE**: OpenBSD 6 removed the `kern.usermount` option, which allowed non-root users to mount file systems [[link](https://undeadly.org/cgi?action=article&sid=20160715125022&mode=expanded&count=0)]. Therefore you must be root in order to use FUSE and cgofuse.
 
-**Linux**
-- Prerequisites: libfuse-dev, gcc
-- Build:
-    ```
-    $ cd cgofuse
-    $ go install -v ./fuse ./examples/memfs ./examples/passthrough
-    ```
-
-**Windows cgo**
-- Prerequisites: [WinFsp](https://github.com/billziss-gh/winfsp), gcc (e.g. from [Mingw-builds](http://mingw-w64.org/doku.php/download))
-- Build:
-    ```
-    > cd cgofuse
-    > set CPATH=C:\Program Files (x86)\WinFsp\inc\fuse
-    > go install -v ./fuse ./examples/memfs
-    ```
-
-**Windows !cgo**
-- Prerequisites: [WinFsp](https://github.com/billziss-gh/winfsp)
-- Build:
-    ```
-    > cd cgofuse
-    > set CGO_ENABLED=0
-    > go install -v ./fuse ./examples/memfs
-    ```
-
 ## How to cross-compile your project using xgo
 
 You can easily cross-compile your project using [xgo](https://github.com/karalabe/xgo) and the [billziss/xgo-cgofuse](https://hub.docker.com/r/billziss/xgo-cgofuse/) docker image.
@@ -117,7 +121,11 @@ There are currently three example file systems:
 
 ## How it is tested
 
-Cgofuse is regularly built and tested on [Travis CI](https://travis-ci.org/billziss-gh/cgofuse), [Poor Man's CI](https://github.com/billziss-gh/pmci) and [AppVeyor](https://ci.appveyor.com/project/billziss-gh/cgofuse). The following software is being used to test cgofuse.
+Cgofuse is regularly built and tested on [Travis CI](https://travis-ci.org/billziss-gh/cgofuse), [AppVeyor](https://ci.appveyor.com/project/billziss-gh/cgofuse) and [DockerHub](https://hub.docker.com/r/billziss/xgo-cgofuse). The following software is being used to test cgofuse.
+
+**Windows (cgo and !cgo)**
+- [winfsp-tests](https://github.com/billziss-gh/winfsp/tree/master/tst/winfsp-tests)
+- [fsx](https://github.com/billziss-gh/secfs.test/tree/master/fstools/src/fsx)
 
 **macOS**
 - [fstest](https://github.com/billziss-gh/secfs.test/tree/master/fstest/ntfs-3g-pjd-fstest-8af5670)
@@ -128,10 +136,6 @@ Cgofuse is regularly built and tested on [Travis CI](https://travis-ci.org/billz
 
 **Linux**
 - [fstest](https://github.com/billziss-gh/secfs.test/tree/master/fstest/ntfs-3g-pjd-fstest-8af5670)
-- [fsx](https://github.com/billziss-gh/secfs.test/tree/master/fstools/src/fsx)
-
-**Windows (cgo and !cgo)**
-- [winfsp-tests](https://github.com/billziss-gh/winfsp/tree/master/tst/winfsp-tests)
 - [fsx](https://github.com/billziss-gh/secfs.test/tree/master/fstools/src/fsx)
 
 ## Contributors
