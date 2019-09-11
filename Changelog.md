@@ -3,9 +3,8 @@
 
 **v1.2.0**
 
-- FreeBSD port.
-- OpenBSD port.
 - Cgo and !cgo variants for Windows port.
+- FreeBSD, NetBSD and OpenBSD ports.
 
 
 **v1.1.0**

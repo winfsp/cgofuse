@@ -131,11 +131,11 @@ Cgofuse is regularly built and tested on [Travis CI](https://travis-ci.org/billz
 - [fstest](https://github.com/billziss-gh/secfs.test/tree/master/fstest/ntfs-3g-pjd-fstest-8af5670)
 - [fsx](https://github.com/billziss-gh/secfs.test/tree/master/fstools/src/fsx)
 
-**FreeBSD**
-- [fsx](https://github.com/billziss-gh/secfs.test/tree/master/fstools/src/fsx)
-
 **Linux**
 - [fstest](https://github.com/billziss-gh/secfs.test/tree/master/fstest/ntfs-3g-pjd-fstest-8af5670)
+- [fsx](https://github.com/billziss-gh/secfs.test/tree/master/fstools/src/fsx)
+
+**FreeBSD**
 - [fsx](https://github.com/billziss-gh/secfs.test/tree/master/fstools/src/fsx)
 
 ## Contributors
