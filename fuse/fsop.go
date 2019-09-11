@@ -21,6 +21,11 @@
 // In order to expose the user mode file system to the OS, the file system must be hosted
 // (mounted) by a FileSystemHost. The FileSystemHost Mount() method is used for this
 // purpose.
+//
+// A note on thread-safety: In general FUSE file systems are expected to protect their
+// own data structures. Many FUSE implementations provide a -s command line option that
+// when used, it instructs the FUSE implementation to serialize requests. This option
+// can be passed to the FileSystemHost Mount() method, when the file system is mounted.
 package fuse
 
 import (
