@@ -10,14 +10,12 @@
 
 Cgofuse is a cross-platform FUSE library for Go. It is supported on multiple platforms and can be ported to any platform that has a FUSE implementation. It has [cgo](https://golang.org/cmd/cgo/) and [!cgo](https://github.com/golang/go/wiki/WindowsDLLs) ("nocgo") variants depending on the platform.
 
-|       |Windows<br/>[![AppVeyor](https://img.shields.io/appveyor/ci/billziss-gh/cgofuse.svg)](https://ci.appveyor.com/project/billziss-gh/cgofuse)|macOS<br/>[![Travis CI](https://img.shields.io/travis/billziss-gh/cgofuse.svg)](https://travis-ci.org/billziss-gh/cgofuse)|Linux<br/>[![Travis CI](https://img.shields.io/travis/billziss-gh/cgofuse.svg)](https://travis-ci.org/billziss-gh/cgofuse)|FreeBSD<br/>![no CI](https://img.shields.io/badge/build-none-lightgrey.svg)|NetBSD<sup>1</sup><br/>![no CI](https://img.shields.io/badge/build-none-lightgrey.svg)|OpenBSD<sup>1</sup><br/>![no CI](https://img.shields.io/badge/build-none-lightgrey.svg)|XGO<br/>[![DockerHub](https://img.shields.io/docker/cloud/build/billziss/xgo-cgofuse?label=build)](https://hub.docker.com/r/billziss/xgo-cgofuse)|
+|       |Windows<br/>[![AppVeyor](https://img.shields.io/appveyor/ci/billziss-gh/cgofuse.svg)](https://ci.appveyor.com/project/billziss-gh/cgofuse)|macOS<br/>[![Travis CI](https://img.shields.io/travis/billziss-gh/cgofuse.svg)](https://travis-ci.org/billziss-gh/cgofuse)|Linux<br/>[![Travis CI](https://img.shields.io/travis/billziss-gh/cgofuse.svg)](https://travis-ci.org/billziss-gh/cgofuse)|FreeBSD<br/>![no CI](https://img.shields.io/badge/build-none-lightgrey.svg)|NetBSD<sup>*</sup><br/>![no CI](https://img.shields.io/badge/build-none-lightgrey.svg)|OpenBSD<sup>*</sup><br/>![no CI](https://img.shields.io/badge/build-none-lightgrey.svg)|XGO<br/>[![DockerHub](https://img.shields.io/docker/cloud/build/billziss/xgo-cgofuse?label=build)](https://hub.docker.com/r/billziss/xgo-cgofuse)|
 |:-----:|:------:|:------:|:------:|:------:|:------:|:------:|:------:|
 |  cgo  |&#x2713;|&#x2713;|&#x2713;|&#x2713;|&#x2713;|&#x2713;|&#x2713;|
 | !cgo  |&#x2713;|        |        |        |        |        |        |
 
-- **1**: NetBSD and OpenBSD support is experimental. There are known issues that stem from the differences in the NetBSD [librefuse](https://github.com/NetBSD/src/tree/bbc46b99bff565d75f55fb23b51eff511068b183/lib/librefuse) and OpenBSD [libfuse](https://github.com/openbsd/src/tree/dae5ffec5618b0b660e9064e3b0991bb4ab1b1e8/lib/libfuse) implementations from the reference [libfuse](https://github.com/libfuse/libfuse) implementation:
-    - NetBSD and OpenBSD: Option parsing may fail because the `fuse_opt_parse` function is not fully compatible with the one in libfuse.
-    - OpenBSD only: Signal handling is broken due to a bug in the OpenBSD implementation of [`fuse_set_signal_handlers`](https://github.com/openbsd/src/blob/dae5ffec5618b0b660e9064e3b0991bb4ab1b1e8/lib/libfuse/fuse.c#L485-L493).
+**\*** NetBSD and OpenBSD support is experimental. There are known issues that stem from the differences in the NetBSD [librefuse](https://github.com/NetBSD/src/tree/bbc46b99bff565d75f55fb23b51eff511068b183/lib/librefuse) and OpenBSD [libfuse](https://github.com/openbsd/src/tree/dae5ffec5618b0b660e9064e3b0991bb4ab1b1e8/lib/libfuse) implementations from the reference [libfuse](https://github.com/libfuse/libfuse) implementation
 
 ## How to build
 
