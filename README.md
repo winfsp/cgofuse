@@ -140,3 +140,4 @@ Cgofuse is regularly built and tested on [Travis CI](https://travis-ci.org/billz
 
 - Bill Zissimopoulos \<billziss at navimatics.com>
 - Nick Craig-Wood \<nick at craig-wood.com>
+- Fredrik Medley <fredrik.medley at veoneer.com>
