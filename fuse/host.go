@@ -403,7 +403,9 @@ func hostFsyncdir(path0 *c_char, datasync c_int, fi0 *c_struct_fuse_file_info) (
 }
 
 func hostInit(conn0 *c_struct_fuse_conn_info) (user_data unsafe.Pointer) {
-	defer recover()
+	defer func() {
+		recover()
+	}()
 	fctx := c_fuse_get_context()
 	user_data = fctx.private_data
 	host := hostHandleGet(user_data)
@@ -419,7 +421,9 @@ func hostInit(conn0 *c_struct_fuse_conn_info) (user_data unsafe.Pointer) {
 }
 
 func hostDestroy(user_data unsafe.Pointer) {
-	defer recover()
+	defer func() {
+		recover()
+	}()
 	if "netbsd" == runtime.GOOS {
 		user_data = c_fuse_get_context().private_data
 	}
