@@ -146,6 +146,25 @@ type Stat_t struct {
 	Flags uint32
 }
 
+// FileInfo_t contains open file information.
+// This structure is analogous to the FUSE struct fuse_file_info.
+type FileInfo_t struct {
+	// Open flags: a combination of the fuse.O_* constants.
+	Flags int
+
+	// Use direct I/O on this file. [IGNORED on Windows]
+	DirectIo bool
+
+	// Do not invalidate file cache. [IGNORED on Windows]
+	KeepCache bool
+
+	// File is not seekable. [IGNORED on Windows]
+	NonSeekable bool
+
+	// File handle.
+	Fh uint64
+}
+
 /*
 // Lock_t contains file locking information.
 // This structure is analogous to the POSIX struct flock.
@@ -288,6 +307,16 @@ type FileSystemInterface interface {
 
 	// Listxattr lists extended attributes.
 	Listxattr(path string, fill func(name string) bool) int
+}
+
+// FileSystemOpenEx is the interface that wraps the OpenEx and CreateEx methods.
+//
+// OpenEx and CreateEx are similar to Open and Create except that they allow
+// direct manipulation of the FileInfo_t struct (which is analogous to the
+// FUSE struct fuse_file_info).
+type FileSystemOpenEx interface {
+	CreateEx(path string, mode uint32, fi *FileInfo_t) int
+	OpenEx(path string, fi *FileInfo_t) int
 }
 
 // FileSystemChflags is the interface that wraps the Chflags method.
