@@ -1,6 +1,12 @@
 # Changelog
 
 
+**v1.3.0**
+
+- Add FileSystemOpenEx interface.
+- Miscellaneous other fixes and improvements.
+
+
 **v1.2.0**
 
 - Cgo and !cgo variants for Windows port.
