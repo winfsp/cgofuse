@@ -159,12 +159,12 @@ static NTSTATUS FspLoad(PVOID *PModule)
 #undef FSP_DLLPATH
 }
 
-#define CGOFUSE_GET_API(h, n)           \
-	if (0 == (*(void **)&(pfn_ ## n) = GetProcAddress(Module, #n)))\
-		return 0;
-
 static PVOID cgofuse_init_winfsp(VOID)
 {
+#define CGOFUSE_GET_API(n)		\
+	if (0 == (*(void **)&(pfn_fsp_ ## n) = GetProcAddress(Module, "fsp_" #n)))\
+		return 0;
+
 	PVOID Module;
 	NTSTATUS Result;
 
@@ -172,33 +172,15 @@ static PVOID cgofuse_init_winfsp(VOID)
 	if (0 > Result)
 		return 0;
 
-	// fuse_common.h
-	CGOFUSE_GET_API(h, fsp_fuse_version);
-	CGOFUSE_GET_API(h, fsp_fuse_mount);
-	CGOFUSE_GET_API(h, fsp_fuse_unmount);
-	CGOFUSE_GET_API(h, fsp_fuse_parse_cmdline);
-	CGOFUSE_GET_API(h, fsp_fuse_ntstatus_from_errno);
-
-	// fuse.h
-	CGOFUSE_GET_API(h, fsp_fuse_main_real);
-	CGOFUSE_GET_API(h, fsp_fuse_is_lib_option);
-	CGOFUSE_GET_API(h, fsp_fuse_new);
-	CGOFUSE_GET_API(h, fsp_fuse_destroy);
-	CGOFUSE_GET_API(h, fsp_fuse_loop);
-	CGOFUSE_GET_API(h, fsp_fuse_loop_mt);
-	CGOFUSE_GET_API(h, fsp_fuse_exit);
-	CGOFUSE_GET_API(h, fsp_fuse_get_context);
-
-	// fuse_opt.h
-	CGOFUSE_GET_API(h, fsp_fuse_opt_parse);
-	CGOFUSE_GET_API(h, fsp_fuse_opt_add_arg);
-	CGOFUSE_GET_API(h, fsp_fuse_opt_insert_arg);
-	CGOFUSE_GET_API(h, fsp_fuse_opt_free_args);
-	CGOFUSE_GET_API(h, fsp_fuse_opt_add_opt);
-	CGOFUSE_GET_API(h, fsp_fuse_opt_add_opt_escaped);
-	CGOFUSE_GET_API(h, fsp_fuse_opt_match);
+	CGOFUSE_GET_API(fuse_main_real);
+	CGOFUSE_GET_API(fuse_exit);
+	CGOFUSE_GET_API(fuse_get_context);
+	CGOFUSE_GET_API(fuse_opt_parse);
+	CGOFUSE_GET_API(fuse_opt_free_args);
 
 	return Module;
+
+#undef CGOFUSE_GET_API
 }
 
 #endif

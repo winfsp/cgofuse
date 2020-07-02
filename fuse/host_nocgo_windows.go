@@ -229,25 +229,11 @@ var (
 	 */
 	fuseOnce                 sync.Once
 	fuseDll                  *syscall.DLL
-	fuse_version             *syscall.Proc
-	fuse_mount               *syscall.Proc
-	fuse_unmount             *syscall.Proc
-	fuse_parse_cmdline       *syscall.Proc
 	fuse_main_real           *syscall.Proc
-	fuse_is_lib_option       *syscall.Proc
-	fuse_new                 *syscall.Proc
-	fuse_destroy             *syscall.Proc
-	fuse_loop                *syscall.Proc
-	fuse_loop_mt             *syscall.Proc
 	fuse_exit                *syscall.Proc
 	fuse_get_context         *syscall.Proc
 	fuse_opt_parse           *syscall.Proc
-	fuse_opt_add_arg         *syscall.Proc
-	fuse_opt_insert_arg      *syscall.Proc
 	fuse_opt_free_args       *syscall.Proc
-	fuse_opt_add_opt         *syscall.Proc
-	fuse_opt_add_opt_escaped *syscall.Proc
-	fuse_opt_match           *syscall.Proc
 
 	hostOptParseOptProc = syscall.NewCallbackCDecl(c_hostOptParseOptProc)
 
@@ -470,25 +456,11 @@ func c_hostFuseInit() c_int {
 	fuseOnce.Do(func() {
 		fuseDll, _ = fspload()
 		if nil != fuseDll {
-			fuse_version = fuseDll.MustFindProc("fuse_version")
-			fuse_mount = fuseDll.MustFindProc("fuse_mount")
-			fuse_unmount = fuseDll.MustFindProc("fuse_unmount")
-			fuse_parse_cmdline = fuseDll.MustFindProc("fuse_parse_cmdline")
 			fuse_main_real = fuseDll.MustFindProc("fuse_main_real")
-			fuse_is_lib_option = fuseDll.MustFindProc("fuse_is_lib_option")
-			fuse_new = fuseDll.MustFindProc("fuse_new")
-			fuse_destroy = fuseDll.MustFindProc("fuse_destroy")
-			fuse_loop = fuseDll.MustFindProc("fuse_loop")
-			fuse_loop_mt = fuseDll.MustFindProc("fuse_loop_mt")
 			fuse_exit = fuseDll.MustFindProc("fuse_exit")
 			fuse_get_context = fuseDll.MustFindProc("fuse_get_context")
 			fuse_opt_parse = fuseDll.MustFindProc("fuse_opt_parse")
-			fuse_opt_add_arg = fuseDll.MustFindProc("fuse_opt_add_arg")
-			fuse_opt_insert_arg = fuseDll.MustFindProc("fuse_opt_insert_arg")
 			fuse_opt_free_args = fuseDll.MustFindProc("fuse_opt_free_args")
-			fuse_opt_add_opt = fuseDll.MustFindProc("fuse_opt_add_opt")
-			fuse_opt_add_opt_escaped = fuseDll.MustFindProc("fuse_opt_add_opt_escaped")
-			fuse_opt_match = fuseDll.MustFindProc("fuse_opt_match")
 		}
 	})
 	if nil == fuseDll {
