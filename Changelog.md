@@ -1,6 +1,13 @@
 # Changelog
 
 
+**v2.0.0**
+
+- The FUSE library is demand-loaded on all platforms.
+    - Prior to this version only the Windows FUSE library (WinFsp) was demand loaded.
+    - This introduces a behavior change for programs that use FUSE when FUSE is not present. Prior to this version such programs would not start at all. In this new version such programs will start, but will fail with a `panic` in `FileSystemHost.Mount` if FUSE is not present.
+
+
 **v1.3.0**
 
 - Add FileSystemOpenEx interface.
