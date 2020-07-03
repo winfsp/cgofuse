@@ -25,7 +25,6 @@ RUN \
 
 # install LIBFUSE
 RUN \
-    apt-get update -y && \
     apt-get install -y --no-install-recommends libfuse-dev:i386 && \
     apt-get install -y --no-install-recommends libfuse-dev:amd64 && \
     apt-get download libfuse-dev:i386 && \
