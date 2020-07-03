@@ -122,7 +122,6 @@ static int (*pfn_fuse_main)(int argc, char *argv[],
 static int (*pfn_fuse_main_real)(int argc, char *argv[],
     const struct fuse_operations *ops, size_t opsize, void *data);
 #endif
-static void (*pfn_fuse_exit)(struct fuse *f);
 static struct fuse_context *(*pfn_fuse_get_context)(void);
 static int (*pfn_fuse_opt_parse)(struct fuse_args *args, void *data,
     const struct fuse_opt opts[], fuse_opt_proc_t proc);
@@ -137,11 +136,6 @@ static inline int inl_fuse_main_real(int argc, char *argv[],
 #else
 	return pfn_fuse_main_real(argc, argv, ops, opsize, data);
 #endif
-}
-static inline void inl_fuse_exit(struct fuse *f)
-{
-	cgofuse_init_fast(1);
-	return pfn_fuse_exit(f);
 }
 static inline struct fuse_context *inl_fuse_get_context(void)
 {
@@ -161,7 +155,7 @@ static inline void inl_fuse_opt_free_args(struct fuse_args *args)
 }
 
 #define fuse_main_real			inl_fuse_main_real
-#define fuse_exit			inl_fuse_exit
+#define fuse_exit			fuse_exit_DO_NOT_USE
 #define fuse_get_context		inl_fuse_get_context
 #define fuse_opt_parse			inl_fuse_opt_parse
 #define fuse_opt_free_args		inl_fuse_opt_free_args
@@ -192,7 +186,6 @@ static void *cgofuse_init_fuse(void)
 #else
 	CGOFUSE_GET_API(fuse_main_real);
 #endif
-	CGOFUSE_GET_API(fuse_exit);
 	CGOFUSE_GET_API(fuse_get_context);
 	CGOFUSE_GET_API(fuse_opt_parse);
 	CGOFUSE_GET_API(fuse_opt_free_args);
