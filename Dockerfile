@@ -33,7 +33,7 @@ RUN \
 
 # install WinFsp-FUSE
 RUN \
-    wget -q -O winfsp.zip --no-check-certificate \
+    wget -q -O winfsp.zip \
         https://github.com/billziss-gh/winfsp/archive/release/1.2.zip && \
     7z e winfsp.zip 'winfsp-release-1.2/inc/fuse/*' -o/usr/local/include/winfsp
 
