@@ -15,7 +15,8 @@ RUN \
 RUN \
     wget -q -O osxfuse.dmg \
         https://github.com/osxfuse/osxfuse/releases/download/osxfuse-3.8.3/osxfuse-3.8.3.dmg && \
-    7z e osxfuse.dmg "FUSE for macOS/Extras/FUSE for macOS 3.8.3.pkg" && \
+    7z e osxfuse.dmg 0.hfs && \
+    7z e 0.hfs "FUSE for macOS/Extras/FUSE for macOS 3.8.3.pkg" && \
     7z e "FUSE for macOS 3.8.3.pkg" Core.pkg/Payload && \
     7z e Payload && \
     7z x Payload~ -o/tmp && \
