@@ -1,6 +1,6 @@
 freebsd_task:
   freebsd_instance:
-    image_family: freebsd-12-0
+    image_family: freebsd-12-1
   env:
     CIRRUS_WORKING_DIR: /tmp/go/src/github.com/billziss-gh/cgofuse
     GOPATH: /tmp/go
