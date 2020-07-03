@@ -3,7 +3,7 @@
 /*
  * port_netbsd.go
  *
- * Copyright 2017-2018 Bill Zissimopoulos
+ * Copyright 2017-2020 Bill Zissimopoulos
  */
 /*
  * This file is part of Cgofuse.
