@@ -16,23 +16,13 @@ package fuse
 
 /*
 #cgo darwin CFLAGS: -DFUSE_USE_VERSION=28 -D_FILE_OFFSET_BITS=64 -I/usr/local/include/osxfuse/fuse
-#cgo darwin LDFLAGS: -L/usr/local/lib -losxfuse
-
 #cgo freebsd CFLAGS: -DFUSE_USE_VERSION=28 -D_FILE_OFFSET_BITS=64 -I/usr/local/include/fuse
-#cgo freebsd LDFLAGS: -L/usr/local/lib -lfuse
-
 #cgo netbsd CFLAGS: -DFUSE_USE_VERSION=28 -D_FILE_OFFSET_BITS=64 -D_KERNTYPES
-#cgo netbsd LDFLAGS: -lrefuse
-
 #cgo openbsd CFLAGS: -DFUSE_USE_VERSION=28 -D_FILE_OFFSET_BITS=64
-#cgo openbsd LDFLAGS: -lfuse
-
 #cgo linux CFLAGS: -DFUSE_USE_VERSION=28 -D_FILE_OFFSET_BITS=64 -I/usr/include/fuse
-#cgo linux LDFLAGS: -lfuse
-
-// Use `set CPATH=C:\Program Files (x86)\WinFsp\inc\fuse` on Windows.
-// The flag `I/usr/local/include/winfsp` only works on xgo and docker.
 #cgo windows CFLAGS: -DFUSE_USE_VERSION=28 -I/usr/local/include/winfsp
+	// Use `set CPATH=C:\Program Files (x86)\WinFsp\inc\fuse` on Windows.
+	// The flag `I/usr/local/include/winfsp` only works on xgo and docker.
 
 #if !(defined(__APPLE__) || defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__) || defined(__linux__) || defined(_WIN32))
 #error platform not supported
@@ -45,56 +35,172 @@ package fuse
 
 #if defined(__APPLE__) || defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__) || defined(__linux__)
 
+#include <dlfcn.h>
+#include <pthread.h>
 #include <spawn.h>
 #include <sys/mount.h>
 #include <sys/wait.h>
-#include <fuse.h>
+#include <unistd.h>
+
+#define cgofuse_barrier()		__sync_synchronize()
+#define cgofuse_mutex_t			pthread_mutex_t
+#define cgofuse_mutex_init(l)		((void)0)
+#define cgofuse_mutex_lock(l)		pthread_mutex_lock(l)
+#define cgofuse_mutex_unlock(l)		pthread_mutex_unlock(l)
+#define CGOFUSE_MUTEX_INITIALIZER	PTHREAD_MUTEX_INITIALIZER
 
 #elif defined(_WIN32)
 
 #include <windows.h>
 
-static PVOID cgofuse_init_slow(int hardfail);
-static VOID  cgofuse_init_fail(VOID);
-static PVOID cgofuse_init_winfsp(VOID);
+#define cgofuse_barrier()		MemoryBarrier()
+#define cgofuse_mutex_t			CRITICAL_SECTION
+#define cgofuse_mutex_init(l)		InitializeCriticalSection(l)
+#define cgofuse_mutex_lock(l)		EnterCriticalSection(l)
+#define cgofuse_mutex_unlock(l)		LeaveCriticalSection(l)
+#define CGOFUSE_MUTEX_INITIALIZER	{ 0 }
 
-static CRITICAL_SECTION cgofuse_lock;
-static PVOID cgofuse_module = 0;
-static BOOLEAN cgofuse_stat_ex = FALSE;
+#endif
 
-static inline PVOID cgofuse_init_fast(int hardfail)
+static void *cgofuse_init_slow(int hardfail);
+static void  cgofuse_init_fail(void);
+static void *cgofuse_init_fuse(void);
+
+static cgofuse_mutex_t cgofuse_mutex = CGOFUSE_MUTEX_INITIALIZER;
+static void *cgofuse_module = 0;
+
+static inline void *cgofuse_init_fast(int hardfail)
 {
-	PVOID Module = cgofuse_module;
-	MemoryBarrier();
+	void *Module = cgofuse_module;
+	cgofuse_barrier();
 	if (0 == Module)
 		Module = cgofuse_init_slow(hardfail);
 	return Module;
 }
 
-static PVOID cgofuse_init_slow(int hardfail)
+static void *cgofuse_init_slow(int hardfail)
 {
-	PVOID Module;
-	EnterCriticalSection(&cgofuse_lock);
+	void *Module;
+	cgofuse_mutex_lock(&cgofuse_mutex);
 	Module = cgofuse_module;
 	if (0 == Module)
 	{
-		Module = cgofuse_init_winfsp();
-		MemoryBarrier();
+		Module = cgofuse_init_fuse();
+		cgofuse_barrier();
 		cgofuse_module = Module;
 	}
-	LeaveCriticalSection(&cgofuse_lock);
+	cgofuse_mutex_unlock(&cgofuse_mutex);
 	if (0 == Module && hardfail)
 		cgofuse_init_fail();
 	return Module;
 }
 
-static VOID cgofuse_init_fail(VOID)
+static void cgofuse_init_fail(void)
 {
+#if defined(__APPLE__) || defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__) || defined(__linux__)
+	static const char *message = "cgofuse: cannot find FUSE\n";
+	write(2, message, strlen(message));
+	exit(1);
+#elif defined(_WIN32)
 	static const char *message = "cgofuse: cannot find winfsp\n";
 	DWORD BytesTransferred;
 	WriteFile(GetStdHandle(STD_ERROR_HANDLE), message, lstrlenA(message), &BytesTransferred, 0);
 	ExitProcess(ERROR_DLL_NOT_FOUND);
+#endif
 }
+
+#if defined(__APPLE__) || defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__) || defined(__linux__)
+
+#include <fuse.h>
+
+#if defined(__OpenBSD__)
+static int (*pfn_fuse_main)(int argc, char *argv[],
+    const struct fuse_operations *ops, void *data);
+#else
+static int (*pfn_fuse_main_real)(int argc, char *argv[],
+    const struct fuse_operations *ops, size_t opsize, void *data);
+#endif
+static void (*pfn_fuse_exit)(struct fuse *f);
+static struct fuse_context *(*pfn_fuse_get_context)(void);
+static int (*pfn_fuse_opt_parse)(struct fuse_args *args, void *data,
+    const struct fuse_opt opts[], fuse_opt_proc_t proc);
+static void (*pfn_fuse_opt_free_args)(struct fuse_args *args);
+
+static inline int inl_fuse_main_real(int argc, char *argv[],
+    const struct fuse_operations *ops, size_t opsize, void *data)
+{
+	cgofuse_init_fast(1);
+#if defined(__OpenBSD__)
+	return pfn_fuse_main(argc, argv, ops, data);
+#else
+	return pfn_fuse_main_real(argc, argv, ops, opsize, data);
+#endif
+}
+static inline void inl_fuse_exit(struct fuse *f)
+{
+	cgofuse_init_fast(1);
+	return pfn_fuse_exit(f);
+}
+static inline struct fuse_context *inl_fuse_get_context(void)
+{
+	cgofuse_init_fast(1);
+	return pfn_fuse_get_context();
+}
+static inline int inl_fuse_opt_parse(struct fuse_args *args, void *data,
+    const struct fuse_opt opts[], fuse_opt_proc_t proc)
+{
+	cgofuse_init_fast(1);
+	return pfn_fuse_opt_parse(args, data, opts, proc);
+}
+static inline void inl_fuse_opt_free_args(struct fuse_args *args)
+{
+	cgofuse_init_fast(1);
+	return pfn_fuse_opt_free_args(args);
+}
+
+#define fuse_main_real			inl_fuse_main_real
+#define fuse_exit			inl_fuse_exit
+#define fuse_get_context		inl_fuse_get_context
+#define fuse_opt_parse			inl_fuse_opt_parse
+#define fuse_opt_free_args		inl_fuse_opt_free_args
+
+static void *cgofuse_init_fuse(void)
+{
+#define CGOFUSE_GET_API(n)		\
+	if (0 == (*(void **)&(pfn_ ## n) = dlsym(h, #n)))\
+		return 0;
+
+	void *h;
+#if defined(__APPLE__)
+	h = dlopen("/usr/local/lib/libosxfuse.2.dylib", RTLD_NOW);
+#elif defined(__FreeBSD__)
+	h = dlopen("libfuse.so.2", RTLD_NOW);
+#elif defined(__NetBSD__)
+	h = dlopen("librefuse.so.2", RTLD_NOW);
+#elif defined(__OpenBSD__)
+	h = dlopen("libfuse.so.2.0", RTLD_NOW);
+#elif defined(__linux__)
+	h = dlopen("libfuse.so.2", RTLD_NOW);
+#endif
+	if (0 == h)
+		return 0;
+
+#if defined(__OpenBSD__)
+	CGOFUSE_GET_API(fuse_main);
+#else
+	CGOFUSE_GET_API(fuse_main_real);
+#endif
+	CGOFUSE_GET_API(fuse_exit);
+	CGOFUSE_GET_API(fuse_get_context);
+	CGOFUSE_GET_API(fuse_opt_parse);
+	CGOFUSE_GET_API(fuse_opt_free_args);
+
+	return h;
+
+#undef CGOFUSE_GET_API
+}
+
+#elif defined(_WIN32)
 
 #define FSP_FUSE_API                    static
 #define FSP_FUSE_API_NAME(api)          (* pfn_ ## api)
@@ -104,7 +210,7 @@ static VOID cgofuse_init_fail(VOID)
 #include <fuse.h>
 #include <fuse_opt.h>
 
-static NTSTATUS FspLoad(PVOID *PModule)
+static NTSTATUS FspLoad(void **PModule)
 {
 #if defined(_WIN64)
 #define FSP_DLLNAME                     "winfsp-x64.dll"
@@ -159,16 +265,14 @@ static NTSTATUS FspLoad(PVOID *PModule)
 #undef FSP_DLLPATH
 }
 
-static PVOID cgofuse_init_winfsp(VOID)
+static void *cgofuse_init_fuse(void)
 {
 #define CGOFUSE_GET_API(n)		\
 	if (0 == (*(void **)&(pfn_fsp_ ## n) = GetProcAddress(Module, "fsp_" #n)))\
 		return 0;
 
-	PVOID Module;
-	NTSTATUS Result;
-
-	Result = FspLoad(&Module);
+	void *Module;
+	NTSTATUS Result = FspLoad(&Module);
 	if (0 > Result)
 		return 0;
 
@@ -182,6 +286,8 @@ static PVOID cgofuse_init_winfsp(VOID)
 
 #undef CGOFUSE_GET_API
 }
+
+static BOOLEAN cgofuse_stat_ex = FALSE;
 
 #endif
 
@@ -369,7 +475,9 @@ static inline void hostAsgnCfileinfo(struct fuse_file_info *fi,
 {
 	fi->direct_io = direct_io;
 	fi->keep_cache = keep_cache;
+#if !defined(__NetBSD__)
 	fi->nonseekable = nonseekable;
+#endif
 	fi->fh = fh;
 }
 
@@ -406,19 +514,12 @@ static int _hostGetxattr(char *path, char *name, char *value, size_t size,
 
 static void hostStaticInit(void)
 {
-#if defined(__APPLE__) || defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__) || defined(__linux__)
-#elif defined(_WIN32)
-	InitializeCriticalSection(&cgofuse_lock);
-#endif
+	cgofuse_mutex_init(&cgofuse_mutex);
 }
 
 static int hostFuseInit(void)
 {
-#if defined(__APPLE__) || defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__) || defined(__linux__)
-	return 1;
-#elif defined(_WIN32)
 	return 0 != cgofuse_init_fast(0);
-#endif
 }
 
 static int hostMount(int argc, char *argv[], void *data)
@@ -477,11 +578,7 @@ static int hostMount(int argc, char *argv[], void *data)
 		.chflags = (int (*)(const char *, uint32_t))go_hostChflags,
 #endif
 	};
-#if defined(__OpenBSD__)
-	return 0 == fuse_main(argc, argv, &fsop, data);
-#else
 	return 0 == fuse_main_real(argc, argv, &fsop, sizeof fsop, data);
-#endif
 }
 
 static int hostUnmount(struct fuse *fuse, char *mountpoint)
