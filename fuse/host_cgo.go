@@ -20,6 +20,7 @@ package fuse
 #cgo netbsd CFLAGS: -DFUSE_USE_VERSION=28 -D_FILE_OFFSET_BITS=64 -D_KERNTYPES
 #cgo openbsd CFLAGS: -DFUSE_USE_VERSION=28 -D_FILE_OFFSET_BITS=64
 #cgo linux CFLAGS: -DFUSE_USE_VERSION=28 -D_FILE_OFFSET_BITS=64 -I/usr/include/fuse
+#cgo linux LDFLAGS: -ldl
 #cgo windows CFLAGS: -DFUSE_USE_VERSION=28 -I/usr/local/include/winfsp
 	// Use `set CPATH=C:\Program Files (x86)\WinFsp\inc\fuse` on Windows.
 	// The flag `I/usr/local/include/winfsp` only works on xgo and docker.
