@@ -100,7 +100,8 @@ static void cgofuse_init_fail(void)
 {
 #if defined(__APPLE__) || defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__) || defined(__linux__)
 	static const char *message = "cgofuse: cannot find FUSE\n";
-	write(2, message, strlen(message));
+	int res = write(2, message, strlen(message));
+	(void)res; // suppress dumb gcc warning; see https://gcc.gnu.org/bugzilla/show_bug.cgi?id=66425
 	exit(1);
 #elif defined(_WIN32)
 	static const char *message = "cgofuse: cannot find winfsp\n";
