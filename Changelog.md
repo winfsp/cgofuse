@@ -1,7 +1,7 @@
 # Changelog
 
 
-**v2.0.0**
+**v1.4.0**
 
 - The FUSE library is demand-loaded on all platforms.
     - Prior to this version only the Windows FUSE library (WinFsp) was demand loaded.
