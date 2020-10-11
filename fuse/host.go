@@ -714,8 +714,24 @@ func (host *FileSystemHost) Unmount() bool {
 	var mntp *c_char
 	if "" != host.mntp {
 		mntp = c_CString(host.mntp)
+		defer c_free(unsafe.Pointer(mntp))
 	}
 	return 0 != c_hostUnmount(host.fuse, mntp)
+}
+
+// Notify notifies the operating system about a file change.
+// The action is a combination of the fuse.NOTIFY_* constants.
+func (host *FileSystemHost) Notify(path string, action uint32) bool {
+	if nil == host.fuse {
+		return false
+	}
+	if "" == path {
+		return false
+	}
+	var p *c_char
+	p = c_CString(path)
+	defer c_free(unsafe.Pointer(p))
+	return 0 != c_hostNotify(host.fuse, p, c_uint32_t(action))
 }
 
 // Getcontext gets information related to a file system operation.

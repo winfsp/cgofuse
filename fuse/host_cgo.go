@@ -205,6 +205,12 @@ static void *cgofuse_init_fuse(void)
 #include <fuse.h>
 #include <fuse_opt.h>
 
+// optional
+#if !defined(FSP_FUSE_NOTIFY_MKDIR)
+static int (* pfn_fsp_fuse_notify)(struct fsp_fuse_env *env,
+	struct fuse *f, const char *path, uint32_t action);
+#endif
+
 static NTSTATUS FspLoad(void **PModule)
 {
 #if defined(_WIN64)
@@ -276,6 +282,9 @@ static void *cgofuse_init_fuse(void)
 	CGOFUSE_GET_API(fuse_get_context);
 	CGOFUSE_GET_API(fuse_opt_parse);
 	CGOFUSE_GET_API(fuse_opt_free_args);
+
+	// optional
+	*(void **)&pfn_fsp_fuse_notify = GetProcAddress(Module, "fsp_fuse_notify");
 
 	return Module;
 
@@ -612,6 +621,17 @@ static int hostUnmount(struct fuse *fuse, char *mountpoint)
 #endif
 }
 
+static int hostNotify(struct fuse *fuse, const char *path, uint32_t action)
+{
+#if defined(_WIN32)
+	if (0 == pfn_fsp_fuse_notify)
+		return 0;
+	return 0 == pfn_fsp_fuse_notify(fsp_fuse_env(), fuse, path, action);
+#else
+	return 0;
+#endif
+}
+
 static void hostOptSet(struct fuse_opt *opt,
 	const char *templ, fuse_opt_offset_t offset, int value)
 {
@@ -799,6 +819,9 @@ func c_hostMount(argc c_int, argv **c_char, data unsafe.Pointer) c_int {
 }
 func c_hostUnmount(fuse *c_struct_fuse, mountpoint *c_char) c_int {
 	return C.hostUnmount(fuse, mountpoint)
+}
+func c_hostNotify(fuse *c_struct_fuse, path *c_char, action c_uint32_t) c_int {
+	return C.hostNotify(fuse, path, action)
 }
 func c_hostOptSet(opt *c_struct_fuse_opt,
 	templ *c_char, offset c_fuse_opt_offset_t, value c_int) {

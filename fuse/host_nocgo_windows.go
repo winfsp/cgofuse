@@ -227,13 +227,16 @@ var (
 	 * It appears safe to call cdecl functions from Go. Is it really?
 	 * https://codereview.appspot.com/4961045/
 	 */
-	fuseOnce                 sync.Once
-	fuseDll                  *syscall.DLL
-	fuse_main_real           *syscall.Proc
-	fuse_exit                *syscall.Proc
-	fuse_get_context         *syscall.Proc
-	fuse_opt_parse           *syscall.Proc
-	fuse_opt_free_args       *syscall.Proc
+	fuseOnce           sync.Once
+	fuseDll            *syscall.DLL
+	fuse_main_real     *syscall.Proc
+	fuse_exit          *syscall.Proc
+	fuse_get_context   *syscall.Proc
+	fuse_opt_parse     *syscall.Proc
+	fuse_opt_free_args *syscall.Proc
+
+	/* optional */
+	fuse_notify *syscall.Proc
 
 	hostOptParseOptProc = syscall.NewCallbackCDecl(c_hostOptParseOptProc)
 
@@ -461,6 +464,8 @@ func c_hostFuseInit() c_int {
 			fuse_get_context = fuseDll.MustFindProc("fuse_get_context")
 			fuse_opt_parse = fuseDll.MustFindProc("fuse_opt_parse")
 			fuse_opt_free_args = fuseDll.MustFindProc("fuse_opt_free_args")
+			/* optional */
+			fuse_notify, _ = fuseDll.FindProc("fuse_notify")
 		}
 	})
 	if nil == fuseDll {
@@ -483,6 +488,19 @@ func c_hostMount(argc c_int, argv **c_char, data unsafe.Pointer) c_int {
 func c_hostUnmount(fuse *c_struct_fuse, mountpoint *c_char) c_int {
 	fuse_exit.Call(uintptr(unsafe.Pointer(fuse)))
 	return 1
+}
+func c_hostNotify(fuse *c_struct_fuse, path *c_char, action c_uint32_t) c_int {
+	if nil == fuse_notify {
+		return 0
+	}
+	r, _, _ := fuse_notify.Call(
+		uintptr(unsafe.Pointer(fuse)),
+		uintptr(unsafe.Pointer(path)),
+		uintptr(action))
+	if 0 == r {
+		return 1
+	}
+	return 0
 }
 func c_hostOptSet(opt *c_struct_fuse_opt,
 	templ *c_char, offset c_fuse_opt_offset_t, value c_int) {
