@@ -1,6 +1,12 @@
 # Changelog
 
 
+**v1.5.0**
+
+- Add `FileSystemHost.Notify` API which allows file change notification to be issued from the user mode file system [Windows only].
+- Add `notifyfs` file system to showcase the new API functionality [Windows only].
+
+
 **v1.4.0**
 
 - The FUSE library is demand-loaded on all platforms.
