@@ -32,6 +32,7 @@ type FileSystemHost struct {
 	sigc chan os.Signal
 
 	capCaseInsensitive, capReaddirPlus, capDeleteAccess bool
+	sync.RWMutex
 }
 
 var (
@@ -421,6 +422,8 @@ func hostInit(conn0 *c_struct_fuse_conn_info) (user_data unsafe.Pointer) {
 	fctx := c_fuse_get_context()
 	user_data = fctx.private_data
 	host := hostHandleGet(user_data)
+	host.Lock()
+	defer host.Unlock()
 	host.fuse = fctx.fuse
 	c_hostAsgnCconninfo(conn0,
 		c_bool(host.capCaseInsensitive),
@@ -442,6 +445,8 @@ func hostDestroy(user_data unsafe.Pointer) {
 	}
 	host := hostHandleGet(user_data)
 	host.fsop.Destroy()
+	host.RLock()
+	defer host.RUnlock()
 	if nil != host.sigc {
 		signal.Stop(host.sigc)
 	}
@@ -676,7 +681,9 @@ func (host *FileSystemHost) Mount(mountpoint string, opts []string) bool {
 		}
 	}
 	defer func() {
+		host.Lock()
 		host.mntp = ""
+		host.Unlock()
 	}()
 
 	/*
@@ -696,7 +703,10 @@ func (host *FileSystemHost) Mount(mountpoint string, opts []string) bool {
 		host.sigc = make(chan os.Signal, 1)
 		defer close(host.sigc)
 		go func() {
-			_, ok := <-host.sigc
+			host.RLock()
+			sigc := host.sigc
+			host.RUnlock()
+			_, ok := <-sigc
 			if ok {
 				host.Unmount()
 			}
@@ -716,6 +726,8 @@ func (host *FileSystemHost) Mount(mountpoint string, opts []string) bool {
 // Unmount may be called at any time after the Init() method has been called
 // and before the Destroy() method has been called.
 func (host *FileSystemHost) Unmount() bool {
+	host.RLock()
+
 	if nil == host.fuse {
 		return false
 	}
@@ -724,12 +736,16 @@ func (host *FileSystemHost) Unmount() bool {
 		mntp = c_CString(host.mntp)
 		defer c_free(unsafe.Pointer(mntp))
 	}
+	host.RUnlock()
 	return 0 != c_hostUnmount(host.fuse, mntp)
 }
 
 // Notify notifies the operating system about a file change.
 // The action is a combination of the fuse.NOTIFY_* constants.
 func (host *FileSystemHost) Notify(path string, action uint32) bool {
+	host.RLock()
+	defer host.RUnlock()
+
 	if nil == host.fuse {
 		return false
 	}
