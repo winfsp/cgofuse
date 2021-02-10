@@ -168,7 +168,9 @@ static void *cgofuse_init_fuse(void)
 
 	void *h;
 #if defined(__APPLE__)
-	h = dlopen("/usr/local/lib/libosxfuse.2.dylib", RTLD_NOW);
+	h = dlopen("/usr/local/lib/libfuse.2.dylib", RTLD_NOW); // MacFUSE/OSXFuse >= v4
+	if (0 == h)
+		h = dlopen("/usr/local/lib/libosxfuse.2.dylib", RTLD_NOW); // MacFUSE/OSXFuse < v4
 #elif defined(__FreeBSD__)
 	h = dlopen("libfuse.so.2", RTLD_NOW);
 #elif defined(__NetBSD__)
