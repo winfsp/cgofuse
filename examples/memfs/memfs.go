@@ -8,8 +8,9 @@
  *
  * It is licensed under the MIT license. The full license text can be found
  * in the License.txt file at the root of this project.
+ * 
  */
-
+ 
 package main
 
 import (
@@ -97,6 +98,33 @@ type Memfs struct {
 	root    *node_t
 	openmap map[uint64]*node_t
 }
+
+
+func (self *Memfs) Statfs(path string, stat *fuse.Statfs_t) (err int) {
+	fmt.Printf("STAT FS!!! %s\n", path)
+	stat.Bsize = 4096
+	// f_frsize
+	stat.Frsize = 4096
+	
+	// 8 EB - 1
+	vtotal := (8 << 50) / stat.Frsize * 1024 - 1
+	vavail := (2 << 50) / stat.Frsize * 1024
+	vfree  := (1 << 50) / stat.Frsize * 1024
+	//used := total - free
+	
+	// f_blocks
+	stat.Blocks = vtotal
+	stat.Bfree  = vfree
+	stat.Bavail = vavail
+	
+	stat.Files  = 2240224
+	stat.Ffree  = 1927486
+	stat.Favail = 9900000
+	
+	stat.Namemax = 255
+	return 0
+}
+
 
 func (self *Memfs) Mknod(path string, mode uint32, dev uint64) (errc int) {
 	defer trace(path, mode, dev)(&errc)
@@ -582,8 +610,21 @@ var _ fuse.FileSystemSetcrtime = (*Memfs)(nil)
 var _ fuse.FileSystemSetchgtime = (*Memfs)(nil)
 
 func main() {
-	memfs := NewMemfs()
-	host := fuse.NewFileSystemHost(memfs)
-	host.SetCapReaddirPlus(true)
-	host.Mount("", os.Args[1:])
+	var wg sync.WaitGroup
+	cpy := 4
+	wg.Add(cpy)
+	for i := 0; i < cpy; i++ {
+		memfs := NewMemfs()
+		host := fuse.NewFileSystemHost(memfs)
+		host.SetCapReaddirPlus(true)
+		go func(i int) {
+			fmt.Printf("mount %d\n", i)
+			host.Mount("", append([]string{
+				"-o", "ExactFileSystemName=NTFS",
+				"-o", fmt.Sprintf("volname=MyVolume%d", i),
+			}, os.Args[1:]...))
+			wg.Done()
+		}(i)
+	}
+	wg.Wait()
 }
