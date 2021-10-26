@@ -19,7 +19,7 @@
             }
         }
         ```
-    - Return -fuse.EPERM from `Unlink` / `Rmdir` for files that should not be deleted.
+    - Return `-fuse.EPERM` from `Unlink` / `Rmdir` for files that should not be deleted.
 
 
 **v1.5.0**
