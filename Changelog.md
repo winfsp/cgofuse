@@ -1,6 +1,27 @@
 # Changelog
 
 
+**v1.6.0**
+
+- Add `FileSystemHost.SetCapDeleteAccess` [Windows only]. A file system can use this capability to deny delete access on Windows. Such a file system must:
+    - Implement the `Access` file system operation and handle the new `fuse.DELETE_OK` mask to return `-fuse.EPERM` for files that should not be deleted. An example implementation might look like:
+        ```Go
+        func (fs *filesystem) Access(path string, mask uint32) int {
+            if "windows" == runtime.GOOS {
+                if 0 != mask&fuse.DELETE_OK {
+                    if "/nounlink" == path {
+                        return -fuse.EPERM
+                    }
+                }
+                return 0
+            } else {
+                return -fuse.ENOSYS
+            }
+        }
+        ```
+    - Return -fuse.EPERM from `Unlink` / `Rmdir` for files that should not be deleted.
+
+
 **v1.5.0**
 
 - Add `FileSystemHost.Notify` API which allows file change notification to be issued from the user mode file system [Windows only].
