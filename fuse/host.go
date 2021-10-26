@@ -31,7 +31,7 @@ type FileSystemHost struct {
 	mntp string
 	sigc chan os.Signal
 
-	capCaseInsensitive, capReaddirPlus bool
+	capCaseInsensitive, capReaddirPlus, capDeleteAccess bool
 }
 
 var (
@@ -424,7 +424,8 @@ func hostInit(conn0 *c_struct_fuse_conn_info) (user_data unsafe.Pointer) {
 	host.fuse = fctx.fuse
 	c_hostAsgnCconninfo(conn0,
 		c_bool(host.capCaseInsensitive),
-		c_bool(host.capReaddirPlus))
+		c_bool(host.capReaddirPlus),
+		c_bool(host.capDeleteAccess))
 	if nil != host.sigc {
 		signal.Notify(host.sigc, syscall.SIGINT, syscall.SIGTERM)
 	}
@@ -585,6 +586,13 @@ func (host *FileSystemHost) SetCapCaseInsensitive(value bool) {
 // full stat information during Readdir, thus avoiding extraneous Getattr calls.
 func (host *FileSystemHost) SetCapReaddirPlus(value bool) {
 	host.capReaddirPlus = value
+}
+
+// SetCapDeleteAccess informs the host that the hosted file system implements Access that
+// understands the DELETE_OK flag [Windows only]. A file system can use this capability
+// to deny delete access on Windows.
+func (host *FileSystemHost) SetCapDeleteAccess(value bool) {
+	host.capDeleteAccess = value
 }
 
 // Mount mounts a file system on the given mountpoint with the mount options in opts.

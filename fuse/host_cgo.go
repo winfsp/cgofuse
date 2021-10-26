@@ -360,7 +360,8 @@ extern int go_hostChflags(char *path, uint32_t flags);
 
 static inline void hostAsgnCconninfo(struct fuse_conn_info *conn,
 	bool capCaseInsensitive,
-	bool capReaddirPlus)
+	bool capReaddirPlus,
+	bool capDeleteAccess)
 {
 #if defined(__APPLE__)
 	if (capCaseInsensitive)
@@ -375,6 +376,8 @@ static inline void hostAsgnCconninfo(struct fuse_conn_info *conn,
 		conn->want |= conn->capable & FSP_FUSE_CAP_CASE_INSENSITIVE;
 	if (capReaddirPlus)
 		conn->want |= conn->capable & FSP_FUSE_CAP_READDIR_PLUS;
+	if (capDeleteAccess)
+		conn->want |= conn->capable & (1 << 24);//FSP_FUSE_CAP_DELETE_ACCESS
 #endif
 }
 
@@ -730,8 +733,9 @@ func c_fuse_opt_free_args(args *c_struct_fuse_args) {
 
 func c_hostAsgnCconninfo(conn *c_struct_fuse_conn_info,
 	capCaseInsensitive c_bool,
-	capReaddirPlus c_bool) {
-	C.hostAsgnCconninfo(conn, capCaseInsensitive, capReaddirPlus)
+	capReaddirPlus c_bool,
+	capDeleteAccess c_bool) {
+	C.hostAsgnCconninfo(conn, capCaseInsensitive, capReaddirPlus, capDeleteAccess)
 }
 func c_hostCstatvfsFromFusestatfs(stbuf *c_fuse_statvfs_t,
 	bsize c_uint64_t,

@@ -145,6 +145,15 @@ const (
 	UF_ARCHIVE  = 0x00000800
 )
 
+// Access flags
+const (
+	F_OK      = 0
+	R_OK      = 4
+	W_OK      = 2
+	X_OK      = 1
+	DELETE_OK = 0x40000000 // Delete access check [Windows only]
+)
+
 // Options that control Setxattr operation.
 const (
 	XATTR_CREATE  = 1

@@ -247,6 +247,7 @@ const (
 	FSP_FUSE_CAP_CASE_INSENSITIVE = 1 << 29
 	FSP_FUSE_CAP_READDIR_PLUS     = 1 << 21
 	FSP_FUSE_CAP_STAT_EX          = 1 << 23
+	FSP_FUSE_CAP_DELETE_ACCESS    = 1 << 24
 
 	FUSE_OPT_KEY_NONOPT = -2
 )
@@ -301,7 +302,8 @@ func c_fuse_opt_free_args(args *c_struct_fuse_args) {
 
 func c_hostAsgnCconninfo(conn *c_struct_fuse_conn_info,
 	capCaseInsensitive c_bool,
-	capReaddirPlus c_bool) {
+	capReaddirPlus c_bool,
+	capDeleteAccess c_bool) {
 	conn.want |= conn.capable & FSP_FUSE_CAP_STAT_EX
 	cgofuse_stat_ex = 0 != conn.want&FSP_FUSE_CAP_STAT_EX // hack!
 	if capCaseInsensitive {
@@ -309,6 +311,9 @@ func c_hostAsgnCconninfo(conn *c_struct_fuse_conn_info,
 	}
 	if capReaddirPlus {
 		conn.want |= conn.capable & FSP_FUSE_CAP_READDIR_PLUS
+	}
+	if capDeleteAccess {
+		conn.want |= conn.capable & FSP_FUSE_CAP_DELETE_ACCESS
 	}
 }
 func c_hostCstatvfsFromFusestatfs(stbuf *c_fuse_statvfs_t,
