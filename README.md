@@ -10,10 +10,10 @@
 
 Cgofuse is a cross-platform FUSE library for Go. It is supported on multiple platforms and can be ported to any platform that has a FUSE implementation. It has [cgo](https://golang.org/cmd/cgo/) and [!cgo](https://github.com/golang/go/wiki/WindowsDLLs) ("nocgo") variants depending on the platform.
 
-|       |Windows<br/>[![AppVeyor](https://img.shields.io/appveyor/ci/billziss-gh/cgofuse/master.svg)](https://ci.appveyor.com/project/billziss-gh/cgofuse)|macOS<br/>[![Travis CI](https://img.shields.io/travis/billziss-gh/cgofuse/master.svg)](https://travis-ci.org/billziss-gh/cgofuse)|Linux<br/>[![Travis CI](https://img.shields.io/travis/billziss-gh/cgofuse/master.svg)](https://travis-ci.org/billziss-gh/cgofuse)|FreeBSD<br/>[![Cirrus CI](https://img.shields.io/cirrus/github/billziss-gh/cgofuse/master?script=build&task=freebsd)](https://cirrus-ci.com/github/billziss-gh/cgofuse)|NetBSD<sup>*</sup><br/>![no CI](https://img.shields.io/badge/build-none-lightgrey.svg)|OpenBSD<sup>*</sup><br/>![no CI](https://img.shields.io/badge/build-none-lightgrey.svg)|XGO<br/>[![DockerHub](https://img.shields.io/docker/cloud/build/billziss/xgo-cgofuse?label=build)](https://hub.docker.com/r/billziss/xgo-cgofuse)|
-|:-----:|:------:|:------:|:------:|:------:|:------:|:------:|:------:|
-|  cgo  |&#x2713;|&#x2713;|&#x2713;|&#x2713;|&#x2713;|&#x2713;|&#x2713;|
-| !cgo  |&#x2713;|        |        |        |        |        |        |
+|       |Windows<br/>[![AppVeyor](https://img.shields.io/appveyor/ci/billziss-gh/cgofuse/master.svg)](https://ci.appveyor.com/project/billziss-gh/cgofuse)|macOS<br/>[![Travis CI](https://img.shields.io/travis/billziss-gh/cgofuse/master.svg)](https://travis-ci.org/billziss-gh/cgofuse)|Linux<br/>[![Travis CI](https://img.shields.io/travis/billziss-gh/cgofuse/master.svg)](https://travis-ci.org/billziss-gh/cgofuse)|FreeBSD<br/>[![Cirrus CI](https://img.shields.io/cirrus/github/billziss-gh/cgofuse/master?script=build&task=freebsd)](https://cirrus-ci.com/github/billziss-gh/cgofuse)|NetBSD<sup>*</sup><br/>![no CI](https://img.shields.io/badge/build-none-lightgrey.svg)|OpenBSD<sup>*</sup><br/>![no CI](https://img.shields.io/badge/build-none-lightgrey.svg)|
+|:-----:|:------:|:------:|:------:|:------:|:------:|:------:|
+|  cgo  |&#x2713;|&#x2713;|&#x2713;|&#x2713;|&#x2713;|&#x2713;|
+| !cgo  |&#x2713;|        |        |        |        |        |
 
 **\*** NetBSD and OpenBSD support is experimental. There are known issues that stem from the differences in the NetBSD [librefuse](https://github.com/NetBSD/src/tree/bbc46b99bff565d75f55fb23b51eff511068b183/lib/librefuse) and OpenBSD [libfuse](https://github.com/openbsd/src/tree/dae5ffec5618b0b660e9064e3b0991bb4ab1b1e8/lib/libfuse) implementations from the reference [libfuse](https://github.com/libfuse/libfuse) implementation
 
@@ -89,22 +89,6 @@ Cgofuse is a cross-platform FUSE library for Go. It is supported on multiple pla
     ```
 - **NOTE**: OpenBSD 6 removed the `kern.usermount` option, which allowed non-root users to mount file systems [[link](https://undeadly.org/cgi?action=article&sid=20160715125022&mode=expanded&count=0)]. Therefore you must be root in order to use FUSE and cgofuse.
 
-## How to cross-compile your project using xgo
-
-You can easily cross-compile your project using [xgo](https://github.com/karalabe/xgo) and the [billziss/xgo-cgofuse](https://hub.docker.com/r/billziss/xgo-cgofuse/) docker image.
-
-- Prerequisites: [docker](https://www.docker.com), [xgo](https://github.com/karalabe/xgo)
-- Build:
-    ```
-    $ docker pull billziss/xgo-cgofuse
-    $ go get -u github.com/karalabe/xgo
-    $ cd YOUR-PROJECT-THAT-USES-CGOFUSE
-    $ xgo --image=billziss/xgo-cgofuse \
-        --targets=darwin/386,darwin/amd64,linux/386,linux/amd64,windows/386,windows/amd64 .
-    ```
-
-Cross-compilation only works for Windows, macOS and Linux.
-
 ## How to use
 
 User mode file systems are expected to implement `fuse.FileSystemInterface`. To make implementation simpler a file system can embed ("inherit") a `fuse.FileSystemBase` which provides default implementations for all operations. To mount a file system one must instantiate a `fuse.FileSystemHost` using `fuse.NewFileSystemHost`.
@@ -119,7 +103,7 @@ There are currently three example file systems:
 
 ## How it is tested
 
-Cgofuse is regularly built and tested on [Travis CI](https://travis-ci.org/billziss-gh/cgofuse), [AppVeyor](https://ci.appveyor.com/project/billziss-gh/cgofuse) and [DockerHub](https://hub.docker.com/r/billziss/xgo-cgofuse). The following software is being used to test cgofuse.
+The following software is being used to test cgofuse.
 
 **Windows (cgo and !cgo)**
 - [winfsp-tests](https://github.com/winfsp/winfsp/tree/master/tst/winfsp-tests)
