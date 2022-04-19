@@ -104,8 +104,8 @@ const (
 	O_RDWR    = 0x0002
 	O_APPEND  = 0x0008
 	O_CREAT   = 0x0100
-	O_EXCL    = 0x0200
-	O_TRUNC   = 0x0400
+	O_TRUNC   = 0x0200
+	O_EXCL    = 0x0400
 	O_ACCMODE = O_RDONLY | O_WRONLY | O_RDWR
 )
 
