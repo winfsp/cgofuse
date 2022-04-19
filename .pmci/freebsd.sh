@@ -6,9 +6,9 @@ pkg install -y fusefs-libs
 
 # cgofuse: build and test
 export GOPATH=/tmp/go
-mkdir -p /tmp/go/src/github.com/billziss-gh
-cp -R /tmp/repo/cgofuse /tmp/go/src/github.com/billziss-gh
-cd /tmp/go/src/github.com/billziss-gh/cgofuse
+mkdir -p /tmp/go/src/github.com/winfsp
+cp -R /tmp/repo/cgofuse /tmp/go/src/github.com/winfsp
+cd /tmp/go/src/github.com/winfsp/cgofuse
 go build -v ./...
 go build -v ./examples/memfs
 go build -v ./examples/passthrough

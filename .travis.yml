@@ -18,7 +18,7 @@ before_install:
 # secfs.test
 - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get -qq install libacl1-dev; fi
 - mkdir -p /tmp/t/{m,p}
-- git clone -q https://github.com/billziss-gh/secfs.test.git /tmp/t/secfs.test
+- git clone -q https://github.com/winfsp/secfs.test.git /tmp/t/secfs.test
 - git -C /tmp/t/secfs.test checkout -q 3dba1298402d3c612fe5f0624ce8168c9354707b
 - if [[ "$TRAVIS_OS_NAME" == "osx"   ]]; then sed -e 's/^fs=.*$/fs="cgofuse"/' -i "" /tmp/t/secfs.test/fstest/fstest/tests/conf; fi
 - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sed -e 's/^fs=.*$/fs="cgofuse"/' -i""  /tmp/t/secfs.test/fstest/fstest/tests/conf; fi

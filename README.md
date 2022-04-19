@@ -3,8 +3,8 @@
 </h1>
 
 <p align="center">
-    <a href="https://godoc.org/github.com/billziss-gh/cgofuse/fuse">
-        <img src="https://godoc.org/github.com/billziss-gh/cgofuse/fuse?status.svg"/>
+    <a href="https://godoc.org/github.com/winfsp/cgofuse/fuse">
+        <img src="https://godoc.org/github.com/winfsp/cgofuse/fuse?status.svg"/>
     </a>
 </p>
 
@@ -20,7 +20,7 @@ Cgofuse is a cross-platform FUSE library for Go. It is supported on multiple pla
 ## How to build
 
 **Windows cgo**
-- Prerequisites: [WinFsp](https://github.com/billziss-gh/winfsp), gcc (e.g. from [Mingw-builds](http://mingw-w64.org/doku.php/download))
+- Prerequisites: [WinFsp](https://github.com/winfsp/winfsp), gcc (e.g. from [Mingw-builds](http://mingw-w64.org/doku.php/download))
 - Build:
     ```
     > cd cgofuse
@@ -29,7 +29,7 @@ Cgofuse is a cross-platform FUSE library for Go. It is supported on multiple pla
     ```
 
 **Windows !cgo**
-- Prerequisites: [WinFsp](https://github.com/billziss-gh/winfsp)
+- Prerequisites: [WinFsp](https://github.com/winfsp/winfsp)
 - Build:
     ```
     > cd cgofuse
@@ -109,7 +109,7 @@ Cross-compilation only works for Windows, macOS and Linux.
 
 User mode file systems are expected to implement `fuse.FileSystemInterface`. To make implementation simpler a file system can embed ("inherit") a `fuse.FileSystemBase` which provides default implementations for all operations. To mount a file system one must instantiate a `fuse.FileSystemHost` using `fuse.NewFileSystemHost`.
 
-The full documentation is available at GoDoc.org: [package fuse](https://godoc.org/github.com/billziss-gh/cgofuse/fuse)
+The full documentation is available at GoDoc.org: [package fuse](https://godoc.org/github.com/winfsp/cgofuse/fuse)
 
 There are currently three example file systems:
 
@@ -122,7 +122,7 @@ There are currently three example file systems:
 Cgofuse is regularly built and tested on [Travis CI](https://travis-ci.org/billziss-gh/cgofuse), [AppVeyor](https://ci.appveyor.com/project/billziss-gh/cgofuse) and [DockerHub](https://hub.docker.com/r/billziss/xgo-cgofuse). The following software is being used to test cgofuse.
 
 **Windows (cgo and !cgo)**
-- [winfsp-tests](https://github.com/billziss-gh/winfsp/tree/master/tst/winfsp-tests)
+- [winfsp-tests](https://github.com/winfsp/winfsp/tree/master/tst/winfsp-tests)
 - [fsx](https://github.com/billziss-gh/secfs.test/tree/master/fstools/src/fsx)
 
 **macOS**

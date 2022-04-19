@@ -1,6 +1,6 @@
 version: '{build}'
 
-clone_folder: C:\projects\go\src\github.com\billziss-gh\cgofuse
+clone_folder: C:\projects\go\src\github.com\winfsp\cgofuse
 
 environment:
   CPATH: C:\projects\winfsp\inc\fuse
@@ -24,7 +24,7 @@ install:
     $usingTask.AssemblyFile = '$(WDKContentRoot)build\bin\Microsoft.DriverKit.Build.Tasks.16.0.dll'
     $targets.Save("C:\Program Files (x86)\Windows Kits\10\build\WindowsDriver.Common.targets")
 - choco install winfsp --version=1.0.17072 -y
-- git clone -q --recurse-submodules https://github.com/billziss-gh/winfsp.git C:\projects\winfsp
+- git clone -q --recurse-submodules https://github.com/winfsp/winfsp.git C:\projects\winfsp
 - git -C C:\projects\winfsp checkout -q release/1.2
 
 build_script:
@@ -42,7 +42,7 @@ test_script:
 - C:\projects\winfsp\tools\nmake-ext-test.bat
 
 # hard code fsreg parameters because appveyor does not like percents ("--VolumePrefix=%1 %2")
-- C:\projects\winfsp\tools\fsreg.bat gomemfs "C:\projects\go\src\github.com\billziss-gh\cgofuse\memfs.exe" "--VolumePrefix=\gomemfs\share M:" "D:P(A;;RPWPLC;;;WD)"
+- C:\projects\winfsp\tools\fsreg.bat gomemfs "C:\projects\go\src\github.com\winfsp\cgofuse\memfs.exe" "--VolumePrefix=\gomemfs\share M:" "D:P(A;;RPWPLC;;;WD)"
 
 # test against WinFsp v1.0
 - 'net use M: \\gomemfs\share'
@@ -55,8 +55,8 @@ test_script:
 
 # test against WinFsp v1.2 DLL with chflags, setcrtime and setchgtime
 # HACK: mixing DLL and FSD versions; do not try this at home
-- copy C:\projects\winfsp\build\VStudio\build\Release\winfsp-x64.dll C:\projects\go\src\github.com\billziss-gh\cgofuse
-- copy C:\projects\winfsp\build\VStudio\build\Release\winfsp-x86.dll C:\projects\go\src\github.com\billziss-gh\cgofuse
+- copy C:\projects\winfsp\build\VStudio\build\Release\winfsp-x64.dll C:\projects\go\src\github.com\winfsp\cgofuse
+- copy C:\projects\winfsp\build\VStudio\build\Release\winfsp-x86.dll C:\projects\go\src\github.com\winfsp\cgofuse
 - 'net use M: \\gomemfs\share'
 - 'M: & cd'
 - C:\projects\winfsp\build\VStudio\build\Release\winfsp-tests-x64.exe --external --resilient --share-prefix=\gomemfs\share -create_allocation_test -create_fileattr_test -getfileinfo_name_test -delete_access_test -setsecurity_test -querydir_namelen_test -reparse* -stream*
