@@ -100,6 +100,7 @@ There are currently three example file systems:
 - [Hellofs](examples/hellofs/hellofs.go) is an extremely simple file system. Runs on all OS'es.
 - [Memfs](examples/memfs/memfs.go) is an in memory file system. Runs on all OS'es.
 - [Passthrough](examples/passthrough/passthrough.go) is a file system that passes all operations to the underlying file system. Runs on all OS'es except Windows.
+- [Notifyfs](examples/notifyfs/notifyfs.go) is a file system that can issue file change notifications. Runs on Windows only.
 
 ## How it is tested
 
