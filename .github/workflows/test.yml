@@ -1,0 +1,158 @@
+name: test
+
+on:
+  push:
+    branches:
+      - "*"
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+
+  test:
+    runs-on: ${{ matrix.os }}
+    env:
+      GOARCH: ${{ matrix.arch }}
+      CGO_ENABLED: ${{ matrix.cgo }}
+      CPATH: ${{ matrix.cpath }}
+      GODEBUG: cgocheck=2
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            arch: amd64
+            cgo: 1
+            cpath: C:\Program Files (x86)\WinFsp\inc\fuse
+          - os: windows-latest
+            arch: amd64
+            cgo: 0
+          - os: windows-latest
+            arch: 386
+            cgo: 0
+          - os: ubuntu-latest
+            arch: amd64
+            cgo: 1
+          - os: macos-10.15
+            arch: amd64
+            cgo: 1
+      fail-fast: false
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
+
+      - name: Install go
+        uses: actions/setup-go@v2
+        with:
+          stable: true
+          go-version: 1.17.*
+
+      - name: Install winfsp and winfsp-tests (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          $releases = Invoke-WebRequest https://api.github.com/repos/winfsp/winfsp/releases | `
+              ConvertFrom-Json
+
+          $asseturi = $releases[0].assets.browser_download_url | `
+              Where-Object { $_ -match "winfsp-.*\.msi" }
+          Invoke-WebRequest -Uri $asseturi -Out winfsp.msi
+          Start-Process -NoNewWindow -Wait msiexec "/i winfsp.msi /qn INSTALLLEVEL=1000"
+
+          $asseturi = $releases[0].assets.browser_download_url | `
+              Where-Object { $_ -match "winfsp-tests-.*\.zip" }
+          Invoke-WebRequest -Uri $asseturi -Out winfsp-tests.zip
+          Expand-Archive -Path winfsp-tests.zip
+          Copy-Item "C:\Program Files (x86)\WinFsp\bin\winfsp-x64.dll" winfsp-tests
+
+      - name: Install FUSE and secfs.test (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get -qq install libfuse-dev
+          sudo apt-get -qq install libacl1-dev
+
+          git clone -q https://github.com/billziss-gh/secfs.test.git secfs.test
+          git -C secfs.test checkout -q edf5eb4a108bfb41073f765aef0cdd32bb3ee1ed
+          mkdir -p secfs.test/tools/bin
+          touch secfs.test/tools/bin/bonnie++
+          touch secfs.test/tools/bin/iozone
+          make -C secfs.test
+
+          # configure fstest for cgofuse
+          sed -e 's/^fs=.*$/fs="cgofuse"/' -i""  secfs.test/fstest/fstest/tests/conf
+
+          # remove irrelevant tests
+          rm -rf secfs.test/fstest/fstest/tests/xacl
+          rm -rf secfs.test/fstest/fstest/tests/zzz_ResourceFork
+
+      - name: Install FUSE and secfs.test (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          # requires macos-10.15; does not work on macos-latest
+          # see https://github.com/actions/virtual-environments/issues/4731
+          brew install macfuse
+
+          git clone -q https://github.com/billziss-gh/secfs.test.git secfs.test
+          git -C secfs.test checkout -q edf5eb4a108bfb41073f765aef0cdd32bb3ee1ed
+          mkdir -p secfs.test/tools/bin
+          touch secfs.test/tools/bin/bonnie++
+          touch secfs.test/tools/bin/iozone
+          make -C secfs.test
+
+          # configure fstest for cgofuse
+          sed -e 's/^fs=.*$/fs="cgofuse"/' -i ""  secfs.test/fstest/fstest/tests/conf
+
+          # monkey-patch/disable some tests for macOS
+          rm secfs.test/fstest/fstest/tests/rmdir/12.t
+          sed -e 's/lchmod)/lchmod) return 1/' -i "" secfs.test/fstest/fstest/tests/misc.sh
+
+          # remove irrelevant tests
+          rm -rf secfs.test/fstest/fstest/tests/xacl
+          rm -rf secfs.test/fstest/fstest/tests/zzz_ResourceFork
+
+      - name: Build packages
+        run: |
+          go build -v -o . ./...
+          go test -v -count=1 ./fuse
+
+      - name: Test file systems (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          Set-PSDebug -Trace 1
+
+          $testexe = (Get-Item winfsp-tests\winfsp-tests-x64.exe)
+          Start-Process -NoNewWindow .\memfs.exe "-o uid=-1,rellinks,FileInfoTimeout=-1 X:"
+          Start-Sleep 3
+          Push-Location X:\
+          . $testexe --fuse-external --resilient --case-insensitive-cmp `
+              +* `
+              -create_fileattr_test `
+              -reparse_nfs_test `
+              -ea*
+          Stop-Process -Name memfs
+          Start-Sleep 3
+          Pop-Location
+
+      - name: Test file systems (Linux / macOS)
+        if: runner.os == 'Linux' || runner.os == 'macOS'
+        run: |
+          set -x
+
+          mkdir p mnt
+
+          sudo ./memfs -o allow_other,default_permissions,use_ino,attr_timeout=0 mnt &
+          sleep 3
+          (cd mnt && sudo prove -fr ../secfs.test/fstest/fstest/tests)
+          (cd mnt && ../secfs.test/tools/bin/fsx -N 10000 test xxxxxx)
+          (cd mnt && ../secfs.test/tools/bin/fsx -e -N 1000 test xxxx)
+          sudo umount mnt
+
+          sudo ./passthrough -o allow_other,default_permissions,use_ino,attr_timeout=0 p mnt &
+          sleep 3
+          (cd mnt && sudo prove -fr ../secfs.test/fstest/fstest/tests)
+          (cd mnt && ../secfs.test/tools/bin/fsx -N 10000 test xxxxxx)
+          sudo umount mnt
+
+          rm -rf p
+          rmdir mnt
