@@ -3,7 +3,15 @@
 
 **v1.6.0**
 
-- Add `FileSystemHost.SetCapDeleteAccess` [Windows only]. A file system can use this capability to deny delete access on Windows. Such a file system must:
+- Rename import path to `github.com/winfsp/cgofuse`.
+
+- Convert package to module.
+
+- Preliminary support for Windows on ARM64.
+
+- Add `FileSystemGetpath` interface. A case-insensitive file system can use `Getpath` to report the correct case of a file path on Windows.
+
+- Add `FileSystemHost.SetCapDeleteAccess`. A file system can use this capability to deny delete access on Windows. Such a file system must:
     - Implement the `Access` file system operation and handle the new `fuse.DELETE_OK` mask to return `-fuse.EPERM` for files that should not be deleted. An example implementation might look like:
         ```Go
         func (fs *filesystem) Access(path string, mask uint32) int {
