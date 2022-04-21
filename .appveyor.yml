@@ -10,8 +10,6 @@ environment:
   matrix:
   - GOARCH: amd64
     CGO_ENABLED: 1
-  - GOARCH: 386
-    CGO_ENABLED: 1
   - GOARCH: amd64
     CGO_ENABLED: 0
   - GOARCH: 386
