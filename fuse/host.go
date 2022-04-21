@@ -525,6 +525,29 @@ func hostUtimens(path0 *c_char, tmsp0 *c_fuse_timespec_t) (errc0 c_int) {
 	}
 }
 
+func hostGetpath(path0 *c_char, buff0 *c_char, size0 c_size_t,
+	fi0 *c_struct_fuse_file_info) (errc0 c_int) {
+	defer recoverAsErrno(&errc0)
+	fsop := hostHandleGet(c_fuse_get_context().private_data).fsop
+	intf, ok := fsop.(FileSystemGetpath)
+	if !ok {
+		return -c_int(ENOSYS)
+	}
+	path := c_GoString(path0)
+	fifh := ^uint64(0)
+	if nil != fi0 {
+		fifh = uint64(fi0.fh)
+	}
+	errc, rslt := intf.Getpath(path, fifh)
+	buff := (*[1 << 30]byte)(unsafe.Pointer(buff0))
+	copy(buff[:size0-1], rslt)
+	rlen := len(rslt)
+	if c_size_t(rlen) < size0 {
+		buff[rlen] = 0
+	}
+	return c_int(errc)
+}
+
 func hostSetchgtime(path0 *c_char, tmsp0 *c_fuse_timespec_t) (errc0 c_int) {
 	defer recoverAsErrno(&errc0)
 	fsop := hostHandleGet(c_fuse_get_context().private_data).fsop

@@ -69,7 +69,7 @@ type fuse_operations struct {
 	read_buf    uintptr
 	flock       uintptr
 	fallocate   uintptr
-	reserved00  uintptr
+	getpath     uintptr
 	reserved01  uintptr
 	reserved02  uintptr
 	statfs_x    uintptr
@@ -626,6 +626,7 @@ func init() {
 			ftruncate:   syscall.NewCallbackCDecl(go_hostFtruncate64),
 			fgetattr:    syscall.NewCallbackCDecl(go_hostFgetattr64),
 			utimens:     syscall.NewCallbackCDecl(go_hostUtimens64),
+			getpath:     syscall.NewCallbackCDecl(go_hostGetpath64),
 			setchgtime:  syscall.NewCallbackCDecl(go_hostSetchgtime64),
 			setcrtime:   syscall.NewCallbackCDecl(go_hostSetcrtime64),
 			chflags:     syscall.NewCallbackCDecl(go_hostChflags64),
@@ -666,6 +667,7 @@ func init() {
 			ftruncate:   syscall.NewCallbackCDecl(go_hostFtruncate32),
 			fgetattr:    syscall.NewCallbackCDecl(go_hostFgetattr32),
 			utimens:     syscall.NewCallbackCDecl(go_hostUtimens32),
+			getpath:     syscall.NewCallbackCDecl(go_hostGetpath32),
 			setchgtime:  syscall.NewCallbackCDecl(go_hostSetchgtime32),
 			setcrtime:   syscall.NewCallbackCDecl(go_hostSetcrtime32),
 			chflags:     syscall.NewCallbackCDecl(go_hostChflags32),
@@ -818,6 +820,11 @@ func go_hostFgetattr64(path0 *c_char, stat0 *c_fuse_stat_t,
 
 func go_hostUtimens64(path0 *c_char, tmsp0 *c_fuse_timespec_t) (errc0 uintptr) {
 	return uintptr(int(hostUtimens(path0, tmsp0)))
+}
+
+func go_hostGetpath64(path0 *c_char, buff0 *c_char, size0 uintptr,
+	fi0 *c_struct_fuse_file_info) (errc0 uintptr) {
+	return uintptr(int(hostGetpath(path0, buff0, c_size_t(size0), fi0)))
 }
 
 func go_hostSetchgtime64(path0 *c_char, tmsp0 *c_fuse_timespec_t) (errc0 uintptr) {
@@ -980,6 +987,11 @@ func go_hostFgetattr32(path0 *c_char, stat0 *c_fuse_stat_t,
 
 func go_hostUtimens32(path0 *c_char, tmsp0 *c_fuse_timespec_t) (errc0 uintptr) {
 	return uintptr(int(hostUtimens(path0, tmsp0)))
+}
+
+func go_hostGetpath32(path0 *c_char, buff0 *c_char, size0 uintptr,
+	fi0 *c_struct_fuse_file_info) (errc0 uintptr) {
+	return uintptr(int(hostGetpath(path0, buff0, c_size_t(size0), fi0)))
 }
 
 func go_hostSetchgtime32(path0 *c_char, tmsp0 *c_fuse_timespec_t) (errc0 uintptr) {

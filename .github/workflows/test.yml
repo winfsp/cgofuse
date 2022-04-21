@@ -24,6 +24,9 @@ jobs:
             cgo: 1
             cpath: C:\Program Files (x86)\WinFsp\inc\fuse
           - os: windows-latest
+            arch: 386
+            cgo: 1
+          - os: windows-latest
             arch: amd64
             cgo: 0
           - os: windows-latest

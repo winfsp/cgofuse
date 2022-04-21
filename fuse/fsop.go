@@ -319,6 +319,13 @@ type FileSystemOpenEx interface {
 	OpenEx(path string, fi *FileInfo_t) int
 }
 
+// FileSystemGetpath is the interface that wraps the Getpath method.
+//
+// Getpath allows a case-insensitive file system to report the correct case of a file path.
+type FileSystemGetpath interface {
+	Getpath(path string, fh uint64) (int, string)
+}
+
 // FileSystemChflags is the interface that wraps the Chflags method.
 //
 // Chflags changes the BSD file flags (Windows file attributes). [OSX and Windows only]

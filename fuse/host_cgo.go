@@ -354,6 +354,8 @@ extern int go_hostFtruncate(char *path, fuse_off_t off, struct fuse_file_info *f
 extern int go_hostFgetattr(char *path, fuse_stat_t *stbuf, struct fuse_file_info *fi);
 //extern int go_hostLock(char *path, struct fuse_file_info *fi, int cmd, struct fuse_flock *lock);
 extern int go_hostUtimens(char *path, fuse_timespec_t tv[2]);
+extern int go_hostGetpath(char *path, char *buf, size_t size,
+	struct fuse_file_info *fi);
 extern int go_hostSetchgtime(char *path, fuse_timespec_t *tv);
 extern int go_hostSetcrtime(char *path, fuse_timespec_t *tv);
 extern int go_hostChflags(char *path, uint32_t flags);
@@ -587,6 +589,28 @@ static int hostMount(int argc, char *argv[], void *data)
 		.chflags = (int (*)(const char *, uint32_t))go_hostChflags,
 #endif
 	};
+#if defined(_WIN32)
+	// WinFsp introduced the getpath operation in version 2022+ARM64 Beta2,
+	// which we would like to use if available.
+	//
+	// Versions of WinFsp with getpath support have getpath in struct fuse_operations.
+	// Versions of WinFsp without getpath support have reserved00 in struct fuse_operations.
+	// Unfortunately there is currently no way to detect whether the version of WinFsp we
+	// are building against has getpath or not. We would also like to always build with
+	// getpath support regardless of the version of WinFsp we are building against.
+	//
+	// (Ideally a macro should be added to WinFsp <fuse.h> that indicates whether getpath
+	// exists.)
+	//
+	// To resolve this problem we overwrite the location of the getpath/reserved00 field
+	// using the hack below. We must make sure to write to the correct location for both
+	// 64-bit and 32-bit mode.
+	//
+	// Note that this is threadsafe in the presence of multiple threads, because we always
+	// write the same value to getpath/reserved00 (and because writes of aligned pointer
+	// values are atomic so that no half writes can be observed).
+	((void **)&fsop)[45] = go_hostGetpath;
+#endif
 	return 0 == fuse_main_real(argc, argv, &fsop, sizeof fsop, data);
 }
 
@@ -1013,6 +1037,12 @@ func go_hostFgetattr(path0 *c_char, stat0 *c_fuse_stat_t,
 //export go_hostUtimens
 func go_hostUtimens(path0 *c_char, tmsp0 *c_fuse_timespec_t) (errc0 c_int) {
 	return hostUtimens(path0, tmsp0)
+}
+
+//export go_hostGetpath
+func go_hostGetpath(path0 *c_char, buff0 *c_char, size0 c_size_t,
+	fi0 *c_struct_fuse_file_info) (errc0 c_int) {
+	return hostGetpath(path0, buff0, size0, fi0)
 }
 
 //export go_hostSetchgtime
