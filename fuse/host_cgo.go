@@ -216,7 +216,9 @@ static int (* pfn_fsp_fuse_notify)(struct fsp_fuse_env *env,
 
 static NTSTATUS FspLoad(void **PModule)
 {
-#if defined(_WIN64)
+#if defined(__aarch64__)
+#define FSP_DLLNAME                     "winfsp-a64.dll"
+#elif defined(__amd64__)
 #define FSP_DLLNAME                     "winfsp-x64.dll"
 #else
 #define FSP_DLLNAME                     "winfsp-x86.dll"

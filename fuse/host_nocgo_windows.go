@@ -17,6 +17,7 @@ package fuse
 
 import (
 	"path/filepath"
+	"runtime"
 	"sync"
 	"syscall"
 	"unsafe"
@@ -540,9 +541,12 @@ func c_hostOptParse(args *c_struct_fuse_args, data unsafe.Pointer, opts *c_struc
 
 func fspload() (dll *syscall.DLL, err error) {
 	dllname := ""
-	if uint64(0xffffffff) < uint64(^uintptr(0)) {
+	switch runtime.GOARCH {
+	case "arm64":
+		dllname = "winfsp-a64.dll"
+	case "amd64":
 		dllname = "winfsp-x64.dll"
-	} else {
+	case "386":
 		dllname = "winfsp-x86.dll"
 	}
 
