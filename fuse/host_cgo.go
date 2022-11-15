@@ -16,7 +16,7 @@
 package fuse
 
 /*
-#cgo darwin CFLAGS: -DFUSE_USE_VERSION=28 -D_FILE_OFFSET_BITS=64 -I/usr/local/include/osxfuse/fuse
+#cgo darwin CFLAGS: -DFUSE_USE_VERSION=28 -D_FILE_OFFSET_BITS=64 -I/usr/local/include/osxfuse/fuse -I/usr/local/include/fuse
 #cgo freebsd CFLAGS: -DFUSE_USE_VERSION=28 -D_FILE_OFFSET_BITS=64 -I/usr/local/include/fuse
 #cgo netbsd CFLAGS: -DFUSE_USE_VERSION=28 -D_FILE_OFFSET_BITS=64 -D_KERNTYPES
 #cgo openbsd CFLAGS: -DFUSE_USE_VERSION=28 -D_FILE_OFFSET_BITS=64
