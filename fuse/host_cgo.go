@@ -634,9 +634,21 @@ static int hostUnmount(struct fuse *fuse, char *mountpoint)
 	if (0 == umount2(mountpoint, MNT_DETACH))
 		return 1;
 	// linux: umount2 failed; try fusermount
-	char *argv[] =
+	char *paths[] =
 	{
 		"/bin/fusermount",
+		"/usr/bin/fusermount",
+	};
+	char *path = paths[0];
+	for (size_t i = 0; sizeof paths / sizeof paths[0] > i; i++)
+		if (0 == access(paths[i], X_OK))
+		{
+			path = paths[i];
+			break;
+		}
+	char *argv[] =
+	{
+		path,
 		"-z",
 		"-u",
 		mountpoint,
