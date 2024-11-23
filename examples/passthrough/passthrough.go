@@ -1,3 +1,4 @@
+//go:build darwin || freebsd || netbsd || openbsd || linux
 // +build darwin freebsd netbsd openbsd linux
 
 /*
@@ -115,7 +116,7 @@ func (self *Ptfs) Readlink(path string) (errc int, target string) {
 	return 0, string(buff[:n])
 }
 
-func (self *Ptfs) Rename(oldpath string, newpath string) (errc int) {
+func (self *Ptfs) Rename(oldpath string, newpath string, flags uint32) (errc int) {
 	defer trace(oldpath, newpath)(&errc)
 	defer setuidgid()()
 	oldpath = filepath.Join(self.root, oldpath)
@@ -123,19 +124,19 @@ func (self *Ptfs) Rename(oldpath string, newpath string) (errc int) {
 	return errno(syscall.Rename(oldpath, newpath))
 }
 
-func (self *Ptfs) Chmod(path string, mode uint32) (errc int) {
+func (self *Ptfs) Chmod(path string, mode uint32, fh uint64) (errc int) {
 	defer trace(path, mode)(&errc)
 	path = filepath.Join(self.root, path)
 	return errno(syscall.Chmod(path, mode))
 }
 
-func (self *Ptfs) Chown(path string, uid uint32, gid uint32) (errc int) {
+func (self *Ptfs) Chown(path string, uid uint32, gid uint32, fh uint64) (errc int) {
 	defer trace(path, uid, gid)(&errc)
 	path = filepath.Join(self.root, path)
 	return errno(syscall.Lchown(path, int(uid), int(gid)))
 }
 
-func (self *Ptfs) Utimens(path string, tmsp1 []fuse.Timespec) (errc int) {
+func (self *Ptfs) Utimens(path string, tmsp1 []fuse.Timespec, fh uint64) (errc int) {
 	defer trace(path, tmsp1)(&errc)
 	path = filepath.Join(self.root, path)
 	tmsp := [2]syscall.Timespec{}
@@ -229,7 +230,7 @@ func (self *Ptfs) Opendir(path string) (errc int, fh uint64) {
 func (self *Ptfs) Readdir(path string,
 	fill func(name string, stat *fuse.Stat_t, ofst int64) bool,
 	ofst int64,
-	fh uint64) (errc int) {
+	fh uint64, flags uint32) (errc int) {
 	defer trace(path, fill, ofst, fh)(&errc)
 	path = filepath.Join(self.root, path)
 	file, e := os.Open(path)
@@ -264,5 +265,6 @@ func main() {
 		args = append(args[:len(args)-2], args[len(args)-1])
 	}
 	_host = fuse.NewFileSystemHost(&ptfs)
+	_host.SetUseIno(true)
 	_host.Mount("", args[1:])
 }

@@ -16,12 +16,18 @@
 package fuse
 
 /*
+#cgo fuse3,freebsd CFLAGS: -DFUSE_USE_VERSION=39 -D_FILE_OFFSET_BITS=64 -I/usr/local/include/fuse3
+#cgo fuse3,netbsd CFLAGS: -DFUSE_USE_VERSION=39 -D_FILE_OFFSET_BITS=64 -D_KERNTYPES
+#cgo fuse3,openbsd CFLAGS: -DFUSE_USE_VERSION=39 -D_FILE_OFFSET_BITS=64
+#cgo fuse3,linux CFLAGS: -DFUSE_USE_VERSION=39 -D_FILE_OFFSET_BITS=64 -I/usr/include/fuse3
+#cgo fuse3,linux LDFLAGS: -lfuse3 -ldl
+
 #cgo darwin CFLAGS: -DFUSE_USE_VERSION=28 -D_FILE_OFFSET_BITS=64 -I/usr/local/include/osxfuse/fuse -I/usr/local/include/fuse
-#cgo freebsd CFLAGS: -DFUSE_USE_VERSION=28 -D_FILE_OFFSET_BITS=64 -I/usr/local/include/fuse
-#cgo netbsd CFLAGS: -DFUSE_USE_VERSION=28 -D_FILE_OFFSET_BITS=64 -D_KERNTYPES
-#cgo openbsd CFLAGS: -DFUSE_USE_VERSION=28 -D_FILE_OFFSET_BITS=64
-#cgo linux CFLAGS: -DFUSE_USE_VERSION=28 -D_FILE_OFFSET_BITS=64 -I/usr/include/fuse
-#cgo linux LDFLAGS: -ldl
+#cgo !fuse3,freebsd CFLAGS: -DFUSE_USE_VERSION=28 -D_FILE_OFFSET_BITS=64 -I/usr/local/include/fuse
+#cgo !fuse3,netbsd CFLAGS: -DFUSE_USE_VERSION=28 -D_FILE_OFFSET_BITS=64 -D_KERNTYPES
+#cgo !fuse3,openbsd CFLAGS: -DFUSE_USE_VERSION=28 -D_FILE_OFFSET_BITS=64
+#cgo !fuse3,linux CFLAGS: -DFUSE_USE_VERSION=28 -D_FILE_OFFSET_BITS=64 -I/usr/include/fuse
+#cgo !fuse3,linux LDFLAGS: -ldl
 #cgo windows CFLAGS: -DFUSE_USE_VERSION=28 -I/usr/local/include/winfsp
 	// Use `set CPATH=C:\Program Files (x86)\WinFsp\inc\fuse` on Windows.
 	// The flag `I/usr/local/include/winfsp` only works on xgo and docker.
@@ -114,7 +120,11 @@ static void cgofuse_init_fail(void)
 
 #if defined(__APPLE__) || defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__) || defined(__linux__)
 
-#include <fuse.h>
+#if FUSE_USE_VERSION >= 30
+	#include <fuse3/fuse.h>
+#else
+	#include <fuse.h>
+#endif
 
 #if defined(__OpenBSD__)
 static int (*pfn_fuse_main)(int argc, char *argv[],
@@ -175,13 +185,29 @@ static void *cgofuse_init_fuse(void)
 	if (0 == h)
 		h = dlopen("/usr/local/lib/libfuse-t.dylib", RTLD_NOW); // FUSE-T
 #elif defined(__FreeBSD__)
-	h = dlopen("libfuse.so.2", RTLD_NOW);
+#if FUSE_USE_VERSION >= 30
+	h = dlopen("libfuse3.so.3", RTLD_NOW);
+#else
+    h = dlopen("libfuse.so.2", RTLD_NOW);
+#endif
 #elif defined(__NetBSD__)
-	h = dlopen("librefuse.so.2", RTLD_NOW);
+#if FUSE_USE_VERSION >= 30
+	h = dlopen("libfuse3.so.3", RTLD_NOW);
+#else
+    h = dlopen("libfuse.so.2", RTLD_NOW);
+#endif
 #elif defined(__OpenBSD__)
-	h = dlopen("libfuse.so.2.0", RTLD_NOW);
+#if FUSE_USE_VERSION >= 30
+	h = dlopen("libfuse3.so.3", RTLD_NOW);
+#else
+    h = dlopen("libfuse.so.2", RTLD_NOW);
+#endif
 #elif defined(__linux__)
-	h = dlopen("libfuse.so.2", RTLD_NOW);
+#if FUSE_USE_VERSION >= 30
+	h = dlopen("libfuse3.so.3", RTLD_NOW);
+#else
+    h = dlopen("libfuse.so.2", RTLD_NOW);
+#endif
 #endif
 	if (0 == h)
 		return 0;
@@ -321,18 +347,41 @@ typedef struct fuse_timespec fuse_timespec_t;
 typedef unsigned int fuse_opt_offset_t;
 #endif
 
-extern int go_hostGetattr(char *path, fuse_stat_t *stbuf);
+#if FUSE_USE_VERSION >= 30
+	typedef enum fuse_readdir_flags fuse_readdir_flags_t;
+	typedef enum fuse_fill_dir_flags fuse_fill_dir_flags_t;
+	static int fill_dir_plus = (1 << 1);
+#else
+	typedef int fuse_readdir_flags_t;
+	struct fuse_config;
+#endif
+
+#if FUSE_USE_VERSION >= 30
+extern int go_hostGetattrFuse3(char *path, fuse_stat_t *stbuf, struct fuse_file_info *fi);
+#else
+extern int go_hostGetattrFuse2(char *path, fuse_stat_t *stbuf);
+#endif
 extern int go_hostReadlink(char *path, char *buf, size_t size);
 extern int go_hostMknod(char *path, fuse_mode_t mode, fuse_dev_t dev);
 extern int go_hostMkdir(char *path, fuse_mode_t mode);
 extern int go_hostUnlink(char *path);
 extern int go_hostRmdir(char *path);
 extern int go_hostSymlink(char *target, char *newpath);
-extern int go_hostRename(char *oldpath, char *newpath);
+#if FUSE_USE_VERSION >= 30
+extern int go_hostRenameFuse3(char *oldpath, char *newpath, unsigned int flags);
+#else
+extern int go_hostRenameFuse2(char *oldpath, char *newpath);
+#endif
 extern int go_hostLink(char *oldpath, char *newpath);
-extern int go_hostChmod(char *path, fuse_mode_t mode);
-extern int go_hostChown(char *path, fuse_uid_t uid, fuse_gid_t gid);
-extern int go_hostTruncate(char *path, fuse_off_t size);
+#if FUSE_USE_VERSION >= 30
+extern int go_hostChmodFuse3(char *path, fuse_mode_t mode, struct fuse_file_info *fi);
+extern int go_hostChownFuse3(char *path, fuse_uid_t uid, fuse_gid_t gid, struct fuse_file_info *fi);
+extern int go_hostTruncateFuse3(char *path, fuse_off_t size, struct fuse_file_info *fi);
+#else
+extern int go_hostChmodFuse2(char *path, fuse_mode_t mode);
+extern int go_hostChownFuse2(char *path, fuse_uid_t uid, fuse_gid_t gid);
+extern int go_hostTruncateFuse2(char *path, fuse_off_t size);
+#endif
 extern int go_hostOpen(char *path, struct fuse_file_info *fi);
 extern int go_hostRead(char *path, char *buf, size_t size, fuse_off_t off,
 	struct fuse_file_info *fi);
@@ -347,18 +396,33 @@ extern int go_hostGetxattr(char *path, char *name, char *value, size_t size);
 extern int go_hostListxattr(char *path, char *namebuf, size_t size);
 extern int go_hostRemovexattr(char *path, char *name);
 extern int go_hostOpendir(char *path, struct fuse_file_info *fi);
-extern int go_hostReaddir(char *path, void *buf, fuse_fill_dir_t filler, fuse_off_t off,
+#if FUSE_USE_VERSION >= 30
+extern int go_hostReaddirFuse3(char *path, void *buf, fuse_fill_dir_t filler, fuse_off_t off,
+	struct fuse_file_info *fi, fuse_readdir_flags_t flags);
+#else
+extern int go_hostReaddirFuse2(char *path, void *buf, fuse_fill_dir_t filler, fuse_off_t off,
 	struct fuse_file_info *fi);
+#endif
 extern int go_hostReleasedir(char *path, struct fuse_file_info *fi);
 extern int go_hostFsyncdir(char *path, int datasync, struct fuse_file_info *fi);
-extern void *go_hostInit(struct fuse_conn_info *conn);
+#if FUSE_USE_VERSION >= 30
+extern void *go_hostInitFuse3(struct fuse_conn_info *conn, struct fuse_config *cfg);
+#else
+extern void *go_hostInitFuse2(struct fuse_conn_info *conn);
+#endif
 extern void go_hostDestroy(void *data);
 extern int go_hostAccess(char *path, int mask);
 extern int go_hostCreate(char *path, fuse_mode_t mode, struct fuse_file_info *fi);
+#if FUSE_USE_VERSION < 30
 extern int go_hostFtruncate(char *path, fuse_off_t off, struct fuse_file_info *fi);
 extern int go_hostFgetattr(char *path, fuse_stat_t *stbuf, struct fuse_file_info *fi);
+#endif
 //extern int go_hostLock(char *path, struct fuse_file_info *fi, int cmd, struct fuse_flock *lock);
-extern int go_hostUtimens(char *path, fuse_timespec_t tv[2]);
+#if FUSE_USE_VERSION >= 30
+extern int go_hostUtimensFuse3(char *path, fuse_timespec_t tv[2], struct fuse_file_info *fi);
+#else
+extern int go_hostUtimensFuse2(char *path, fuse_timespec_t tv[2]);
+#endif
 extern int go_hostGetpath(char *path, char *buf, size_t size,
 	struct fuse_file_info *fi);
 extern int go_hostSetchgtime(char *path, fuse_timespec_t *tv);
@@ -387,6 +451,23 @@ static inline void hostAsgnCconninfo(struct fuse_conn_info *conn,
 		conn->want |= conn->capable & (1 << 24);//FSP_FUSE_CAP_DELETE_ACCESS
 #endif
 }
+
+#if FUSE_USE_VERSION >= 30
+static inline void hostAsgnCconfig(struct fuse_config *cfg,
+	bool direct_io,
+	bool use_ino)
+{
+	memset(cfg, 0, sizeof *cfg);
+	cfg->direct_io = direct_io;
+	cfg->use_ino = use_ino;
+	cfg->attr_timeout = 0;
+}
+#else
+static inline void hostAsgnCconfig(struct fuse_config *cfg,
+	bool direct_io,
+	bool use_ino)
+{}
+#endif
 
 static inline void hostCstatvfsFromFusestatfs(fuse_statvfs_t *stbuf,
 	uint64_t bsize,
@@ -500,7 +581,11 @@ static inline void hostAsgnCfileinfo(struct fuse_file_info *fi,
 static inline int hostFilldir(fuse_fill_dir_t filler, void *buf,
 	char *name, fuse_stat_t *stbuf, fuse_off_t off)
 {
+#if FUSE_USE_VERSION >= 30
+	return filler(buf, name, stbuf, off, fill_dir_plus);
+#else
 	return filler(buf, name, stbuf, off);
+#endif
 }
 
 #if defined(__APPLE__)
@@ -542,18 +627,32 @@ static int hostMount(int argc, char *argv[], void *data)
 {
 	static struct fuse_operations fsop =
 	{
-		.getattr = (int (*)(const char *, fuse_stat_t *))go_hostGetattr,
+#if FUSE_USE_VERSION >= 30
+		.getattr = (int (*)(const char *, fuse_stat_t *, struct fuse_file_info *))go_hostGetattrFuse3,
+#else
+		.getattr = (int (*)(const char *, fuse_stat_t *))go_hostGetattrFuse2,
+#endif
 		.readlink = (int (*)(const char *, char *, size_t))go_hostReadlink,
 		.mknod = (int (*)(const char *, fuse_mode_t, fuse_dev_t))go_hostMknod,
 		.mkdir = (int (*)(const char *, fuse_mode_t))go_hostMkdir,
 		.unlink = (int (*)(const char *))go_hostUnlink,
 		.rmdir = (int (*)(const char *))go_hostRmdir,
 		.symlink = (int (*)(const char *, const char *))go_hostSymlink,
-		.rename = (int (*)(const char *, const char *))go_hostRename,
+#if FUSE_USE_VERSION >= 30
+		.rename = (int (*)(const char *, const char *, unsigned int flags))go_hostRenameFuse3,
+#else
+		.rename = (int (*)(const char *, const char *))go_hostRenameFuse2,
+#endif
 		.link = (int (*)(const char *, const char *))go_hostLink,
-		.chmod = (int (*)(const char *, fuse_mode_t))go_hostChmod,
-		.chown = (int (*)(const char *, fuse_uid_t, fuse_gid_t))go_hostChown,
-		.truncate = (int (*)(const char *, fuse_off_t))go_hostTruncate,
+#if FUSE_USE_VERSION >= 30
+		.chmod = (int (*)(const char *, fuse_mode_t, struct fuse_file_info *))go_hostChmodFuse3,
+		.chown = (int (*)(const char *, fuse_uid_t, fuse_gid_t, struct fuse_file_info *))go_hostChownFuse3,
+		.truncate = (int (*)(const char *, fuse_off_t, struct fuse_file_info *))go_hostTruncateFuse3,
+#else
+		.chmod = (int (*)(const char *, fuse_mode_t))go_hostChmodFuse2,
+		.chown = (int (*)(const char *, fuse_uid_t, fuse_gid_t))go_hostChownFuse2,
+		.truncate = (int (*)(const char *, fuse_off_t))go_hostTruncateFuse2,
+#endif
 		.open = (int (*)(const char *, struct fuse_file_info *))go_hostOpen,
 		.read = (int (*)(const char *, char *, size_t, fuse_off_t, struct fuse_file_info *))
 			go_hostRead,
@@ -575,19 +674,34 @@ static int hostMount(int argc, char *argv[], void *data)
 		.listxattr = (int (*)(const char *, char *, size_t))go_hostListxattr,
 		.removexattr = (int (*)(const char *, const char *))go_hostRemovexattr,
 		.opendir = (int (*)(const char *, struct fuse_file_info *))go_hostOpendir,
+#if FUSE_USE_VERSION >= 30
 		.readdir = (int (*)(const char *, void *, fuse_fill_dir_t, fuse_off_t,
-			struct fuse_file_info *))go_hostReaddir,
+			struct fuse_file_info *, fuse_readdir_flags_t flags))go_hostReaddirFuse3,
+#else
+		.readdir = (int (*)(const char *, void *, fuse_fill_dir_t, fuse_off_t,
+			struct fuse_file_info *))go_hostReaddirFuse2,
+#endif
 		.releasedir = (int (*)(const char *, struct fuse_file_info *))go_hostReleasedir,
 		.fsyncdir = (int (*)(const char *, int, struct fuse_file_info *))go_hostFsyncdir,
-		.init = (void *(*)(struct fuse_conn_info *))go_hostInit,
+#if FUSE_USE_VERSION >= 30
+		.init = (void *(*)(struct fuse_conn_info *, struct fuse_config *))go_hostInitFuse3,
+#else
+		.init = (void *(*)(struct fuse_conn_info *))go_hostInitFuse2,
+#endif
 		.destroy = (void (*)(void *))go_hostDestroy,
 		.access = (int (*)(const char *, int))go_hostAccess,
 		.create = (int (*)(const char *, fuse_mode_t, struct fuse_file_info *))go_hostCreate,
+#if FUSE_USE_VERSION < 30
 		.ftruncate = (int (*)(const char *, fuse_off_t, struct fuse_file_info *))go_hostFtruncate,
 		.fgetattr = (int (*)(const char *, fuse_stat_t *, struct fuse_file_info *))go_hostFgetattr,
+#endif
 		//.lock = (int (*)(const char *, struct fuse_file_info *, int, struct fuse_flock *))
 		//	go_hostFlock,
-		.utimens = (int (*)(const char *, const fuse_timespec_t [2]))go_hostUtimens,
+#if FUSE_USE_VERSION >= 30
+		.utimens = (int (*)(const char *, const fuse_timespec_t [2], struct fuse_file_info *))go_hostUtimensFuse3,
+#else
+		.utimens = (int (*)(const char *, const fuse_timespec_t [2]))go_hostUtimensFuse2,
+#endif
 #if defined(__APPLE__) || (defined(_WIN32) && defined(FSP_FUSE_CAP_STAT_EX))
 		.setchgtime = (int (*)(const char *, const fuse_timespec_t *))go_hostSetchgtime,
 		.setcrtime = (int (*)(const char *, const fuse_timespec_t *))go_hostSetcrtime,
@@ -634,9 +748,21 @@ static int hostUnmount(struct fuse *fuse, char *mountpoint)
 	if (0 == umount2(mountpoint, MNT_DETACH))
 		return 1;
 	// linux: umount2 failed; try fusermount
-	char *argv[] =
+	char *paths[] =
 	{
 		"/bin/fusermount",
+		"/usr/bin/fusermount",
+	};
+	char *path = paths[0];
+	for (size_t i = 0; sizeof paths / sizeof paths[0] > i; i++)
+		if (0 == access(paths[i], X_OK))
+		{
+			path = paths[i];
+			break;
+		}
+	char *argv[] =
+	{
+		path,
 		"-z",
 		"-u",
 		mountpoint,
@@ -711,6 +837,7 @@ type (
 	c_fuse_mode_t           = C.fuse_mode_t
 	c_fuse_off_t            = C.fuse_off_t
 	c_fuse_opt_offset_t     = C.fuse_opt_offset_t
+	c_fuse_readdir_flags_t  = C.fuse_readdir_flags_t
 	c_fuse_stat_t           = C.fuse_stat_t
 	c_fuse_stat_ex_t        = C.fuse_stat_ex_t
 	c_fuse_statvfs_t        = C.fuse_statvfs_t
@@ -724,6 +851,7 @@ type (
 	c_size_t                = C.size_t
 	c_struct_fuse           = C.struct_fuse
 	c_struct_fuse_args      = C.struct_fuse_args
+	c_struct_fuse_config    = C.struct_fuse_config
 	c_struct_fuse_conn_info = C.struct_fuse_conn_info
 	c_struct_fuse_context   = C.struct_fuse_context
 	c_struct_fuse_file_info = C.struct_fuse_file_info
@@ -765,6 +893,11 @@ func c_hostAsgnCconninfo(conn *c_struct_fuse_conn_info,
 	capReaddirPlus c_bool,
 	capDeleteAccess c_bool) {
 	C.hostAsgnCconninfo(conn, capCaseInsensitive, capReaddirPlus, capDeleteAccess)
+}
+func c_hostAsgnCconfig(cfg *c_struct_fuse_config,
+	directIO c_bool,
+	useIno c_bool) {
+	C.hostAsgnCconfig(cfg, directIO, useIno)
 }
 func c_hostCstatvfsFromFusestatfs(stbuf *c_fuse_statvfs_t,
 	bsize c_uint64_t,
@@ -867,9 +1000,15 @@ func c_hostOptParse(args *c_struct_fuse_args, data unsafe.Pointer, opts *c_struc
 	return C.hostOptParse(args, data, opts, nonopts)
 }
 
-//export go_hostGetattr
-func go_hostGetattr(path0 *c_char, stat0 *c_fuse_stat_t) (errc0 c_int) {
-	return hostGetattr(path0, stat0)
+//export go_hostGetattrFuse3
+func go_hostGetattrFuse3(path0 *c_char, stat0 *c_fuse_stat_t,
+	fi0 *c_struct_fuse_file_info) (errc0 c_int) {
+	return hostGetattr(path0, stat0, fi0)
+}
+
+//export go_hostGetattrFuse2
+func go_hostGetattrFuse2(path0 *c_char, stat0 *c_fuse_stat_t) (errc0 c_int) {
+	return hostGetattr(path0, stat0, nil)
 }
 
 //export go_hostReadlink
@@ -902,9 +1041,14 @@ func go_hostSymlink(target0 *c_char, newpath0 *c_char) (errc0 c_int) {
 	return hostSymlink(target0, newpath0)
 }
 
-//export go_hostRename
-func go_hostRename(oldpath0 *c_char, newpath0 *c_char) (errc0 c_int) {
-	return hostRename(oldpath0, newpath0)
+//export go_hostRenameFuse3
+func go_hostRenameFuse3(oldpath0 *c_char, newpath0 *c_char, flags c_uint32_t) (errc0 c_int) {
+	return hostRename(oldpath0, newpath0, flags)
+}
+
+//export go_hostRenameFuse2
+func go_hostRenameFuse2(oldpath0 *c_char, newpath0 *c_char) (errc0 c_int) {
+	return hostRename(oldpath0, newpath0, 0)
 }
 
 //export go_hostLink
@@ -912,19 +1056,35 @@ func go_hostLink(oldpath0 *c_char, newpath0 *c_char) (errc0 c_int) {
 	return hostLink(oldpath0, newpath0)
 }
 
-//export go_hostChmod
-func go_hostChmod(path0 *c_char, mode0 c_fuse_mode_t) (errc0 c_int) {
-	return hostChmod(path0, mode0)
+//export go_hostChmodFuse3
+func go_hostChmodFuse3(path0 *c_char, mode0 c_fuse_mode_t, fi0 *c_struct_fuse_file_info) (errc0 c_int) {
+	return hostChmod(path0, mode0, fi0)
 }
 
-//export go_hostChown
-func go_hostChown(path0 *c_char, uid0 c_fuse_uid_t, gid0 c_fuse_gid_t) (errc0 c_int) {
-	return hostChown(path0, uid0, gid0)
+//export go_hostChmodFuse2
+func go_hostChmodFuse2(path0 *c_char, mode0 c_fuse_mode_t) (errc0 c_int) {
+	return hostChmod(path0, mode0, nil)
 }
 
-//export go_hostTruncate
-func go_hostTruncate(path0 *c_char, size0 c_fuse_off_t) (errc0 c_int) {
-	return hostTruncate(path0, size0)
+//export go_hostChownFuse3
+func go_hostChownFuse3(path0 *c_char, uid0 c_fuse_uid_t, gid0 c_fuse_gid_t, fi0 *c_struct_fuse_file_info) (errc0 c_int) {
+	return hostChown(path0, uid0, gid0, fi0)
+}
+
+//export go_hostChownFuse2
+func go_hostChownFuse2(path0 *c_char, uid0 c_fuse_uid_t, gid0 c_fuse_gid_t) (errc0 c_int) {
+	return hostChown(path0, uid0, gid0, nil)
+}
+
+//export go_hostTruncateFuse3
+func go_hostTruncateFuse3(path0 *c_char, size0 c_fuse_off_t,
+	fi0 *c_struct_fuse_file_info) (errc0 c_int) {
+	return hostTruncate(path0, size0, fi0)
+}
+
+//export go_hostTruncateFuse2
+func go_hostTruncateFuse2(path0 *c_char, size0 c_fuse_off_t) (errc0 c_int) {
+	return hostTruncate(path0, size0, nil)
 }
 
 //export go_hostOpen
@@ -990,11 +1150,18 @@ func go_hostOpendir(path0 *c_char, fi0 *c_struct_fuse_file_info) (errc0 c_int) {
 	return hostOpendir(path0, fi0)
 }
 
-//export go_hostReaddir
-func go_hostReaddir(path0 *c_char,
+//export go_hostReaddirFuse3
+func go_hostReaddirFuse3(path0 *c_char,
+	buff0 unsafe.Pointer, fill0 c_fuse_fill_dir_t, ofst0 c_fuse_off_t,
+	fi0 *c_struct_fuse_file_info, flags c_fuse_readdir_flags_t) (errc0 c_int) {
+	return hostReaddir(path0, buff0, fill0, ofst0, fi0, flags)
+}
+
+//export go_hostReaddirFuse2
+func go_hostReaddirFuse2(path0 *c_char,
 	buff0 unsafe.Pointer, fill0 c_fuse_fill_dir_t, ofst0 c_fuse_off_t,
 	fi0 *c_struct_fuse_file_info) (errc0 c_int) {
-	return hostReaddir(path0, buff0, fill0, ofst0, fi0)
+	return hostReaddir(path0, buff0, fill0, ofst0, fi0, 0)
 }
 
 //export go_hostReleasedir
@@ -1007,9 +1174,14 @@ func go_hostFsyncdir(path0 *c_char, datasync c_int, fi0 *c_struct_fuse_file_info
 	return hostFsyncdir(path0, datasync, fi0)
 }
 
-//export go_hostInit
-func go_hostInit(conn0 *c_struct_fuse_conn_info) (user_data unsafe.Pointer) {
-	return hostInit(conn0)
+//export go_hostInitFuse3
+func go_hostInitFuse3(conn0 *c_struct_fuse_conn_info, conf0 *c_struct_fuse_config) (user_data unsafe.Pointer) {
+	return hostInit(conn0, conf0)
+}
+
+//export go_hostInitFuse2
+func go_hostInitFuse2(conn0 *c_struct_fuse_conn_info) (user_data unsafe.Pointer) {
+	return hostInit(conn0, nil)
 }
 
 //export go_hostDestroy
@@ -1039,9 +1211,14 @@ func go_hostFgetattr(path0 *c_char, stat0 *c_fuse_stat_t,
 	return hostFgetattr(path0, stat0, fi0)
 }
 
-//export go_hostUtimens
-func go_hostUtimens(path0 *c_char, tmsp0 *c_fuse_timespec_t) (errc0 c_int) {
-	return hostUtimens(path0, tmsp0)
+//export go_hostUtimensFuse3
+func go_hostUtimensFuse3(path0 *c_char, tmsp0 *c_fuse_timespec_t, fi0 *c_struct_fuse_file_info) (errc0 c_int) {
+	return hostUtimens(path0, tmsp0, fi0)
+}
+
+//export go_hostUtimensFuse2
+func go_hostUtimensFuse2(path0 *c_char, tmsp0 *c_fuse_timespec_t) (errc0 c_int) {
+	return hostUtimens(path0, tmsp0, nil)
 }
 
 //export go_hostGetpath

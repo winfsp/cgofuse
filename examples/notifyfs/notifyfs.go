@@ -100,7 +100,7 @@ func (self *Notifyfs) Read(path string, buff []byte, ofst int64, fh uint64) (n i
 func (self *Notifyfs) Readdir(path string,
 	fill func(name string, stat *fuse.Stat_t, ofst int64) bool,
 	ofst int64,
-	fh uint64) (errc int) {
+	fh uint64, flags uint32) (errc int) {
 	fill(".", nil, 0)
 	fill("..", nil, 0)
 	count := self.count()

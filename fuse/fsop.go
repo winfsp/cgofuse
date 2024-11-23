@@ -12,6 +12,10 @@
 
 // Package fuse allows the creation of user mode file systems in Go.
 //
+// This packages supports both FUSE2 and FUSE3 on Linux and FUSE2 on Windows and macOS.
+// By default, cgofuse will link with FUSE2. To link with FUSE3, simply add '-tags=fuse3'
+// to your 'go build' flags.
+//
 // A user mode file system is a user mode process that receives file system operations
 // from the OS FUSE layer and satisfies them in user mode. A user mode file system
 // implements the interface FileSystemInterface either directly or by embedding a
@@ -235,16 +239,16 @@ type FileSystemInterface interface {
 	Readlink(path string) (int, string)
 
 	// Rename renames a file.
-	Rename(oldpath string, newpath string) int
+	Rename(oldpath string, newpath string, flags uint32) int
 
 	// Chmod changes the permission bits of a file.
-	Chmod(path string, mode uint32) int
+	Chmod(path string, mode uint32, fh uint64) int
 
 	// Chown changes the owner and group of a file.
-	Chown(path string, uid uint32, gid uint32) int
+	Chown(path string, uid uint32, gid uint32, fh uint64) int
 
 	// Utimens changes the access and modification times of a file.
-	Utimens(path string, tmsp []Timespec) int
+	Utimens(path string, tmsp []Timespec, fh uint64) int
 
 	// Access checks file access permissions.
 	Access(path string, mask uint32) int
@@ -288,7 +292,7 @@ type FileSystemInterface interface {
 	Readdir(path string,
 		fill func(name string, stat *Stat_t, ofst int64) bool,
 		ofst int64,
-		fh uint64) int
+		fh uint64, flags uint32) int
 
 	// Releasedir closes an open directory.
 	Releasedir(path string, fh uint64) int
@@ -450,25 +454,25 @@ func (*FileSystemBase) Readlink(path string) (int, string) {
 
 // Rename renames a file.
 // The FileSystemBase implementation returns -ENOSYS.
-func (*FileSystemBase) Rename(oldpath string, newpath string) int {
+func (*FileSystemBase) Rename(oldpath string, newpath string, flags uint32) int {
 	return -ENOSYS
 }
 
 // Chmod changes the permission bits of a file.
 // The FileSystemBase implementation returns -ENOSYS.
-func (*FileSystemBase) Chmod(path string, mode uint32) int {
+func (*FileSystemBase) Chmod(path string, mode uint32, fh uint64) int {
 	return -ENOSYS
 }
 
 // Chown changes the owner and group of a file.
 // The FileSystemBase implementation returns -ENOSYS.
-func (*FileSystemBase) Chown(path string, uid uint32, gid uint32) int {
+func (*FileSystemBase) Chown(path string, uid uint32, gid uint32, fh uint64) int {
 	return -ENOSYS
 }
 
 // Utimens changes the access and modification times of a file.
 // The FileSystemBase implementation returns -ENOSYS.
-func (*FileSystemBase) Utimens(path string, tmsp []Timespec) int {
+func (*FileSystemBase) Utimens(path string, tmsp []Timespec, fh uint64) int {
 	return -ENOSYS
 }
 
@@ -553,7 +557,7 @@ func (*FileSystemBase) Opendir(path string) (int, uint64) {
 func (*FileSystemBase) Readdir(path string,
 	fill func(name string, stat *Stat_t, ofst int64) bool,
 	ofst int64,
-	fh uint64) int {
+	fh uint64, flags uint32) int {
 	return -ENOSYS
 }
 

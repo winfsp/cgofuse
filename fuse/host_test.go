@@ -47,7 +47,7 @@ func (self *testfs) Getattr(path string, stat *Stat_t, fh uint64) (errc int) {
 func (self *testfs) Readdir(path string,
 	fill func(name string, stat *Stat_t, ofst int64) bool,
 	ofst int64,
-	fh uint64) (errc int) {
+	fh uint64, flags uint32) (errc int) {
 	fill(".", nil, 0)
 	fill("..", nil, 0)
 	return 0
