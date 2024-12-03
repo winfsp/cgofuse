@@ -239,16 +239,16 @@ type FileSystemInterface interface {
 	Readlink(path string) (int, string)
 
 	// Rename renames a file.
-	Rename(oldpath string, newpath string, flags uint32) int
+	Rename(oldpath string, newpath string) int
 
 	// Chmod changes the permission bits of a file.
-	Chmod(path string, mode uint32, fh uint64) int
+	Chmod(path string, mode uint32) int
 
 	// Chown changes the owner and group of a file.
-	Chown(path string, uid uint32, gid uint32, fh uint64) int
+	Chown(path string, uid uint32, gid uint32) int
 
 	// Utimens changes the access and modification times of a file.
-	Utimens(path string, tmsp []Timespec, fh uint64) int
+	Utimens(path string, tmsp []Timespec) int
 
 	// Access checks file access permissions.
 	Access(path string, mask uint32) int
@@ -292,7 +292,7 @@ type FileSystemInterface interface {
 	Readdir(path string,
 		fill func(name string, stat *Stat_t, ofst int64) bool,
 		ofst int64,
-		fh uint64, flags uint32) int
+		fh uint64) int
 
 	// Releasedir closes an open directory.
 	Releasedir(path string, fh uint64) int
@@ -311,6 +311,25 @@ type FileSystemInterface interface {
 
 	// Listxattr lists extended attributes.
 	Listxattr(path string, fill func(name string) bool) int
+}
+
+// FileSystemFuse3 is the interface that wraps the fuse3 equivalent methods.
+//
+// ChmodFuse3, ChownFuse3, and UtimensFuse3 each similar to Chmod, Chown, and
+// Utimens except they include a file handle that could be null and only work
+// on with Fuse3.
+//
+// RenameFuse3 and ReaddirFuse3 are similar to Rename and Readir except that they
+// include additional flags.
+type FileSystemFuse3 interface {
+	ChmodFuse3(path string, mode uint32, fh uint64) int
+	ChownFuse3(path string, uid uint32, gid uint32, fh uint64) int
+	UtimensFuse3(path string, tmsp []Timespec, fh uint64) int
+	RenameFuse3(oldpath string, newpath string, flags uint32) int
+	ReaddirFuse3(path string,
+		fill func(name string, stat *Stat_t, ofst int64) bool,
+		ofst int64,
+		fh uint64, flags uint32) int
 }
 
 // FileSystemOpenEx is the interface that wraps the OpenEx and CreateEx methods.
@@ -454,25 +473,25 @@ func (*FileSystemBase) Readlink(path string) (int, string) {
 
 // Rename renames a file.
 // The FileSystemBase implementation returns -ENOSYS.
-func (*FileSystemBase) Rename(oldpath string, newpath string, flags uint32) int {
+func (*FileSystemBase) Rename(oldpath string, newpath string) int {
 	return -ENOSYS
 }
 
 // Chmod changes the permission bits of a file.
 // The FileSystemBase implementation returns -ENOSYS.
-func (*FileSystemBase) Chmod(path string, mode uint32, fh uint64) int {
+func (*FileSystemBase) Chmod(path string, mode uint32) int {
 	return -ENOSYS
 }
 
 // Chown changes the owner and group of a file.
 // The FileSystemBase implementation returns -ENOSYS.
-func (*FileSystemBase) Chown(path string, uid uint32, gid uint32, fh uint64) int {
+func (*FileSystemBase) Chown(path string, uid uint32, gid uint32) int {
 	return -ENOSYS
 }
 
 // Utimens changes the access and modification times of a file.
 // The FileSystemBase implementation returns -ENOSYS.
-func (*FileSystemBase) Utimens(path string, tmsp []Timespec, fh uint64) int {
+func (*FileSystemBase) Utimens(path string, tmsp []Timespec) int {
 	return -ENOSYS
 }
 
@@ -557,7 +576,7 @@ func (*FileSystemBase) Opendir(path string) (int, uint64) {
 func (*FileSystemBase) Readdir(path string,
 	fill func(name string, stat *Stat_t, ofst int64) bool,
 	ofst int64,
-	fh uint64, flags uint32) int {
+	fh uint64) int {
 	return -ENOSYS
 }
 

@@ -64,7 +64,7 @@ func (self *Hellofs) Read(path string, buff []byte, ofst int64, fh uint64) (n in
 
 func (self *Hellofs) Readdir(path string,
 	fill func(name string, stat *fuse.Stat_t, ofst int64) bool,
-	ofst int64, fh uint64, flags uint32) (errc int) {
+	ofst int64, fh uint64) (errc int) {
 	fill(".", nil, 0)
 	fill("..", nil, 0)
 	fill(filename, nil, 0)

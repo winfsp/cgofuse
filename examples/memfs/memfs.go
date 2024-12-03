@@ -165,7 +165,7 @@ func (self *Memfs) Readlink(path string) (errc int, target string) {
 	return 0, string(node.data)
 }
 
-func (self *Memfs) Rename(oldpath string, newpath string, flags uint32) (errc int) {
+func (self *Memfs) Rename(oldpath string, newpath string) (errc int) {
 	defer trace(oldpath, newpath)(&errc)
 	defer self.synchronize()()
 	oldprnt, oldname, oldnode := self.lookupNode(oldpath, nil)
@@ -194,7 +194,7 @@ func (self *Memfs) Rename(oldpath string, newpath string, flags uint32) (errc in
 	return 0
 }
 
-func (self *Memfs) Chmod(path string, mode uint32, fh uint64) (errc int) {
+func (self *Memfs) Chmod(path string, mode uint32) (errc int) {
 	defer trace(path, mode)(&errc)
 	defer self.synchronize()()
 	_, _, node := self.lookupNode(path, nil)
@@ -206,7 +206,7 @@ func (self *Memfs) Chmod(path string, mode uint32, fh uint64) (errc int) {
 	return 0
 }
 
-func (self *Memfs) Chown(path string, uid uint32, gid uint32, fh uint64) (errc int) {
+func (self *Memfs) Chown(path string, uid uint32, gid uint32) (errc int) {
 	defer trace(path, uid, gid)(&errc)
 	defer self.synchronize()()
 	_, _, node := self.lookupNode(path, nil)
@@ -223,7 +223,7 @@ func (self *Memfs) Chown(path string, uid uint32, gid uint32, fh uint64) (errc i
 	return 0
 }
 
-func (self *Memfs) Utimens(path string, tmsp []fuse.Timespec, fh uint64) (errc int) {
+func (self *Memfs) Utimens(path string, tmsp []fuse.Timespec) (errc int) {
 	defer trace(path, tmsp)(&errc)
 	defer self.synchronize()()
 	_, _, node := self.lookupNode(path, nil)
@@ -326,7 +326,7 @@ func (self *Memfs) Opendir(path string) (errc int, fh uint64) {
 func (self *Memfs) Readdir(path string,
 	fill func(name string, stat *fuse.Stat_t, ofst int64) bool,
 	ofst int64,
-	fh uint64, flags uint32) (errc int) {
+	fh uint64) (errc int) {
 	defer trace(path, fill, ofst, fh)(&errc)
 	defer self.synchronize()()
 	node := self.openmap[fh]
