@@ -12,6 +12,10 @@
 
 // Package fuse allows the creation of user mode file systems in Go.
 //
+// This packages supports both FUSE2 and FUSE3 on Linux and FUSE2 on Windows and macOS.
+// By default, cgofuse will link with FUSE2. To link with FUSE3, simply add '-tags=fuse3'
+// to your 'go build' flags.
+//
 // A user mode file system is a user mode process that receives file system operations
 // from the OS FUSE layer and satisfies them in user mode. A user mode file system
 // implements the interface FileSystemInterface either directly or by embedding a
@@ -307,6 +311,25 @@ type FileSystemInterface interface {
 
 	// Listxattr lists extended attributes.
 	Listxattr(path string, fill func(name string) bool) int
+}
+
+// FileSystemFuse3 is the interface that wraps the fuse3 equivalent methods.
+//
+// ChmodFuse3, ChownFuse3, and UtimensFuse3 each similar to Chmod, Chown, and
+// Utimens except they include a file handle that could be null and only work
+// on with Fuse3.
+//
+// RenameFuse3 and ReaddirFuse3 are similar to Rename and Readir except that they
+// include additional flags.
+type FileSystemFuse3 interface {
+	ChmodFuse3(path string, mode uint32, fh uint64) int
+	ChownFuse3(path string, uid uint32, gid uint32, fh uint64) int
+	UtimensFuse3(path string, tmsp []Timespec, fh uint64) int
+	RenameFuse3(oldpath string, newpath string, flags uint32) int
+	ReaddirFuse3(path string,
+		fill func(name string, stat *Stat_t, ofst int64) bool,
+		ofst int64,
+		fh uint64, flags uint32) int
 }
 
 // FileSystemOpenEx is the interface that wraps the OpenEx and CreateEx methods.

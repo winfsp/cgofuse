@@ -1,3 +1,4 @@
+//go:build darwin || freebsd || netbsd || openbsd || linux
 // +build darwin freebsd netbsd openbsd linux
 
 /*
@@ -264,5 +265,6 @@ func main() {
 		args = append(args[:len(args)-2], args[len(args)-1])
 	}
 	_host = fuse.NewFileSystemHost(&ptfs)
+	_host.SetUseIno(true)
 	_host.Mount("", args[1:])
 }
