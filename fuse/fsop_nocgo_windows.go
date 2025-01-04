@@ -161,6 +161,19 @@ const (
 	XATTR_REPLACE = 2
 )
 
+// Flags used in Utimens and Utimens3.
+const (
+	UTIME_NOW  = (1 << 30) - 1
+	UTIME_OMIT = (1 << 30) - 2
+)
+
+// Flags used in FileSystemRename3.Rename3.
+const (
+	RENAME_NOREPLACE = 1 << 0
+	RENAME_EXCHANGE  = 1 << 1
+	RENAME_WHITEOUT  = 1 << 2
+)
+
 // Notify actions.
 const (
 	NOTIFY_MKDIR    = 0x0001

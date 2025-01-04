@@ -86,26 +86,6 @@ type fuse_operations struct {
 	fsetattr_x  uintptr
 }
 
-type fuse_readdir_flags_t struct {
-	st_dev      c_fuse_dev_t
-	_           align64
-	st_ino      c_fuse_ino_t
-	st_mode     c_fuse_mode_t
-	st_nlink    c_fuse_nlink_t
-	st_uid      c_fuse_uid_t
-	st_gid      c_fuse_gid_t
-	st_rdev     c_fuse_dev_t
-	_           align64
-	st_size     c_fuse_off_t
-	st_atim     c_fuse_timespec_t
-	st_mtim     c_fuse_timespec_t
-	st_ctim     c_fuse_timespec_t
-	st_blksize  c_fuse_blksize_t
-	_           align64
-	st_blocks   c_fuse_blkcnt_t
-	st_birthtim c_fuse_timespec_t
-}
-
 type fuse_stat_t struct {
 	st_dev      c_fuse_dev_t
 	_           align64
@@ -163,31 +143,6 @@ type struct_fuse_args struct {
 }
 
 type struct_fuse_config struct {
-	set_gid                c_int
-	gid                    c_unsigned
-	set_uid                c_int
-	uid                    c_unsigned
-	set_mode               c_int
-	umask                  c_unsigned
-	entry_timeout          c_double
-	negative_timeout       c_double
-	attr_timeout           c_double
-	intr                   c_int
-	intr_signal            c_int
-	remember               c_int
-	hard_remove            c_int
-	use_ino                c_int
-	readdir_ino            c_int
-	direct_io              c_int
-	kernel_cache           c_int
-	auto_cache             c_int
-	no_rofd_flush          c_int
-	ac_attr_timeout_set    c_int
-	ac_attr_timeout        c_double
-	nullpath_ok            c_int
-	parallel_direct_writes c_int
-	fmask                  c_unsigned
-	dmask                  c_unsigned
 }
 
 type struct_fuse_conn_info struct {
@@ -228,7 +183,6 @@ type struct_fuse_opt struct {
 type (
 	c_bool                  = bool
 	c_char                  = byte
-	c_double                = float64
 	c_fuse_blkcnt_t         = int64
 	c_fuse_blksize_t        = int32
 	c_fuse_dev_t            = uint32
@@ -242,7 +196,6 @@ type (
 	c_fuse_off_t            = int64
 	c_fuse_opt_offset_t     = uint32
 	c_fuse_pid_t            = int32
-	c_fuse_readdir_flags_t  = uintptr
 	c_fuse_stat_t           = fuse_stat_t
 	c_fuse_stat_ex_t        = fuse_stat_ex_t
 	c_fuse_statvfs_t        = fuse_statvfs_t
@@ -356,7 +309,8 @@ func c_fuse_opt_free_args(args *c_struct_fuse_args) {
 func c_hostAsgnCconninfo(conn *c_struct_fuse_conn_info,
 	capCaseInsensitive c_bool,
 	capReaddirPlus c_bool,
-	capDeleteAccess c_bool) {
+	capDeleteAccess c_bool,
+	capOpenTrunc c_bool) {
 	conn.want |= conn.capable & FSP_FUSE_CAP_STAT_EX
 	cgofuse_stat_ex = 0 != conn.want&FSP_FUSE_CAP_STAT_EX // hack!
 	if capCaseInsensitive {
@@ -369,7 +323,7 @@ func c_hostAsgnCconninfo(conn *c_struct_fuse_conn_info,
 		conn.want |= conn.capable & FSP_FUSE_CAP_DELETE_ACCESS
 	}
 }
-func c_hostAsgnCconfig(cfg *c_struct_fuse_config,
+func c_hostAsgnCconfig(conf *c_struct_fuse_config,
 	directIO c_bool,
 	useIno c_bool) {
 }
@@ -839,7 +793,7 @@ func go_hostOpendir64(path0 *c_char, fi0 *c_struct_fuse_file_info) (errc0 uintpt
 func go_hostReaddir64(path0 *c_char,
 	buff0 unsafe.Pointer, fill0 c_fuse_fill_dir_t, ofst0 uintptr,
 	fi0 *c_struct_fuse_file_info) (errc0 uintptr) {
-	return uintptr(int(hostReaddir(path0, buff0, fill0, c_fuse_off_t(ofst0), fi0, 0)))
+	return uintptr(int(hostReaddir(path0, buff0, fill0, c_fuse_off_t(ofst0), fi0)))
 }
 
 func go_hostReleasedir64(path0 *c_char, fi0 *c_struct_fuse_file_info) (errc0 uintptr) {
@@ -1006,7 +960,7 @@ func go_hostReaddir32(path0 *c_char,
 	buff0 unsafe.Pointer, fill0 c_fuse_fill_dir_t, lofst0, hofst0 uintptr,
 	fi0 *c_struct_fuse_file_info) (errc0 uintptr) {
 	return uintptr(int(hostReaddir(path0,
-		buff0, fill0, (c_fuse_off_t(hofst0)<<32)|c_fuse_off_t(lofst0), fi0, 0)))
+		buff0, fill0, (c_fuse_off_t(hofst0)<<32)|c_fuse_off_t(lofst0), fi0)))
 }
 
 func go_hostReleasedir32(path0 *c_char, fi0 *c_struct_fuse_file_info) (errc0 uintptr) {

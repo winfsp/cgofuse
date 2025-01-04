@@ -31,8 +31,12 @@ type FileSystemHost struct {
 	mntp string
 	sigc chan os.Signal
 
-	capCaseInsensitive, capReaddirPlus, capDeleteAccess bool
-	directIO, useIno                                    bool
+	capCaseInsensitive bool
+	capReaddirPlus     bool
+	capDeleteAccess    bool
+	capOpenTrunc       bool
+	directIO           bool
+	useIno             bool
 }
 
 var (
@@ -112,8 +116,7 @@ func recoverAsErrno(errc0 *c_int) {
 	}
 }
 
-func hostGetattr(path0 *c_char, stat0 *c_fuse_stat_t,
-	fi0 *c_struct_fuse_file_info) (errc0 c_int) {
+func hostGetattr(path0 *c_char, stat0 *c_fuse_stat_t, fi0 *c_struct_fuse_file_info) (errc0 c_int) {
 	defer recoverAsErrno(&errc0)
 	fsop := hostHandleGet(c_fuse_get_context().private_data).fsop
 	path := c_GoString(path0)
@@ -185,11 +188,15 @@ func hostRename(oldpath0 *c_char, newpath0 *c_char, flags c_uint32_t) (errc0 c_i
 	defer recoverAsErrno(&errc0)
 	fsop := hostHandleGet(c_fuse_get_context().private_data).fsop
 	oldpath, newpath := c_GoString(oldpath0), c_GoString(newpath0)
-	intf, ok := fsop.(FileSystemFuse3)
+	intf, ok := fsop.(FileSystemRename3)
 	if ok {
-		errc := intf.RenameFuse3(oldpath, newpath, uint32(flags))
+		errc := intf.Rename3(oldpath, newpath, uint32(flags))
 		return c_int(errc)
 	} else {
+		if 0 != flags {
+			// man 2 rename: EINVAL when "the filesystem does not support one of the flags"
+			return -c_int(EINVAL)
+		}
 		errc := fsop.Rename(oldpath, newpath)
 		return c_int(errc)
 	}
@@ -207,13 +214,13 @@ func hostChmod(path0 *c_char, mode0 c_fuse_mode_t, fi0 *c_struct_fuse_file_info)
 	defer recoverAsErrno(&errc0)
 	fsop := hostHandleGet(c_fuse_get_context().private_data).fsop
 	path := c_GoString(path0)
-	intf, ok := fsop.(FileSystemFuse3)
+	intf, ok := fsop.(FileSystemChmod3)
 	if ok {
 		fifh := ^uint64(0)
 		if nil != fi0 {
 			fifh = uint64(fi0.fh)
 		}
-		errc := intf.ChmodFuse3(path, uint32(mode0), fifh)
+		errc := intf.Chmod3(path, uint32(mode0), fifh)
 		return c_int(errc)
 	} else {
 		errc := fsop.Chmod(path, uint32(mode0))
@@ -225,13 +232,13 @@ func hostChown(path0 *c_char, uid0 c_fuse_uid_t, gid0 c_fuse_gid_t, fi0 *c_struc
 	defer recoverAsErrno(&errc0)
 	fsop := hostHandleGet(c_fuse_get_context().private_data).fsop
 	path := c_GoString(path0)
-	intf, ok := fsop.(FileSystemFuse3)
+	intf, ok := fsop.(FileSystemChown3)
 	if ok {
 		fifh := ^uint64(0)
 		if nil != fi0 {
 			fifh = uint64(fi0.fh)
 		}
-		errc := intf.ChownFuse3(path, uint32(uid0), uint32(gid0), fifh)
+		errc := intf.Chown3(path, uint32(uid0), uint32(gid0), fifh)
 		return c_int(errc)
 	} else {
 		errc := fsop.Chown(path, uint32(uid0), uint32(gid0))
@@ -411,7 +418,7 @@ func hostOpendir(path0 *c_char, fi0 *c_struct_fuse_file_info) (errc0 c_int) {
 }
 
 func hostReaddir(path0 *c_char, buff0 unsafe.Pointer, fill0 c_fuse_fill_dir_t, ofst0 c_fuse_off_t,
-	fi0 *c_struct_fuse_file_info, flags c_fuse_readdir_flags_t) (errc0 c_int) {
+	fi0 *c_struct_fuse_file_info) (errc0 c_int) {
 	defer recoverAsErrno(&errc0)
 	fsop := hostHandleGet(c_fuse_get_context().private_data).fsop
 	path := c_GoString(path0)
@@ -427,14 +434,8 @@ func hostReaddir(path0 *c_char, buff0 unsafe.Pointer, fill0 c_fuse_fill_dir_t, o
 			return 0 == c_hostFilldir(fill0, buff0, name, stat, c_fuse_off_t(off1))
 		}
 	}
-	intf, ok := fsop.(FileSystemFuse3)
-	if ok {
-		errc := intf.ReaddirFuse3(path, fill, int64(ofst0), uint64(fi0.fh), uint32(flags))
-		return c_int(errc)
-	} else {
-		errc := fsop.Readdir(path, fill, int64(ofst0), uint64(fi0.fh))
-		return c_int(errc)
-	}
+	errc := fsop.Readdir(path, fill, int64(ofst0), uint64(fi0.fh))
+	return c_int(errc)
 }
 
 func hostReleasedir(path0 *c_char, fi0 *c_struct_fuse_file_info) (errc0 c_int) {
@@ -456,7 +457,7 @@ func hostFsyncdir(path0 *c_char, datasync c_int, fi0 *c_struct_fuse_file_info) (
 	return c_int(errc)
 }
 
-func hostInit(conn0 *c_struct_fuse_conn_info, cfg *c_struct_fuse_config) (user_data unsafe.Pointer) {
+func hostInit(conn0 *c_struct_fuse_conn_info, conf0 *c_struct_fuse_config) (user_data unsafe.Pointer) {
 	defer func() {
 		recover()
 	}()
@@ -467,8 +468,9 @@ func hostInit(conn0 *c_struct_fuse_conn_info, cfg *c_struct_fuse_config) (user_d
 	c_hostAsgnCconninfo(conn0,
 		c_bool(host.capCaseInsensitive),
 		c_bool(host.capReaddirPlus),
-		c_bool(host.capDeleteAccess))
-	c_hostAsgnCconfig(cfg,
+		c_bool(host.capDeleteAccess),
+		c_bool(host.capOpenTrunc))
+	c_hostAsgnCconfig(conf0,
 		c_bool(host.directIO),
 		c_bool(host.useIno))
 	if nil != host.sigc {
@@ -557,35 +559,29 @@ func hostUtimens(path0 *c_char, tmsp0 *c_fuse_timespec_t, fi0 *c_struct_fuse_fil
 	defer recoverAsErrno(&errc0)
 	fsop := hostHandleGet(c_fuse_get_context().private_data).fsop
 	path := c_GoString(path0)
-	intf, ok := fsop.(FileSystemFuse3)
+	tmsp := [2]Timespec{}
+	if nil == tmsp0 {
+		tmsp[0] = Now()
+		tmsp[1] = tmsp[0]
+	} else if tmsa := (*[2]c_fuse_timespec_t)(unsafe.Pointer(tmsp0)); UTIME_NOW == tmsa[0].tv_nsec &&
+		UTIME_NOW == tmsa[1].tv_nsec {
+		tmsp[0] = Now()
+		tmsp[1] = tmsp[0]
+	} else {
+		copyFusetimespecFromCtimespec(&tmsp[0], &tmsa[0])
+		copyFusetimespecFromCtimespec(&tmsp[1], &tmsa[1])
+	}
+	intf, ok := fsop.(FileSystemUtimens3)
 	if ok {
 		fifh := ^uint64(0)
 		if nil != fi0 {
 			fifh = uint64(fi0.fh)
 		}
-		if tmsp0 == nil {
-			errc := intf.UtimensFuse3(path, nil, fifh)
-			return c_int(errc)
-		} else {
-			tmsp := [2]Timespec{}
-			tmsa := (*[2]c_fuse_timespec_t)(unsafe.Pointer(tmsp0))
-			copyFusetimespecFromCtimespec(&tmsp[0], &tmsa[0])
-			copyFusetimespecFromCtimespec(&tmsp[1], &tmsa[1])
-			errc := intf.UtimensFuse3(path, tmsp[:], fifh)
-			return c_int(errc)
-		}
+		errc := intf.Utimens3(path, tmsp[:], fifh)
+		return c_int(errc)
 	} else {
-		if tmsp0 == nil {
-			errc := fsop.Utimens(path, nil)
-			return c_int(errc)
-		} else {
-			tmsp := [2]Timespec{}
-			tmsa := (*[2]c_fuse_timespec_t)(unsafe.Pointer(tmsp0))
-			copyFusetimespecFromCtimespec(&tmsp[0], &tmsa[0])
-			copyFusetimespecFromCtimespec(&tmsp[1], &tmsa[1])
-			errc := fsop.Utimens(path, tmsp[:])
-			return c_int(errc)
-		}
+		errc := fsop.Utimens(path, tmsp[:])
+		return c_int(errc)
 	}
 }
 
@@ -682,13 +678,19 @@ func (host *FileSystemHost) SetCapDeleteAccess(value bool) {
 	host.capDeleteAccess = value
 }
 
-// SetDirectIO causes the file system to disable page caching [Fuse3 only]. Must be set
+// SetCapOpenTrunc informs the host that the hosted file system can handle the O_TRUNC
+// Open flag [Linux only].
+func (host *FileSystemHost) SetCapOpenTrunc(value bool) {
+	host.capOpenTrunc = value
+}
+
+// SetDirectIO causes the file system to disable page caching [FUSE3 only]. Must be set
 // before Mount is called.
 func (host *FileSystemHost) SetDirectIO(value bool) {
 	host.directIO = value
 }
 
-// SetUseIno causes the file system to use its own inode values [Fuse3 only]. Must be set
+// SetUseIno causes the file system to use its own inode values [FUSE3 only]. Must be set
 // before Mount is called.
 func (host *FileSystemHost) SetUseIno(value bool) {
 	host.useIno = value
@@ -699,10 +701,10 @@ func (host *FileSystemHost) SetUseIno(value bool) {
 // Many of the mount options in opts are specific to the underlying FUSE implementation.
 // Some of the common options include:
 //
-//	-h   --help            print help
-//	-V   --version         print FUSE version
-//	-d   -o debug          enable FUSE debug output
-//	-s                     disable multi-threaded operation
+//     -h   --help            print help
+//     -V   --version         print FUSE version
+//     -d   -o debug          enable FUSE debug output
+//     -s                     disable multi-threaded operation
 //
 // Please refer to the individual FUSE implementation documentation for additional options.
 //
@@ -912,48 +914,49 @@ func optNormStr(opt string) string {
 //
 // For pointer to bool types:
 //
-//	-x                       Match -x without parameter.
-//	-foo --foo               As above for -foo or --foo.
-//	foo                      Match "-o foo".
-//	-x= -foo= --foo= foo=    Match option with parameter.
-//	-x=%VERB ... foo=%VERB   Match option with parameter of syntax.
-//	                         Allowed verbs: d,o,x,X,v
-//	                         - d,o,x,X: set to true if parameter non-0.
-//	                         - v: set to true if parameter present.
+//     -x                       Match -x without parameter.
+//     -foo --foo               As above for -foo or --foo.
+//     foo                      Match "-o foo".
+//     -x= -foo= --foo= foo=    Match option with parameter.
+//     -x=%VERB ... foo=%VERB   Match option with parameter of syntax.
+//                              Allowed verbs: d,o,x,X,v
+//                              - d,o,x,X: set to true if parameter non-0.
+//                              - v: set to true if parameter present.
 //
-//	The formats -x=, and -x=%v are equivalent.
+//     The formats -x=, and -x=%v are equivalent.
 //
 // For pointer to other types:
 //
-//	-x                       Match -x with parameter (-x=PARAM).
-//	-foo --foo               As above for -foo or --foo.
-//	foo                      Match "-o foo=PARAM".
-//	-x= -foo= --foo= foo=    Match option with parameter.
-//	-x=%VERB ... foo=%VERB   Match option with parameter of syntax.
-//	                         Allowed verbs for pointer to int types: d,o,x,X,v
-//	                         Allowed verbs for pointer to string types: s,v
+//     -x                       Match -x with parameter (-x=PARAM).
+//     -foo --foo               As above for -foo or --foo.
+//     foo                      Match "-o foo=PARAM".
+//     -x= -foo= --foo= foo=    Match option with parameter.
+//     -x=%VERB ... foo=%VERB   Match option with parameter of syntax.
+//                              Allowed verbs for pointer to int types: d,o,x,X,v
+//                              Allowed verbs for pointer to string types: s,v
 //
-//	The formats -x, -x=, and -x=%v are equivalent.
+//     The formats -x, -x=, and -x=%v are equivalent.
 //
 // For example:
 //
-//	var f bool
-//	var set_attr_timeout bool
-//	var attr_timeout int
-//	var umask uint32
-//	outargs, err := OptParse(args, "-f attr_timeout= attr_timeout umask=%o",
-//	    &f, &set_attr_timeout, &attr_timeout, &umask)
+//     var f bool
+//     var set_attr_timeout bool
+//     var attr_timeout int
+//     var umask uint32
+//     outargs, err := OptParse(args, "-f attr_timeout= attr_timeout umask=%o",
+//         &f, &set_attr_timeout, &attr_timeout, &umask)
 //
 // Will accept a command line of:
 //
-//	$ program -f -o attr_timeout=42,umask=077
+//     $ program -f -o attr_timeout=42,umask=077
 //
 // And will set variables as follows:
 //
-//	f == true
-//	set_attr_timeout == true
-//	attr_timeout == 42
-//	umask == 077
+//     f == true
+//     set_attr_timeout == true
+//     attr_timeout == 42
+//     umask == 077
+//
 func OptParse(args []string, format string, vals ...interface{}) (outargs []string, err error) {
 	if 0 == c_hostFuseInit() {
 		if "windows" == runtime.GOOS {

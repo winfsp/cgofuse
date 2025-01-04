@@ -31,6 +31,7 @@ build_script:
 - go version
 - go build -v ./...
 - go build -v ./examples/memfs
+- go build -tags=memfs3 -v -o memfs3.exe ./examples/memfs
 
 test_script:
 - go test -v ./fuse
@@ -43,6 +44,7 @@ test_script:
 
 # hard code fsreg parameters because appveyor does not like percents ("--VolumePrefix=%1 %2")
 - C:\projects\winfsp\tools\fsreg.bat gomemfs "C:\projects\go\src\github.com\winfsp\cgofuse\memfs.exe" "--VolumePrefix=\gomemfs\share M:" "D:P(A;;RPWPLC;;;WD)"
+- C:\projects\winfsp\tools\fsreg.bat gomemfs3 "C:\projects\go\src\github.com\winfsp\cgofuse\memfs3.exe" "--VolumePrefix=\gomemfs3\share N:" "D:P(A;;RPWPLC;;;WD)"
 
 # test against WinFsp v1.0
 - 'net use M: \\gomemfs\share'
@@ -52,6 +54,13 @@ test_script:
 # - C:\Projects\winfsp\ext\test\fstools\src\fsx\fsx.exe -N 10000 test xxxxxx
 - 'C: & cd'
 - 'net use M: /delete'
+- 'net use N: \\gomemfs3\share'
+- 'N: & cd'
+- C:\projects\winfsp\build\VStudio\build\Release\winfsp-tests-x64.exe --external --resilient --share-prefix=\gomemfs3\share -create_allocation_test -create_fileattr_test -getfileinfo_name_test -setfileinfo_test -delete_access_test -setsecurity_test -querydir_namelen_test -reparse* -stream*
+# disable fsx test on WinFsp v1.0, as there was a bug in FUSE write.
+# - C:\Projects\winfsp\ext\test\fstools\src\fsx\fsx.exe -N 10000 test xxxxxx
+- 'C: & cd'
+- 'net use N: /delete'
 
 # test against WinFsp v1.2 DLL with chflags, setcrtime and setchgtime
 # HACK: mixing DLL and FSD versions; do not try this at home
@@ -63,3 +72,9 @@ test_script:
 - C:\Projects\winfsp\ext\test\fstools\src\fsx\fsx.exe -N 10000 test xxxxxx
 - 'C: & cd'
 - 'net use M: /delete'
+- 'net use N: \\gomemfs3\share'
+- 'N: & cd'
+- C:\projects\winfsp\build\VStudio\build\Release\winfsp-tests-x64.exe --external --resilient --share-prefix=\gomemfs3\share -create_allocation_test -create_fileattr_test -getfileinfo_name_test -delete_access_test -setsecurity_test -querydir_namelen_test -reparse* -stream*
+- C:\Projects\winfsp\ext\test\fstools\src\fsx\fsx.exe -N 10000 test xxxxxx
+- 'C: & cd'
+- 'net use N: /delete'

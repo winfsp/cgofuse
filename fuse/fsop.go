@@ -313,25 +313,6 @@ type FileSystemInterface interface {
 	Listxattr(path string, fill func(name string) bool) int
 }
 
-// FileSystemFuse3 is the interface that wraps the fuse3 equivalent methods.
-//
-// ChmodFuse3, ChownFuse3, and UtimensFuse3 each similar to Chmod, Chown, and
-// Utimens except they include a file handle that could be null and only work
-// on with Fuse3.
-//
-// RenameFuse3 and ReaddirFuse3 are similar to Rename and Readir except that they
-// include additional flags.
-type FileSystemFuse3 interface {
-	ChmodFuse3(path string, mode uint32, fh uint64) int
-	ChownFuse3(path string, uid uint32, gid uint32, fh uint64) int
-	UtimensFuse3(path string, tmsp []Timespec, fh uint64) int
-	RenameFuse3(oldpath string, newpath string, flags uint32) int
-	ReaddirFuse3(path string,
-		fill func(name string, stat *Stat_t, ofst int64) bool,
-		ofst int64,
-		fh uint64, flags uint32) int
-}
-
 // FileSystemOpenEx is the interface that wraps the OpenEx and CreateEx methods.
 //
 // OpenEx and CreateEx are similar to Open and Create except that they allow
@@ -368,6 +349,38 @@ type FileSystemSetcrtime interface {
 // Setchgtime changes the file change (ctime) time. [OSX and Windows only]
 type FileSystemSetchgtime interface {
 	Setchgtime(path string, tmsp Timespec) int
+}
+
+// FileSystemChmod3 is the interface that wraps the FUSE3 Chmod method.
+//
+// Chmod3 is similar to Chmod except that it includes a file handle that is
+// available only under FUSE3.
+type FileSystemChmod3 interface {
+	Chmod3(path string, mode uint32, fh uint64) int
+}
+
+// FileSystemChown3 is the interface that wraps the FUSE3 Chown method.
+//
+// Chown3 is similar to Chown except that it includes a file handle that is
+// available only under FUSE3.
+type FileSystemChown3 interface {
+	Chown3(path string, uid uint32, gid uint32, fh uint64) int
+}
+
+// FileSystemUtimens3 is the interface that wraps the FUSE3 Utimens method.
+//
+// Utimens3 is similar to Utimens except that it includes a file handle that is
+// available only under FUSE3.
+type FileSystemUtimens3 interface {
+	Utimens3(path string, tmsp []Timespec, fh uint64) int
+}
+
+// FileSystemRename3 is the interface that wraps the FUSE3 Rename method.
+//
+// Rename3 is similar to Rename except that it includes flags that are
+// available only under FUSE3.
+type FileSystemRename3 interface {
+	Rename3(oldpath string, newpath string, flags uint32) int
 }
 
 // Error encapsulates a FUSE error code. In some rare circumstances it is useful
