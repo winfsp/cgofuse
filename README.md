@@ -1,67 +1,69 @@
-<h1 align="center">
-    Cross-platform FUSE library for Go
-</h1>
+<center>
 
-<p align="center">
-    <a href="https://godoc.org/github.com/winfsp/cgofuse/fuse">
-        <img src="https://godoc.org/github.com/winfsp/cgofuse/fuse?status.svg"/>
-    </a>
-</p>
+# Cross-platform FUSE library for Go
 
-Cgofuse is a cross-platform FUSE library for Go. It is supported on multiple platforms and can be ported to any platform that has a FUSE implementation. It has [cgo](https://golang.org/cmd/cgo/) and [!cgo](https://github.com/golang/go/wiki/WindowsDLLs) ("nocgo") variants depending on the platform.
+<a href="https://godoc.org/github.com/winfsp/cgofuse/fuse">
+    <img src="https://godoc.org/github.com/winfsp/cgofuse/fuse?status.svg"/>
+</a>
 
-|       |Windows<br/>[![](https://img.shields.io/github/workflow/status/winfsp/cgofuse/test)](https://github.com/winfsp/cgofuse/actions/workflows/test.yml)|macOS<br/>[![](https://img.shields.io/github/workflow/status/winfsp/cgofuse/test)](https://github.com/winfsp/cgofuse/actions/workflows/test.yml)|Linux<br/>[![](https://img.shields.io/github/workflow/status/winfsp/cgofuse/test)](https://github.com/winfsp/cgofuse/actions/workflows/test.yml)|FreeBSD<br/>[![no CI](https://img.shields.io/badge/build-none-lightgrey.svg)](https://cirrus-ci.com/github/billziss-gh/cgofuse)|NetBSD<sup>*</sup><br/>![no CI](https://img.shields.io/badge/build-none-lightgrey.svg)|OpenBSD<sup>*</sup><br/>![no CI](https://img.shields.io/badge/build-none-lightgrey.svg)|
-|:-----:|:------:|:------:|:------:|:------:|:------:|:------:|
-|  cgo  |&#x2713;|&#x2713;|&#x2713;|&#x2713;|&#x2713;|&#x2713;|
-| !cgo  |&#x2713;|        |        |        |        |        |
+_Cgofuse is a cross-platform FUSE library for Go. It is supported on multiple platforms and can be ported to any platform that has a FUSE implementation. It has [cgo](https://pkg.go.dev/cmd/cgo), [!cgo](https://go.dev/wiki/WindowsDLLs) (aka "nocgo") and [FUSE](https://github.com/libfuse/libfuse/tree/fuse-2.9.9) (aka "FUSE2"), [FUSE3](https://github.com/libfuse/libfuse) variants depending on the platform._
 
-**\*** NetBSD and OpenBSD support is experimental. There are known issues that stem from the differences in the NetBSD [librefuse](https://github.com/NetBSD/src/tree/bbc46b99bff565d75f55fb23b51eff511068b183/lib/librefuse) and OpenBSD [libfuse](https://github.com/openbsd/src/tree/dae5ffec5618b0b660e9064e3b0991bb4ab1b1e8/lib/libfuse) implementations from the reference [libfuse](https://github.com/libfuse/libfuse) implementation
+|            |**cgo**     |**!cgo**    |**FUSE**    |**FUSE3**   |
+|:----------:|:----------:|:----------:|:----------:|:----------:|
+|**Windows** |&#x2713;    |&#x2713;    |&#x2713;    |            |
+|**macOS**   |&#x2713;    |            |&#x2713;    |            |
+|**Linux**   |&#x2713;    |            |&#x2713;    |&#x2713;    |
+|**FreeBSD** |&#x2713;    |            |&#x2713;    |&#x2713;    |
+|**NetBSD**  |&#x2713;    |            |&#x2713;    |            |
+|**OpenBSD** |&#x2713;    |            |&#x2713;    |            |
+
+</center>
 
 ## How to build
 
-**Windows cgo**
+**Windows**
 - Prerequisites: [WinFsp](https://github.com/winfsp/winfsp), gcc (e.g. from [Mingw-builds](http://mingw-w64.org/doku.php/download))
-- Build:
+- Build **cgo**:
     ```
-    > cd cgofuse
     > set CPATH=C:\Program Files (x86)\WinFsp\inc\fuse
     > go install -v ./fuse ./examples/memfs
     ```
-
-**Windows !cgo**
-- Prerequisites: [WinFsp](https://github.com/winfsp/winfsp)
-- Build:
+- Build **!cgo**:
     ```
-    > cd cgofuse
     > set CGO_ENABLED=0
     > go install -v ./fuse ./examples/memfs
     ```
 
 **macOS**
-- Prerequisites: [FUSE for macOS](https://osxfuse.github.io), [command line tools](https://developer.apple.com/library/content/technotes/tn2339/_index.html)
+- Prerequisites: [macFUSE](https://macfuse.github.io/), [command line tools](https://developer.apple.com/library/content/technotes/tn2339/_index.html)
 - Build:
     ```
-    $ cd cgofuse
     $ go install -v ./fuse ./examples/memfs ./examples/passthrough
     ```
 
 **Linux**
-- Prerequisites: libfuse-dev, gcc
-- Build:
+- Prerequisites: libfuse-dev, libfuse3-dev, gcc
+- Build **FUSE**:
     ```
-    $ cd cgofuse
     $ go install -v ./fuse ./examples/memfs ./examples/passthrough
+    ```
+- Build **FUSE3**:
+    ```
+    $ go install -tags=fuse3 -v ./fuse ./examples/memfs ./examples/passthrough
     ```
 
 **FreeBSD**
-- Prerequisites: fusefs-libs
-- Build:
+- Prerequisites: fusefs-libs, fusefs-libs3
+- Build **FUSE**:
     ```
-    $ cd cgofuse
     $ go install -v ./fuse ./examples/memfs ./examples/passthrough
-
-    # You may also need the following in order to run FUSE file systems.
-    # Commands must be run as root.
+    ```
+- Build **FUSE3**:
+    ```
+    $ go install -tags=fuse3 -v ./fuse ./examples/memfs ./examples/passthrough
+    ```
+- Note: You may also need the following in order to run FUSE file system. Commands must be run as root.
+    ```
     $ vi /boot/loader.conf                      # add: fuse_load="YES"
     $ sysctl vfs.usermount=1                    # allow user mounts
     $ pw usermod USERNAME -G operator           # allow user to open /dev/fuse
@@ -71,23 +73,24 @@ Cgofuse is a cross-platform FUSE library for Go. It is supported on multiple pla
 - Prerequisites: NONE
 - Build:
     ```
-    $ cd cgofuse
     $ go install -v ./fuse ./examples/memfs ./examples/passthrough
-
-    # You may also need the following in order to run FUSE file systems.
-    # Commands must be run as root.
+    ```
+- Note: You may also need the following in order to run FUSE file systems. Commands must be run as root.
+    ```
     $ chmod go+rw /dev/puffs
     $ sysctl -w vfs.generic.usermount=1
     ```
+- Note: Support is experimental. There are known issues that stem from the differences in the NetBSD [librefuse](https://github.com/NetBSD/src/tree/bbc46b99bff565d75f55fb23b51eff511068b183/lib/librefuse) implementation from the reference [libfuse](https://github.com/libfuse/libfuse) implementation.
 
 **OpenBSD**
 - Prerequisites: NONE
 - Build:
     ```
-    $ cd cgofuse
     $ go install -v ./fuse ./examples/memfs ./examples/passthrough
     ```
-- **NOTE**: OpenBSD 6 removed the `kern.usermount` option, which allowed non-root users to mount file systems [[link](https://undeadly.org/cgi?action=article&sid=20160715125022&mode=expanded&count=0)]. Therefore you must be root in order to use FUSE and cgofuse.
+- Note: OpenBSD 6 removed the `kern.usermount` option, which allowed non-root users to mount file systems [[link](https://undeadly.org/cgi?action=article&sid=20160715125022&mode=expanded&count=0)]. Therefore you must be root in order to use FUSE and cgofuse.
+- Note: Support is experimental. There are known issues that stem from the differences in the OpenBSD [libfuse](https://github.com/openbsd/src/tree/dae5ffec5618b0b660e9064e3b0991bb4ab1b1e8/lib/libfuse) implementation from the reference [libfuse](https://github.com/libfuse/libfuse) implementation.
+
 
 ## How to use
 
@@ -120,9 +123,3 @@ The following software is being used to test cgofuse.
 
 **FreeBSD**
 - [fsx](https://github.com/billziss-gh/secfs.test/tree/master/fstools/src/fsx)
-
-## Contributors
-
-- Bill Zissimopoulos \<billziss at navimatics.com>
-- Nick Craig-Wood \<nick at craig-wood.com>
-- Fredrik Medley <fredrik.medley at veoneer.com>
