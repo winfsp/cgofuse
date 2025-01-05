@@ -1,4 +1,4 @@
-<center>
+<div align="center">
 
 # Cross-platform FUSE library for Go
 
@@ -17,7 +17,7 @@ _Cgofuse is a cross-platform FUSE library for Go. It is supported on multiple pl
 |**NetBSD**  |&#x2713;    |            |&#x2713;    |            |
 |**OpenBSD** |&#x2713;    |            |&#x2713;    |            |
 
-</center>
+</div>
 
 ## How to build
 
