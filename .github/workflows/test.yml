@@ -91,7 +91,7 @@ jobs:
           rm -rf secfs.test/fstest/fstest/tests/xacl
           rm -rf secfs.test/fstest/fstest/tests/zzz_ResourceFork
 
-      - name: Install FUSE and secfs.test
+      - name: Install FUSE and secfs.test (macOS)
         if: runner.os == 'macOS'
         run: |
           brew install macfuse
@@ -152,7 +152,7 @@ jobs:
           Start-Sleep 3
           Pop-Location
 
-      - name: Test file systems (Linux / macOS disabled) with FUSE2
+      - name: Test file systems (Linux / macOS:disabled) with FUSE2
         if: runner.os == 'Linux' || (false && runner.os == 'macOS')
         run: |
           set -x
