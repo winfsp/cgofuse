@@ -421,8 +421,14 @@ static inline void hostAsgnCconninfo(struct fuse_conn_info *conn,
 #if defined(__APPLE__)
 	if (capCaseInsensitive)
 		FUSE_ENABLE_CASE_INSENSITIVE(conn);
-#elif defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
-#elif defined(__linux__)
+#elif defined(__NetBSD__) || defined(__OpenBSD__)
+#elif defined(__FreeBSD__) || defined(__linux__)
+#if FUSE_USE_VERSION >= 30
+	if (capReaddirPlus)
+		conn->want |= conn->capable & FUSE_CAP_READDIRPLUS;
+	else
+		conn->want &= ~FUSE_CAP_READDIRPLUS;
+#endif
 	// FUSE_CAP_ATOMIC_O_TRUNC was disabled in FUSE2 and is enabled in FUSE3.
 	// So disable it here, unless the user explicitly enables it.
 	if (capOpenTrunc)
