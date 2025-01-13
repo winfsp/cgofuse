@@ -7,7 +7,21 @@
 
 - Convert package to module.
 
+- Support FUSE3 on Linux and FreeBSD. By default, cgofuse will link with FUSE2. To link with FUSE3 add `-tags=fuse3` to your `go build` flags.
+
+- Support FUSE-T on macOS.
+
 - Preliminary support for Windows on ARM64.
+
+- Support Linux distributions that place `fusermount` in `/usr/bin`.
+
+- Add `FileSystemChmod3` interface. `Chmod3` is similar to `Chmod` except that it includes a file handle that is available only under FUSE3.
+
+- Add `FileSystemChown3` interface. `Chown3` is similar to `Chown` except that it includes a file handle that is available only under FUSE3.
+
+- Add `FileSystemUtimens3` interface. `Utimens3` is similar to `Utimens` except that it includes a file handle that is available only under FUSE3.
+
+- Add `FileSystemRename3` interface. `Rename3` is similar to `Rename` except that it includes flags that are available only under FUSE3. These flags include `RENAME_NOREPLACE` and `RENAME_EXCHANGE`.
 
 - Add `FileSystemGetpath` interface. A case-insensitive file system can use `Getpath` to report the correct case of a file path on Windows.
 
@@ -28,6 +42,12 @@
         }
         ```
     - Return `-fuse.EPERM` from `Unlink` / `Rmdir` for files that should not be deleted.
+
+- Add `FileSystemHost.SetCapOpenTrunc`. A file system can use this capability to inform the host that it can handle the `O_TRUNC` flag.
+
+- Add `FileSystemHost.SetDirectIO`. A file system can use this capability to disable page caching on FUSE3.
+
+- Add `FileSystemHost.SetUseIno`. A file system can use this capability when it wants the host to use the `ino` values reported by `Getattr` and other operations on FUSE3.
 
 
 **v1.5.0**
