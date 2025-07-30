@@ -176,6 +176,13 @@ static void *cgofuse_init_fuse(void)
 		h = dlopen("/usr/local/lib/libosxfuse.2.dylib", RTLD_NOW); // MacFUSE/OSXFuse < v4
 	if (0 == h)
 		h = dlopen("/usr/local/lib/libfuse-t.dylib", RTLD_NOW); // FUSE-T
+	if (0 == h)
+	{
+		// runtime path for bundled dylib in e.g. Awesome.app/Contents/Frameworks/libfuse.dylib
+		const char *dylib_path = getenv("CGOFUSE_LIBFUSE_PATH");
+		if(dylib_path)
+			h = dlopen(dylib_path, RTLD_NOW);
+	}
 #elif defined(__FreeBSD__)
 #if FUSE_USE_VERSION < 30
 	h = dlopen("libfuse.so.2", RTLD_NOW);
