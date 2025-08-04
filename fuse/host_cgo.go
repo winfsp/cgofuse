@@ -169,7 +169,7 @@ static void *cgofuse_init_fuse(void)
 	if (0 == (*(void **)&(pfn_ ## n) = dlsym(h, #n)))\
 		return 0;
 
-	void *h;
+	void *h = NULL;
 #if defined(__APPLE__)
 	// runtime path for bundled dylib in e.g. Awesome.app/Contents/Frameworks/libfuse.dylib
 	const char *dylib_path = getenv("CGOFUSE_LIBFUSE_PATH");
