@@ -40,10 +40,12 @@ func (self *Hellofs) Getattr(path string, stat *fuse.Stat_t, fh uint64) (errc in
 	switch path {
 	case "/":
 		stat.Mode = fuse.S_IFDIR | 0555
+		stat.Nlink = 2
 		return 0
 	case "/" + filename:
 		stat.Mode = fuse.S_IFREG | 0444
 		stat.Size = int64(len(contents))
+		stat.Nlink = 1
 		return 0
 	default:
 		return -fuse.ENOENT
