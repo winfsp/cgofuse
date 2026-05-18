@@ -63,3 +63,7 @@ func syscall_Statfs(path string, stat *syscall.Statfs_t) error {
 	*stat = syscall.Statfs_t{}
 	return nil
 }
+
+func syscall_Mknod(path string, mode uint32, dev uint64) error {
+	return syscall.Mknod(path, mode, int(dev))
+}
