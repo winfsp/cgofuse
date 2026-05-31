@@ -44,6 +44,8 @@ var (
 	hostTable = map[unsafe.Pointer]*FileSystemHost{}
 )
 
+const maxwidth = 1 << (30 + 10*(^uint(0)>>32&1))
+
 func hostHandleNew(host *FileSystemHost) unsafe.Pointer {
 	p := c_malloc(1)
 	hostGuard.Lock()
@@ -135,7 +137,7 @@ func hostReadlink(path0 *c_char, buff0 *c_char, size0 c_size_t) (errc0 c_int) {
 	fsop := hostHandleGet(c_fuse_get_context().private_data).fsop
 	path := c_GoString(path0)
 	errc, rslt := fsop.Readlink(path)
-	buff := (*[1 << 30]byte)(unsafe.Pointer(buff0))
+	buff := (*[maxwidth]byte)(unsafe.Pointer(buff0))
 	copy(buff[:size0-1], rslt)
 	rlen := len(rslt)
 	if c_size_t(rlen) < size0 {
@@ -284,7 +286,7 @@ func hostRead(path0 *c_char, buff0 *c_char, size0 c_size_t, ofst0 c_fuse_off_t,
 	defer recoverAsErrno(&nbyt0)
 	fsop := hostHandleGet(c_fuse_get_context().private_data).fsop
 	path := c_GoString(path0)
-	buff := (*[1 << 30]byte)(unsafe.Pointer(buff0))
+	buff := (*[maxwidth]byte)(unsafe.Pointer(buff0))
 	nbyt := fsop.Read(path, buff[:size0], int64(ofst0), uint64(fi0.fh))
 	return c_int(nbyt)
 }
@@ -294,7 +296,7 @@ func hostWrite(path0 *c_char, buff0 *c_char, size0 c_size_t, ofst0 c_fuse_off_t,
 	defer recoverAsErrno(&nbyt0)
 	fsop := hostHandleGet(c_fuse_get_context().private_data).fsop
 	path := c_GoString(path0)
-	buff := (*[1 << 30]byte)(unsafe.Pointer(buff0))
+	buff := (*[maxwidth]byte)(unsafe.Pointer(buff0))
 	nbyt := fsop.Write(path, buff[:size0], int64(ofst0), uint64(fi0.fh))
 	return c_int(nbyt)
 }
@@ -346,7 +348,7 @@ func hostSetxattr(path0 *c_char, name0 *c_char, buff0 *c_char, size0 c_size_t,
 	fsop := hostHandleGet(c_fuse_get_context().private_data).fsop
 	path := c_GoString(path0)
 	name := c_GoString(name0)
-	buff := (*[1 << 30]byte)(unsafe.Pointer(buff0))
+	buff := (*[maxwidth]byte)(unsafe.Pointer(buff0))
 	errc := fsop.Setxattr(path, name, buff[:size0], int(flags))
 	return c_int(errc)
 }
@@ -364,7 +366,7 @@ func hostGetxattr(path0 *c_char, name0 *c_char, buff0 *c_char, size0 c_size_t) (
 		if len(rslt) > int(size0) {
 			return -c_int(ERANGE)
 		}
-		buff := (*[1 << 30]byte)(unsafe.Pointer(buff0))
+		buff := (*[maxwidth]byte)(unsafe.Pointer(buff0))
 		copy(buff[:size0], rslt)
 	}
 	return c_int(len(rslt))
@@ -374,7 +376,7 @@ func hostListxattr(path0 *c_char, buff0 *c_char, size0 c_size_t) (nbyt0 c_int) {
 	defer recoverAsErrno(&nbyt0)
 	fsop := hostHandleGet(c_fuse_get_context().private_data).fsop
 	path := c_GoString(path0)
-	buff := (*[1 << 30]byte)(unsafe.Pointer(buff0))
+	buff := (*[maxwidth]byte)(unsafe.Pointer(buff0))
 	size := int(size0)
 	nbyt := 0
 	fill := func(name1 string) bool {
@@ -599,7 +601,7 @@ func hostGetpath(path0 *c_char, buff0 *c_char, size0 c_size_t,
 		fifh = uint64(fi0.fh)
 	}
 	errc, rslt := intf.Getpath(path, fifh)
-	buff := (*[1 << 30]byte)(unsafe.Pointer(buff0))
+	buff := (*[maxwidth]byte)(unsafe.Pointer(buff0))
 	copy(buff[:size0-1], rslt)
 	rlen := len(rslt)
 	if c_size_t(rlen) < size0 {
