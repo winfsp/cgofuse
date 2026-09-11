@@ -4,7 +4,7 @@ clone_folder: C:\projects\go\src\github.com\winfsp\cgofuse
 
 environment:
   CPATH: C:\projects\winfsp\inc\fuse
-  GODEBUG: cgocheck=2
+  GOEXPERIMENT: cgocheck2
   GOPATH: C:\projects\go
   PATH: C:\mingw-w64\x86_64-6.3.0-posix-seh-rt_v5-rev1\mingw64\bin;%PATH%
   matrix:

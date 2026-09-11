@@ -826,6 +826,27 @@ static int hostOptParse(struct fuse_args *args, void *data, const struct fuse_op
 {
 	return fuse_opt_parse(args, data, opts, nonopts ? hostOptParseOptProc : 0);
 }
+
+// Optimization hints for the Go 1.24+ compiler: these directives eliminate the
+// per-call overhead of preparing for a possible Go callback and/or forcing
+// pointer arguments to escape to the heap.
+#cgo nocallback fuse_get_context
+#cgo nocallback hostFilldir
+#cgo noescape hostFilldir
+#cgo nocallback hostCstatFromFusestat
+#cgo noescape hostCstatFromFusestat
+#cgo nocallback hostCstatvfsFromFusestatfs
+#cgo noescape hostCstatvfsFromFusestatfs
+#cgo nocallback hostAsgnCfileinfo
+#cgo noescape hostAsgnCfileinfo
+#cgo nocallback hostAsgnCconninfo
+#cgo noescape hostAsgnCconninfo
+#cgo nocallback hostAsgnCconfig
+#cgo noescape hostAsgnCconfig
+#cgo nocallback hostStaticInit
+#cgo nocallback hostFuseInit
+#cgo nocallback free
+#cgo noescape free
 */
 import "C"
 import "unsafe"
