@@ -204,6 +204,43 @@ func hostRename(oldpath0 *c_char, newpath0 *c_char, flags c_uint32_t) (errc0 c_i
 	}
 }
 
+// macOS rename flags; see renamex_np(2).
+const (
+	c_RENAME_SECLUDE = 1 << 0
+	c_RENAME_SWAP    = 1 << 1
+	c_RENAME_EXCL    = 1 << 2
+)
+
+func hostRenamex(oldpath0 *c_char, newpath0 *c_char, flags c_uint32_t) (errc0 c_int) {
+	defer recoverAsErrno(&errc0)
+	fsop := hostHandleGet(c_fuse_get_context().private_data).fsop
+	oldpath, newpath := c_GoString(oldpath0), c_GoString(newpath0)
+	if 0 != flags&c_RENAME_SECLUDE {
+		return -c_int(ENOTSUP)
+	}
+	if intf, ok := fsop.(FileSystemRename3); ok {
+		var flags3 uint32
+		if 0 != flags&c_RENAME_EXCL {
+			flags3 |= RENAME_NOREPLACE
+		}
+		if 0 != flags&c_RENAME_SWAP {
+			flags3 |= RENAME_EXCHANGE
+		}
+		return c_int(intf.Rename3(oldpath, newpath, flags3))
+	}
+	if 0 != flags&c_RENAME_SWAP {
+		return -c_int(ENOTSUP)
+	}
+	if 0 != flags&c_RENAME_EXCL {
+		// The macFUSE FSKit backend sends an ordinary rename as renamex with RENAME_EXCL,
+		// so a file system that implements Rename only must keep working.
+		if 0 == fsop.Getattr(newpath, &Stat_t{}, ^uint64(0)) {
+			return -c_int(EEXIST)
+		}
+	}
+	return c_int(fsop.Rename(oldpath, newpath))
+}
+
 func hostLink(oldpath0 *c_char, newpath0 *c_char) (errc0 c_int) {
 	defer recoverAsErrno(&errc0)
 	fsop := hostHandleGet(c_fuse_get_context().private_data).fsop

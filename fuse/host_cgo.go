@@ -413,6 +413,7 @@ extern int go_hostUtimens3(char *path, fuse_timespec_t tv[2], struct fuse_file_i
 #endif
 extern int go_hostGetpath(char *path, char *buf, size_t size,
 	struct fuse_file_info *fi);
+extern int go_hostRenamex(char *oldpath, char *newpath, unsigned int flags);
 extern int go_hostSetchgtime(char *path, fuse_timespec_t *tv);
 extern int go_hostSetcrtime(char *path, fuse_timespec_t *tv);
 extern int go_hostChflags(char *path, uint32_t flags);
@@ -703,6 +704,9 @@ static int hostMount(int argc, char *argv[], void *data)
 		.utimens = (int (*)(const char *, const fuse_timespec_t [2]))go_hostUtimens,
 #else
 		.utimens = (int (*)(const char *, const fuse_timespec_t [2], struct fuse_file_info *))go_hostUtimens3,
+#endif
+#if defined(__APPLE__)
+		.renamex = (int (*)(const char *, const char *, unsigned int))go_hostRenamex,
 #endif
 #if defined(__APPLE__) || (defined(_WIN32) && defined(FSP_FUSE_CAP_STAT_EX))
 		.setchgtime = (int (*)(const char *, const fuse_timespec_t *))go_hostSetchgtime,
@@ -1228,6 +1232,11 @@ func go_hostUtimens3(path0 *c_char, tmsp0 *c_fuse_timespec_t, fi0 *c_struct_fuse
 func go_hostGetpath(path0 *c_char, buff0 *c_char, size0 c_size_t,
 	fi0 *c_struct_fuse_file_info) (errc0 c_int) {
 	return hostGetpath(path0, buff0, size0, fi0)
+}
+
+//export go_hostRenamex
+func go_hostRenamex(oldpath0 *c_char, newpath0 *c_char, flags c_uint32_t) (errc0 c_int) {
+	return hostRenamex(oldpath0, newpath0, flags)
 }
 
 //export go_hostSetchgtime
