@@ -16,7 +16,8 @@
 package fuse
 
 /*
-#cgo darwin CFLAGS: -DFUSE_USE_VERSION=28 -D_FILE_OFFSET_BITS=64 -I/usr/local/include/osxfuse/fuse -I/usr/local/include/fuse
+#cgo darwin,!fuse3 CFLAGS: -DFUSE_USE_VERSION=28 -D_FILE_OFFSET_BITS=64 -I/usr/local/include/osxfuse/fuse -I/usr/local/include/fuse
+#cgo darwin,fuse3 CFLAGS: -DFUSE_USE_VERSION=39 -D_FILE_OFFSET_BITS=64 -DFUSE_DARWIN_ENABLE_EXTENSIONS=0 -I/usr/local/include/fuse3
 #cgo freebsd,!fuse3 CFLAGS: -DFUSE_USE_VERSION=28 -D_FILE_OFFSET_BITS=64 -I/usr/local/include/fuse
 #cgo freebsd,fuse3 CFLAGS: -DFUSE_USE_VERSION=39 -D_FILE_OFFSET_BITS=64 -I/usr/local/include/fuse3
 #cgo netbsd CFLAGS: -DFUSE_USE_VERSION=28 -D_FILE_OFFSET_BITS=64 -D_KERNTYPES
@@ -40,6 +41,7 @@ package fuse
 #if defined(__APPLE__) || defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__) || defined(__linux__)
 
 #include <dlfcn.h>
+#include <errno.h>
 #include <pthread.h>
 #include <spawn.h>
 #include <sys/mount.h>
@@ -118,6 +120,19 @@ static void cgofuse_init_fail(void)
 
 #include <fuse.h>
 
+// Detect macFUSE headers; we build against the vanilla FUSE3 API.
+#if defined(__APPLE__) && FUSE_USE_VERSION >= 30 && defined(FUSE_DARWIN_CAP_CASE_INSENSITIVE)
+#define CGOFUSE_MACFUSE3 1
+#endif
+
+// FUSE3 >= 3.17 (and macFUSE) expect the header version via fuse_main_real_versioned.
+#if defined(__APPLE__) && FUSE_USE_VERSION >= 30 && FUSE_VERSION >= 317
+#define CGOFUSE_VERSIONED_MAIN 1
+static int (*pfn_fuse_main_real_versioned)(int argc, char *argv[],
+    const struct fuse_operations *ops, size_t opsize,
+    struct libfuse_version *version, void *data);
+#endif
+
 #if defined(__OpenBSD__)
 static int (*pfn_fuse_main)(int argc, char *argv[],
     const struct fuse_operations *ops, void *data);
@@ -137,6 +152,21 @@ static inline int inl_fuse_main_real(int argc, char *argv[],
 #if defined(__OpenBSD__)
 	return pfn_fuse_main(argc, argv, ops, data);
 #else
+#if defined(CGOFUSE_VERSIONED_MAIN)
+	if (0 == pfn_fuse_main_real || 0 != pfn_fuse_main_real_versioned)
+	{
+		struct libfuse_version version =
+		{
+			.major = FUSE_MAJOR_VERSION,
+			.minor = FUSE_MINOR_VERSION,
+			.hotfix = FUSE_HOTFIX_VERSION,
+#if defined(CGOFUSE_MACFUSE3)
+			.darwin_extensions_enabled = FUSE_DARWIN_ENABLE_EXTENSIONS,
+#endif
+		};
+		return pfn_fuse_main_real_versioned(argc, argv, ops, opsize, &version, data);
+	}
+#endif
 	return pfn_fuse_main_real(argc, argv, ops, opsize, data);
 #endif
 }
@@ -168,6 +198,8 @@ static void *cgofuse_init_fuse(void)
 #define CGOFUSE_GET_API(n)		\
 	if (0 == (*(void **)&(pfn_ ## n) = dlsym(h, #n)))\
 		return 0;
+#define CGOFUSE_GET_API_OPT(n)		\
+	*(void **)&(pfn_ ## n) = dlsym(h, #n);
 
 	void *h = 0;
 #if defined(__APPLE__)
@@ -175,12 +207,19 @@ static void *cgofuse_init_fuse(void)
 	const char *dylib_path = getenv("CGOFUSE_LIBFUSE_PATH");
 	if (0 != dylib_path)
 		h = dlopen(dylib_path, RTLD_NOW);
+#if FUSE_USE_VERSION < 30
 	if (0 == h)
 		h = dlopen("/usr/local/lib/libfuse.2.dylib", RTLD_NOW); // MacFUSE/OSXFuse >= v4
 	if (0 == h)
 		h = dlopen("/usr/local/lib/libosxfuse.2.dylib", RTLD_NOW); // MacFUSE/OSXFuse < v4
 	if (0 == h)
 		h = dlopen("/usr/local/lib/libfuse-t.dylib", RTLD_NOW); // FUSE-T
+#else
+	if (0 == h)
+		h = dlopen("/usr/local/lib/libfuse3.dylib", RTLD_NOW); // macFUSE >= v4.10, FUSE-T
+	if (0 == h)
+		h = dlopen("/usr/local/lib/libfuse3.4.dylib", RTLD_NOW);
+#endif
 #elif defined(__FreeBSD__)
 #if FUSE_USE_VERSION < 30
 	h = dlopen("libfuse.so.2", RTLD_NOW);
@@ -203,6 +242,11 @@ static void *cgofuse_init_fuse(void)
 
 #if defined(__OpenBSD__)
 	CGOFUSE_GET_API(fuse_main);
+#elif defined(CGOFUSE_VERSIONED_MAIN)
+	CGOFUSE_GET_API_OPT(fuse_main_real_versioned);
+	CGOFUSE_GET_API_OPT(fuse_main_real);
+	if (0 == pfn_fuse_main_real_versioned && 0 == pfn_fuse_main_real)
+		return 0;
 #else
 	CGOFUSE_GET_API(fuse_main_real);
 #endif
@@ -212,6 +256,7 @@ static void *cgofuse_init_fuse(void)
 
 	return h;
 
+#undef CGOFUSE_GET_API_OPT
 #undef CGOFUSE_GET_API
 }
 
@@ -423,11 +468,17 @@ static inline void hostAsgnCconninfo(struct fuse_conn_info *conn,
 	bool capDeleteAccess,
 	bool capOpenTrunc)
 {
-#if defined(__APPLE__)
+#if defined(__APPLE__) && FUSE_USE_VERSION < 30
 	if (capCaseInsensitive)
 		FUSE_ENABLE_CASE_INSENSITIVE(conn);
-#elif defined(__NetBSD__) || defined(__OpenBSD__)
-#elif defined(__FreeBSD__) || defined(__linux__)
+#elif defined(CGOFUSE_MACFUSE3)
+	// macFUSE defaults to case insensitive; clear it unless requested.
+	if (capCaseInsensitive)
+		conn->want_darwin |= conn->capable_darwin & FUSE_DARWIN_CAP_CASE_INSENSITIVE;
+	else
+		conn->want_darwin &= ~(uint64_t)FUSE_DARWIN_CAP_CASE_INSENSITIVE;
+#endif
+#if defined(__FreeBSD__) || defined(__linux__) || (defined(__APPLE__) && FUSE_USE_VERSION >= 30)
 #if FUSE_USE_VERSION >= 30
 	if (capReaddirPlus)
 		conn->want |= conn->capable & FUSE_CAP_READDIRPLUS;
@@ -590,7 +641,7 @@ static inline int hostFilldir(fuse_fill_dir_t filler, void *buf,
 #endif
 }
 
-#if defined(__APPLE__)
+#if defined(__APPLE__) && FUSE_USE_VERSION < 30
 static int _hostSetxattr(char *path, char *name, char *value, size_t size, int flags,
 	uint32_t position)
 {
@@ -606,6 +657,27 @@ static int _hostGetxattr(char *path, char *name, char *value, size_t size,
 #else
 #define _hostSetxattr go_hostSetxattr
 #define _hostGetxattr go_hostGetxattr
+#endif
+
+#if defined(CGOFUSE_MACFUSE3)
+// Linux FUSE3 rename flags, as presented to file systems (see fsop_cgo.go).
+#define CGOFUSE_RENAME_NOREPLACE	(1 << 0)
+#define CGOFUSE_RENAME_EXCHANGE		(1 << 1)
+
+static int _hostRename3(const char *oldpath, const char *newpath, unsigned int flags)
+{
+	// Translate Darwin rename flags to the Linux ones.
+	if (0 != (flags & ~(unsigned int)(RENAME_NOREPLACE | RENAME_EXCHANGE)))
+		return -EINVAL;
+	unsigned int goflags = 0;
+	if (0 != (flags & RENAME_NOREPLACE))
+		goflags |= CGOFUSE_RENAME_NOREPLACE;
+	if (0 != (flags & RENAME_EXCHANGE))
+		goflags |= CGOFUSE_RENAME_EXCHANGE;
+	return go_hostRename3((char *)oldpath, (char *)newpath, goflags);
+}
+#else
+#define _hostRename3 go_hostRename3
 #endif
 
 // hostStaticInit, hostFuseInit and hostInit serve different purposes.
@@ -643,7 +715,7 @@ static int hostMount(int argc, char *argv[], void *data)
 #if FUSE_USE_VERSION < 30
 		.rename = (int (*)(const char *, const char *))go_hostRename,
 #else
-		.rename = (int (*)(const char *, const char *, unsigned int flags))go_hostRename3,
+		.rename = (int (*)(const char *, const char *, unsigned int flags))_hostRename3,
 #endif
 		.link = (int (*)(const char *, const char *))go_hostLink,
 #if FUSE_USE_VERSION < 30
@@ -664,7 +736,7 @@ static int hostMount(int argc, char *argv[], void *data)
 		.flush = (int (*)(const char *, struct fuse_file_info *))go_hostFlush,
 		.release = (int (*)(const char *, struct fuse_file_info *))go_hostRelease,
 		.fsync = (int (*)(const char *, int, struct fuse_file_info *))go_hostFsync,
-#if defined(__APPLE__)
+#if defined(__APPLE__) && FUSE_USE_VERSION < 30
 		.setxattr = (int (*)(const char *, const char *, const char *, size_t, int, uint32_t))
 			_hostSetxattr,
 		.getxattr = (int (*)(const char *, const char *, char *, size_t, uint32_t))
@@ -704,7 +776,7 @@ static int hostMount(int argc, char *argv[], void *data)
 #else
 		.utimens = (int (*)(const char *, const fuse_timespec_t [2], struct fuse_file_info *))go_hostUtimens3,
 #endif
-#if defined(__APPLE__) || (defined(_WIN32) && defined(FSP_FUSE_CAP_STAT_EX))
+#if (defined(__APPLE__) && FUSE_USE_VERSION < 30) || (defined(_WIN32) && defined(FSP_FUSE_CAP_STAT_EX))
 		.setchgtime = (int (*)(const char *, const fuse_timespec_t *))go_hostSetchgtime,
 		.setcrtime = (int (*)(const char *, const fuse_timespec_t *))go_hostSetcrtime,
 		.chflags = (int (*)(const char *, uint32_t))go_hostChflags,

@@ -184,8 +184,8 @@ jobs:
           rm -rf p
           rmdir mnt
 
-      - name: Build packages with FUSE3 (Linux)
-        if: runner.os == 'Linux'
+      - name: Build packages with FUSE3 (Linux / macOS)
+        if: runner.os == 'Linux' || runner.os == 'macOS'
         run: |
           go build -tags=fuse3 -v -o . ./...
           go build -tags=fuse3,memfs3 -v -o memfs3${{ matrix.exe }} ./examples/memfs

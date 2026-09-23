@@ -667,7 +667,7 @@ func (host *FileSystemHost) SetCapCaseInsensitive(value bool) {
 }
 
 // SetCapReaddirPlus informs the host that the hosted file system has the readdir-plus
-// capability [Linux and Windows only]. A file system that has the readdir-plus capability can send
+// capability [FUSE3 and Windows]. A file system that has the readdir-plus capability can send
 // full stat information during Readdir, thus avoiding extraneous Getattr calls.
 func (host *FileSystemHost) SetCapReaddirPlus(value bool) {
 	host.capReaddirPlus = value
@@ -681,7 +681,7 @@ func (host *FileSystemHost) SetCapDeleteAccess(value bool) {
 }
 
 // SetCapOpenTrunc informs the host that the hosted file system can handle the O_TRUNC
-// Open flag [Linux only].
+// Open flag [FUSE3 only].
 func (host *FileSystemHost) SetCapOpenTrunc(value bool) {
 	host.capOpenTrunc = value
 }

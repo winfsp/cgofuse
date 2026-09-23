@@ -11,7 +11,7 @@ _Cgofuse is a cross-platform FUSE library for Go. It is supported on multiple pl
 |            |**cgo**     |**!cgo**    |**FUSE**    |**FUSE3**   |
 |:----------:|:----------:|:----------:|:----------:|:----------:|
 |**Windows** |&#x2713;    |&#x2713;    |&#x2713;    |            |
-|**macOS**   |&#x2713;    |            |&#x2713;    |            |
+|**macOS**   |&#x2713;    |            |&#x2713;    |&#x2713;    |
 |**Linux**   |&#x2713;    |            |&#x2713;    |&#x2713;    |
 |**FreeBSD** |&#x2713;    |            |&#x2713;    |&#x2713;    |
 |**NetBSD**  |&#x2713;    |            |&#x2713;    |            |
@@ -35,11 +35,17 @@ _Cgofuse is a cross-platform FUSE library for Go. It is supported on multiple pl
     ```
 
 **macOS**
-- Prerequisites: [macFUSE](https://macfuse.github.io/), [command line tools](https://developer.apple.com/library/content/technotes/tn2339/_index.html)
-- Build:
+- Prerequisites: [macFUSE](https://macfuse.github.io/) or [FUSE-T](https://www.fuse-t.org/), [command line tools](https://developer.apple.com/library/content/technotes/tn2339/_index.html). FUSE3 requires a distribution that includes the FUSE3 headers and library.
+- Build **FUSE** (default):
     ```
     $ go install -v ./fuse ./examples/memfs ./examples/passthrough
     ```
+- Build **FUSE3**:
+    ```
+    $ go install -tags=fuse3 -v ./fuse ./examples/memfs ./examples/passthrough
+    ```
+- FUSE3 on macOS uses the vanilla FUSE3 API, so the macOS-only `Setchgtime`, `Setcrtime` and `Chflags` callbacks are never invoked. Use a FUSE2 build if your file system needs them.
+- A FUSE3 build can mount through [FSKit](#fskit-backend-macos) instead of NFS, which produces a local rather than a network volume.
 
 **Linux**
 - Prerequisites: libfuse-dev, libfuse3-dev, gcc
@@ -104,6 +110,19 @@ There are currently three example file systems:
 - [Memfs](examples/memfs/memfs.go) is an in memory file system. Runs on all OS'es.
 - [Passthrough](examples/passthrough/passthrough.go) is a file system that passes all operations to the underlying file system. Runs on all OS'es except Windows.
 - [Notifyfs](examples/notifyfs/notifyfs.go) is a file system that can issue file change notifications. Runs on Windows only.
+
+## FSKit backend (macOS)
+
+FSKit requires macOS 15 or later, a FUSE3 build of cgofuse, and either macFUSE 5.2 or later or
+FUSE-T 1.2 or later. It is selected with a mount option:
+
+```
+$ ./memfs -o backend=fskit,volname=MyVolume mnt
+```
+
+The option is interpreted by the FUSE3 library rather than by cgofuse, so the cgofuse API is
+unchanged: pass it in the `opts` argument of `Mount`, or on the command line of a file system
+that forwards its arguments.
 
 ## How it is tested
 
