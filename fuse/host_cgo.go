@@ -23,6 +23,9 @@ package fuse
 #cgo openbsd CFLAGS: -DFUSE_USE_VERSION=28 -D_FILE_OFFSET_BITS=64
 #cgo linux,!fuse3 CFLAGS: -DFUSE_USE_VERSION=28 -D_FILE_OFFSET_BITS=64 -I/usr/include/fuse
 #cgo linux,fuse3 CFLAGS: -DFUSE_USE_VERSION=39 -D_FILE_OFFSET_BITS=64 -I/usr/include/fuse3
+#cgo linux,fuselink CFLAGS: -DCGOFUSE_LINK
+#cgo linux,fuselink,!fuse3 LDFLAGS: -lfuse -lpthread
+#cgo linux,fuselink,fuse3 LDFLAGS: -lfuse3 -lpthread
 #cgo linux LDFLAGS: -ldl
 #cgo windows CFLAGS: -DFUSE_USE_VERSION=28 -I/usr/local/include/winfsp
 	// Use `set CPATH=C:\Program Files (x86)\WinFsp\inc\fuse` on Windows.
@@ -130,6 +133,19 @@ static int (*pfn_fuse_opt_parse)(struct fuse_args *args, void *data,
     const struct fuse_opt opts[], fuse_opt_proc_t proc);
 static void (*pfn_fuse_opt_free_args)(struct fuse_args *args);
 
+#if defined(CGOFUSE_LINK)
+// FUSE is linked at build time (e.g. for static executables, where dlopen is not available).
+// This must come before the fuse_* redirections below so that it references the real API.
+static void *cgofuse_init_fuse(void)
+{
+	pfn_fuse_main_real = fuse_main_real;
+	pfn_fuse_get_context = fuse_get_context;
+	pfn_fuse_opt_parse = fuse_opt_parse;
+	pfn_fuse_opt_free_args = fuse_opt_free_args;
+	return (void *)&cgofuse_module;
+}
+#endif
+
 static inline int inl_fuse_main_real(int argc, char *argv[],
     const struct fuse_operations *ops, size_t opsize, void *data)
 {
@@ -163,6 +179,7 @@ static inline void inl_fuse_opt_free_args(struct fuse_args *args)
 #define fuse_opt_parse			inl_fuse_opt_parse
 #define fuse_opt_free_args		inl_fuse_opt_free_args
 
+#if !defined(CGOFUSE_LINK)
 static void *cgofuse_init_fuse(void)
 {
 #define CGOFUSE_GET_API(n)		\
@@ -214,6 +231,7 @@ static void *cgofuse_init_fuse(void)
 
 #undef CGOFUSE_GET_API
 }
+#endif
 
 #elif defined(_WIN32)
 

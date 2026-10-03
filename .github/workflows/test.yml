@@ -221,3 +221,57 @@ jobs:
 
           rm -rf p
           rmdir mnt
+
+  # Link libfuse at build time (fuselink tag) instead of loading it with dlopen.
+  test-linux-fuselink:
+    runs-on: ubuntu-latest
+    env:
+      GODEBUG: cgocheck=2
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 1.20.*
+
+      - name: Install FUSE
+        run: |
+          sudo apt-get -qq install libfuse-dev libfuse3-dev
+
+      - name: Build and test with FUSE2 linked
+        run: |
+          set -x
+          go build -tags=fuselink -v -o memfs ./examples/memfs
+          ldd memfs | grep -q 'libfuse\.so\.2'
+          go test -tags=fuselink -v -count=1 ./fuse
+
+      - name: Build and test with FUSE3 linked
+        run: |
+          set -x
+          go build -tags=fuse3,fuselink -v -o memfs3 ./examples/memfs
+          ldd memfs3 | grep -q 'libfuse3\.so'
+          go test -tags=fuse3,fuselink -v -count=1 ./fuse
+
+      - name: Build static executable with FUSE3 (musl)
+        env:
+          GODEBUG: ""
+        run: |
+          docker run --rm -v "$PWD:/src" -w /src golang:1.20-alpine sh -c '
+            set -ex
+            apk add -q gcc musl-dev fuse3-dev fuse3-static
+            go build -buildvcs=false -tags=fuse3,fuselink \
+              -ldflags "-linkmode external -extldflags -static" -o memfs-static ./examples/memfs'
+          file memfs-static | grep -q 'statically linked'
+
+      - name: Test static executable
+        run: |
+          set -x
+          mkdir mnt
+          sudo ./memfs-static -o allow_other mnt &
+          sleep 3
+          echo hello | sudo tee mnt/file
+          test "$(cat mnt/file)" = hello
+          sudo umount mnt
+          rmdir mnt

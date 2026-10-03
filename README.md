@@ -51,6 +51,11 @@ _Cgofuse is a cross-platform FUSE library for Go. It is supported on multiple pl
     ```
     $ go install -tags=fuse3 -v ./fuse ./examples/memfs ./examples/passthrough
     ```
+- By default libfuse is loaded at runtime with `dlopen`. The `fuselink` tag links it at build time instead, which allows static executables (e.g. with musl and a static libfuse3). The `fuselink` tag is supported on Linux only; on other platforms it is ignored and the FUSE library is still loaded at runtime. Mounting and unmounting as a non-root user still require `fusermount3` (or `fusermount` for FUSE2) on the target system:
+    ```
+    $ CGO_CFLAGS=-I/path/to/libfuse/include/fuse3 CGO_LDFLAGS=-L/path/to/libfuse/lib \
+        go install -tags=fuse3,fuselink -ldflags '-linkmode external -extldflags -static' -v ./examples/memfs
+    ```
 
 **FreeBSD**
 - Prerequisites: fusefs-libs, fusefs-libs3
