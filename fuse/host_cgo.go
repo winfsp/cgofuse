@@ -186,6 +186,8 @@ static void *cgofuse_init_fuse(void)
 	h = dlopen("libfuse.so.2", RTLD_NOW);
 #else
 	h = dlopen("libfuse3.so.3", RTLD_NOW);
+	if (0 == h)
+		h = dlopen("libfuse3.so.4", RTLD_NOW); // libfuse >= 3.17
 #endif
 #elif defined(__NetBSD__)
 	h = dlopen("librefuse.so.2", RTLD_NOW);
@@ -196,6 +198,8 @@ static void *cgofuse_init_fuse(void)
 	h = dlopen("libfuse.so.2", RTLD_NOW);
 #else
 	h = dlopen("libfuse3.so.3", RTLD_NOW);
+	if (0 == h)
+		h = dlopen("libfuse3.so.4", RTLD_NOW); // libfuse >= 3.17
 #endif
 #endif
 	if (0 == h)
